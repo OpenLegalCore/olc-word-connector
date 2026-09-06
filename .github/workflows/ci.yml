@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+      - "release/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Run full test suite
+        run: npm test -- --run
+
+      - name: Check TypeScript
+        run: npm run typecheck
+
+      - name: Validate Office manifests
+        run: |
+          npm run validate
+          npm run validate:dev
+          npm run validate:stage
+          npm run validate:prod
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: >-
+          npx --no-install prettier --check
+          ".github/workflows/ci.yml"
+          "src/**/*.ts"
+          "src/**/*.css"
+          "src/taskpane/taskpane.html"
+          "test/**/*.ts"
+          "test/**/*.css"
+          "test/harness/harness.html"
+          "scripts/**/*.js"
+          "*.{js,json,mts}"
+
+      - name: Build browser harness
+        run: npm run build:harness
+
+      - name: Build Word harness
+        run: npm run build:word-harness
+
+      - name: Build development
+        run: npm run build:dev
+
+      - name: Build staging
+        run: npm run build:stage
+
+      - name: Build production
+        run: npm run build
+
+      - name: Verify production bundle
+        run: npm run verify:bundle

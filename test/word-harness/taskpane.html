@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenLegalCore Word Acceptance Harness</title>
+    <script
+      type="text/javascript"
+      src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"
+    ></script>
+    <link rel="stylesheet" href="../harness/harness.css" />
+  </head>
+  <body>
+    <main>
+      <h1>DEVELOPMENT ONLY — WORD ACCEPTANCE HARNESS</h1>
+      <p>This harness uses real Word selection capture with a local fake legal-source answer.</p>
+      <p>Office bootstrap: <strong id="bootstrap-status"></strong></p>
+      <p id="bootstrap-error" role="alert"></p>
+
+      <section id="harness-content" hidden>
+        <p>Select text in the disposable Word document only when testing selected context.</p>
+
+        <section>
+          <h2>Minimal retained-range contract canary</h2>
+          <p>Select non-empty text, then run this isolated, nonmutating platform probe.</p>
+          <button id="probe-retained-range">Probe retained range</button>
+          <p>
+            Probe result (content-free):
+            <code id="retained-range-probe-result"></code>
+          </p>
+        </section>
+
+        <section>
+          <h2>Two-gesture retained-range contract canary</h2>
+          <p>Select non-empty text, capture it, then use Reuse only in a later click.</p>
+          <button id="capture-probe-range">Capture probe range</button>
+          <button id="reuse-probe-range" disabled>Reuse probe range</button>
+          <p>
+            Two-gesture result (content-free):
+            <code id="two-gesture-probe-result"></code>
+          </p>
+        </section>
+
+        <section>
+          <h2>Production-shape Capture differential canary</h2>
+          <p>
+            Select non-empty text, capture the production operation shape, then use Reuse only in a
+            later click.
+          </p>
+          <button id="capture-production-shape-range">Capture production-shape range</button>
+          <button id="reuse-production-shape-range" disabled>Reuse production-shape range</button>
+          <p>
+            Production-shape result (content-free):
+            <code id="production-shape-probe-result"></code>
+          </p>
+        </section>
+
+        <label for="question">Legal question</label>
+        <input id="question" value="Which Slovenian law applies?" />
+        <label><input id="selected-context" type="checkbox" /> Use selected text context</label>
+
+        <label for="fake-response">Fake legal-source answer</label>
+        <textarea id="fake-response">Synthetic legal-source answer.</textarea>
+
+        <div class="controls">
+          <label for="delay">Fake response delay (ms)</label>
+          <input id="delay" type="number" min="0" value="0" />
+          <label><input id="gateway-error" type="checkbox" /> Controlled fake error</label>
+        </div>
+
+        <div class="actions">
+          <button id="search">Search</button>
+          <button id="cancel" disabled>Cancel</button>
+          <button id="reset" disabled>Retry / New test</button>
+        </div>
+
+        <p>State: <strong id="state"></strong></p>
+        <p>Error: <strong id="error" role="alert"></strong></p>
+        <p>Office diagnostic (content-free): <code id="office-diagnostic"></code></p>
+        <h2>Answer</h2>
+        <pre id="answer"></pre>
+        <h2>Fake calls</h2>
+        <pre id="calls"></pre>
+      </section>
+    </main>
+  </body>
+</html>

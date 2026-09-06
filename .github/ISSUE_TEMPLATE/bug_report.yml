@@ -1,0 +1,68 @@
+name: Bug report
+description: Report a reproducible connector defect using synthetic data
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include client documents, selected text, generated legal answers,
+        credentials, cookies, private hosts, or personal data. Report security
+        issues privately under SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: v0.1.0-beta.1 or full commit SHA
+    validations:
+      required: true
+  - type: dropdown
+    id: client
+    attributes:
+      label: Word client
+      options:
+        - Word for the web
+        - Word for Windows
+        - Word for Mac
+        - Local UI harness
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: Use synthetic content and list exact steps.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized diagnostics
+      description: Include only non-sensitive error codes or logs.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: I used synthetic data and removed secrets, personal data, and private infrastructure details.
+          required: true
+        - label: This is not a vulnerability report.
+          required: true

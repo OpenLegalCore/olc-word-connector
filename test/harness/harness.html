@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenLegalCore task-pane state gallery</title>
+    <link rel="stylesheet" href="../../src/taskpane/taskpane.css" />
+    <link rel="stylesheet" href="harness.css" />
+  </head>
+  <body class="gallery-runtime">
+    <header class="gallery-page-header">
+      <p class="gallery-kicker">DEVELOPMENT · VISUAL REVIEW</p>
+      <h1>DEVELOPMENT STATE GALLERY — NON-RUNTIME FIXTURES</h1>
+      <p>
+        Deterministic presentational states only. Buttons do not call Word, HTTP, storage, or
+        document mutation.
+      </p>
+    </header>
+
+    <main class="gallery-page">
+      <section class="gallery-controls" aria-labelledby="gallery-controls-heading">
+        <div>
+          <p class="gallery-kicker">VIEW CONTROLS</p>
+          <h2 id="gallery-controls-heading">Inspect a state and task-pane width</h2>
+        </div>
+        <label for="gallery-state">
+          State
+          <select id="gallery-state"></select>
+        </label>
+        <label for="gallery-width">
+          Width
+          <select id="gallery-width"></select>
+        </label>
+        <output id="gallery-current-state" class="gallery-current-state"></output>
+      </section>
+
+      <section class="gallery-review" aria-label="Task-pane fixture preview">
+        <div class="gallery-stage">
+          <div id="gallery-pane" class="gallery-pane" role="region" aria-label="Task pane"></div>
+        </div>
+        <aside class="gallery-review-notes">
+          <p class="gallery-kicker">REVIEW NOTES</p>
+          <h2>Operational-ledger foundation</h2>
+          <ul>
+            <li>Stable compact header, status row, scroll workspace, and lower action region.</li>
+            <li>Warm flat surfaces, thin rules, oxblood focus and restrained status color.</li>
+            <li>
+              Legal answers, sources and recovery states remain readable at every locked width.
+            </li>
+            <li>The gallery contains no Word, HTTP, storage or mutation behavior.</li>
+          </ul>
+        </aside>
+      </section>
+
+      <details class="legacy-harness">
+        <summary>Existing deterministic functional harness</summary>
+        <div class="legacy-harness-content">
+          <h2>DEVELOPMENT HARNESS</h2>
+          <p>This section uses deterministic fakes. It does not connect to Word or a service.</p>
+
+          <label for="selected-text">Selected text</label>
+          <textarea id="selected-text">Selected text for local development.</textarea>
+
+          <label for="question">Legal question</label>
+          <input id="question" value="Which Slovenian law applies?" />
+          <label><input id="selected-context" type="checkbox" /> Use selected text context</label>
+
+          <label for="fake-response">Fake legal-source answer</label>
+          <textarea id="fake-response">Synthetic legal-source answer.</textarea>
+
+          <div class="controls">
+            <label for="delay">Gateway delay (ms)</label>
+            <input id="delay" type="number" min="0" value="0" />
+            <label><input id="gateway-error" type="checkbox" /> Controlled gateway error</label>
+          </div>
+
+          <div class="actions">
+            <button id="search">Search</button>
+            <button id="cancel" disabled>Cancel</button>
+            <button id="reset" disabled>Retry</button>
+          </div>
+
+          <p>State: <strong id="state"></strong></p>
+          <p>Error: <strong id="error"></strong></p>
+          <h2>Answer</h2>
+          <pre id="answer"></pre>
+          <h2>Fake calls</h2>
+          <pre id="calls"></pre>
+        </div>
+      </details>
+    </main>
+  </body>
+</html>

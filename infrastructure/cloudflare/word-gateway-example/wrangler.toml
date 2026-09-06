@@ -1,0 +1,18 @@
+name = "olc-word-gateway-example"
+main = "worker.js"
+compatibility_date = "2026-08-30"
+workers_dev = false
+
+# Replace every example value before deployment. Keep provider credentials in
+# Worker secrets; never add them to this file or to browser code.
+[vars]
+PUBLIC_HOST = "word.example.invalid"
+OWUI_ORIGIN = "https://open-webui.example.invalid"
+ENGINE_ORIGIN = "https://olc-engine.example.invalid"
+
+# Add explicit routes only after PUBLIC_HOST, DNS and TLS are configured.
+# Example:
+# [[routes]]
+# pattern = "word.example.org/api/*"
+# zone_name = "example.org"
+
