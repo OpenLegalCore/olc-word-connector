@@ -14,15 +14,18 @@ identifier is not presented as another.
 
 The compact OpenLegalCore mark used by the Office manifests is derived from the
 OpenLegalCore website repository at the immutable commit and source object
-below. This is a provenance record, not a grant of trademark rights.
+below. The website repository is private; its repository and commit identifiers
+are retained as an internal provenance record and are not presented as a public
+source destination. This is a provenance record, not a grant of trademark
+rights.
 
-- repository:
-  [`OpenLegalCore/openlegalcore-website`](https://github.com/OpenLegalCore/openlegalcore-website)
-- locked commit:
-  [`58481ae5ec5d94ebcf93beac942ff029e8ff8290`](https://github.com/OpenLegalCore/openlegalcore-website/commit/58481ae5ec5d94ebcf93beac942ff029e8ff8290)
+- private repository: `OpenLegalCore/openlegalcore-website`
+- locked commit: `58481ae5ec5d94ebcf93beac942ff029e8ff8290`
 - source path:
   `public/assets/openlegalcore/logo/svg/openlegalcore-mark-primary.svg`
 - source Git blob: `d405a5c21dd2d6269a10189cf6b08faab44c8dde`
+- public served asset:
+  [`openlegalcore-mark-primary.svg`](https://openlegalcore.org/assets/openlegalcore/logo/svg/openlegalcore-mark-primary.svg)
 
 The committed raster derivatives are locked by their current Git blob IDs:
 
