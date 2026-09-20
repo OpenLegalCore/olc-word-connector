@@ -24,6 +24,16 @@ document.
 > require an operator-supplied compatible backend and secure same-origin
 > gateway.
 
+## Public record
+
+| | |
+| --- | --- |
+| **Component status** | Public source-only beta |
+| **Current release** | [v0.1.0-beta.1](https://github.com/OpenLegalCore/olc-word-connector/releases/tag/v0.1.0-beta.1) |
+| **Licence** | [Apache-2.0](LICENSE) |
+| **Project component record** | [OpenLegalCore Word Connector](https://openlegalcore.org/components/word-connector/) |
+| **Wider system map** | [OpenLegalCore component register](https://openlegalcore.org/components/) |
+
 ## At a glance
 
 | | |

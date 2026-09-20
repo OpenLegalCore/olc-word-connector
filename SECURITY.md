@@ -39,9 +39,9 @@ data, credentials, access tokens, cookies or private infrastructure details.
 Redact captures and use synthetic content. If sensitive detail is essential,
 first request an agreed secure channel.
 
-We aim to acknowledge a report within five business days and provide an
-initial assessment within ten business days. These are response targets, not a
-contractual service level. Complex or third-party issues may require more time.
+Reports are reviewed privately, clarification is requested when needed and
+disclosure is coordinated after a safe fix or mitigation is available. The
+project does not promise a response time.
 
 ## Security boundary
 
@@ -79,3 +79,6 @@ coordinated where practical after users have a reasonable remediation path.
 This project does not currently operate a bug-bounty program. This policy
 does not grant access to private systems or waive applicable licenses, service
 terms or law.
+
+The project-wide reporting policy is published at
+[openlegalcore.org/security](https://openlegalcore.org/security/).
