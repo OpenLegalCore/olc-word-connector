@@ -181,8 +181,8 @@ stanje. Odgovor, ki bi prispel pozneje, tega stanja ne more nadomestiti in se ne
 more prikazati kot rezultat. Preklic, časovna omejitev in pozen odgovor pustijo
 dokument nespremenjen.
 
-Med veljavnim pretočnim odzivom se prejeto besedilo odgovora sproti prikazuje z
-istim varnim prikazovalnikom kot dokončani odgovori. Dejanja za kopiranje,
+Med veljavnim pretočnim odzivom OLC Engine se prejeto besedilo odgovora
+sproti prikazuje z istim varnim prikazovalnikom kot dokončani odgovori. Dejanja za kopiranje,
 dopolnitev vprašanja in novo iskanje ostanejo nedostopna, dokler se odziv ne
 konča z veljavnim uspešnim zaključkom. Preklican, prekinjen ali neveljaven delni
 odziv nikoli ne postane rezultat.

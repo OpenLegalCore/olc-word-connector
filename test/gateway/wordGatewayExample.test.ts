@@ -330,9 +330,21 @@ describe("Word gateway example credential and response boundary", () => {
       expect(upstream.headers.get("Authorization")).not.toContain("synthetic-owui-secret");
       expect(upstream.headers.get("CF-Access-Client-ID")).toBe("synthetic-client-id");
       expect(upstream.headers.get("CF-Access-Client-Secret")).toBe("synthetic-client-secret");
+      expect(upstream.headers.get("Cookie")).toBeNull();
       return response("application/json", "{}");
     });
-    await handleRequest(request("/v1/models"), environment, fetchMock as typeof fetch);
+    await handleRequest(
+      request("/v1/models", {
+        headers: {
+          Authorization: "Bearer browser-supplied",
+          Cookie: "browser-cookie=forbidden",
+          "CF-Access-Client-ID": "browser-client",
+          "CF-Access-Client-Secret": "browser-secret",
+        },
+      }),
+      environment,
+      fetchMock as typeof fetch
+    );
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -388,6 +400,35 @@ describe("Word gateway example credential and response boundary", () => {
     expect(result.headers.get("X-Origin-ID")).toBeNull();
   });
 
+  it("cancels the Engine upstream body when the downstream stream is cancelled", async () => {
+    const upstreamCancel = vi.fn(async () => undefined);
+    let delivered = false;
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (!delivered) {
+          delivered = true;
+          controller.enqueue(new TextEncoder().encode('data: {"choices":[]}\n\n'));
+        }
+      },
+      cancel: upstreamCancel,
+    });
+    const result = await handleRequest(
+      request("/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      }),
+      environment,
+      vi.fn(async () => response("text/event-stream", stream))
+    );
+    const reader = result.body!.getReader();
+
+    await expect(reader.read()).resolves.toMatchObject({ done: false });
+    await reader.cancel("downstream-cancelled");
+
+    expect(upstreamCancel).toHaveBeenCalledWith("downstream-cancelled");
+  });
+
   it("bounds declared and measured upstream response bodies", async () => {
     const declared = await handleRequest(
       request("/v1/models"),
@@ -411,16 +452,24 @@ describe("Word gateway example credential and response boundary", () => {
     expect(measured.status).toBe(502);
     expect(await errorCode(measured)).toBe("UPSTREAM_RESPONSE_TOO_LARGE");
 
+    const upstreamCancel = vi.fn(async () => undefined);
+    const oversizedStream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(maxResponseBytes + 1));
+      },
+      cancel: upstreamCancel,
+    });
     const streamed = await handleRequest(
-      request("/api/chat/completions", {
+      request("/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: "{}",
       }),
       environment,
-      vi.fn(async () => response("text/event-stream", "x".repeat(maxResponseBytes + 1)))
+      vi.fn(async () => response("text/event-stream", oversizedStream))
     );
     await expect(streamed.text()).rejects.toThrow();
+    expect(upstreamCancel).toHaveBeenCalledTimes(1);
   });
 
   it.each([

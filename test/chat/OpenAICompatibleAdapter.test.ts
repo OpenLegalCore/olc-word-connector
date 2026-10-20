@@ -614,12 +614,45 @@ describe("OpenAICompatibleAdapter completion", () => {
   });
 
   it.each([
-    ["DONE without stop", 'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":null}]}\n\ndata: [DONE]\n\n'],
-    ["stop without DONE", 'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":null}]}\n\ndata: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n'],
-    ["length terminal", 'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":"length"}]}\n\ndata: [DONE]\n\n'],
+    [
+      "DONE without stop",
+      'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":null}]}\n\ndata: [DONE]\n\n',
+    ],
+    [
+      "stop without DONE",
+      'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":null}]}\n\ndata: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n',
+    ],
+    [
+      "length terminal",
+      'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":"length"}]}\n\ndata: [DONE]\n\n',
+    ],
     ["structured error", 'data: {"error":{"message":"private detail"}}\n\ndata: [DONE]\n\n'],
+    [
+      "error after stop",
+      'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":null}]}\n\n' +
+        'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n' +
+        'data: {"error":{"message":"private detail"}}\n\n' +
+        "data: [DONE]\n\n",
+    ],
+    [
+      "content after stop",
+      'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":null}]}\n\n' +
+        'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n' +
+        'data: {"choices":[{"delta":{"content":"late"},"finish_reason":null}]}\n\n' +
+        "data: [DONE]\n\n",
+    ],
+    [
+      "incomplete usage",
+      'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":null}]}\n\n' +
+        'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n' +
+        'data: {"choices":[],"usage":{"prompt_tokens":1,"completion_tokens":2}}\n\n' +
+        "data: [DONE]\n\n",
+    ],
     ["malformed JSON", "data: {not-json}\n\ndata: [DONE]\n\n"],
-    ["wrong model", `data: ${JSON.stringify({ model: "other-model", choices: [{ delta: { content: "partial" }, finish_reason: null }] })}\n\n`],
+    [
+      "wrong model",
+      `data: ${JSON.stringify({ model: "other-model", choices: [{ delta: { content: "partial" }, finish_reason: null }] })}\n\n`,
+    ],
   ])("rejects an invalid Engine terminal: %s", async (_name, stream) => {
     const transport = sequenceFetch(sseResponse([stream]));
 
@@ -660,6 +693,17 @@ describe("OpenAICompatibleAdapter completion", () => {
       adapter(long.fetch, { maxResponseChars: 4 }).complete(request),
       "INVALID_RESPONSE"
     );
+  });
+
+  it("bounds encoded SSE bytes and rejects invalid UTF-8", async () => {
+    const oversized = sequenceFetch(sseResponse(["x".repeat(65)]));
+    await expectCode(
+      adapter(oversized.fetch, { maxResponseBytes: 64 }).complete(request),
+      "INVALID_RESPONSE"
+    );
+
+    const invalidEncoding = sequenceFetch(sseResponse([new Uint8Array([0xff])]));
+    await expectCode(adapter(invalidEncoding.fetch).complete(request), "INVALID_RESPONSE");
   });
 
   it.each([
@@ -724,11 +768,12 @@ describe("OpenAICompatibleAdapter completion", () => {
       },
       cancel,
     });
-    const fetch = vi.fn<OpenAICompatibleFetch>(async () =>
-      new Response(stream, {
-        status: 200,
-        headers: { "Content-Type": "text/event-stream" },
-      })
+    const fetch = vi.fn<OpenAICompatibleFetch>(
+      async () =>
+        new Response(stream, {
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+        })
     );
     const caller = new AbortController();
     const deltas: string[] = [];
@@ -747,6 +792,44 @@ describe("OpenAICompatibleAdapter completion", () => {
 
     await expectCode(completion, "CANCELLED");
     await vi.waitFor(() => expect(cancel).toHaveBeenCalledTimes(1));
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails with TIMEOUT and cancels the SSE reader after partial text", async () => {
+    vi.useFakeTimers();
+    let streamController: ReadableStreamDefaultController<Uint8Array> | undefined;
+    const cancel = vi.fn(async () => undefined);
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        streamController = controller;
+      },
+      cancel,
+    });
+    const fetch = vi.fn<OpenAICompatibleFetch>(
+      async () =>
+        new Response(stream, {
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+        })
+    );
+    const deltas: string[] = [];
+    const completion = adapter(fetch, { requestTimeoutMs: 25 }).complete(request, undefined, {
+      onTextDelta: (delta) => deltas.push(delta),
+    });
+    const expectation = expectCode(completion, "TIMEOUT");
+
+    streamController?.enqueue(
+      new TextEncoder().encode(
+        `data: ${JSON.stringify({ model: modelId, choices: [{ delta: { content: "Partial" }, finish_reason: null }] })}\n\n`
+      )
+    );
+    await vi.advanceTimersByTimeAsync(0);
+    expect(deltas).toEqual(["Partial"]);
+
+    await vi.advanceTimersByTimeAsync(25);
+
+    await expectation;
+    expect(cancel).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 

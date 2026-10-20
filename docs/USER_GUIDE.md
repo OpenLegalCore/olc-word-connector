@@ -178,8 +178,9 @@ Selecting **Cancel** aborts the active request and returns the pane to a safe
 state. A response arriving later cannot replace that state or appear as a
 result. Cancellation, timeout and late responses leave the document unchanged.
 
-While a valid streaming response is in progress, received answer text appears
-incrementally through the same safe renderer used for completed answers. Copy,
+While a valid OLC Engine streaming response is in progress, received answer
+text appears incrementally through the same safe renderer used for completed
+answers. Copy,
 refine and new-search actions remain unavailable until the response ends with a
 valid success terminal. A cancelled, interrupted or invalid partial response is
 never promoted to a result.

@@ -1,11 +1,6 @@
 /* global AbortController, AbortSignal, ReadableStreamDefaultReader, RequestCredentials, RequestInit, Response, URL, clearTimeout, globalThis, setTimeout */
 
-import type {
-  ChatGateway,
-  CompletionObserver,
-  CompletionRequest,
-  CompletionResult,
-} from "./ChatGateway";
+import type { ChatGateway, CompletionRequest, CompletionResult } from "./ChatGateway";
 import { ChatGatewayError, type ChatGatewayErrorCode } from "./ChatGatewayError";
 import { parseOpenWebUICompletionStream } from "./openWebUIContract";
 import { serializePromptEnvelope } from "./promptEnvelope";
@@ -251,11 +246,7 @@ export class OpenWebUIAdapter implements ChatGateway {
     });
   }
 
-  async complete(
-    request: CompletionRequest,
-    signal?: AbortSignal,
-    observer?: CompletionObserver
-  ): Promise<CompletionResult> {
+  async complete(request: CompletionRequest, signal?: AbortSignal): Promise<CompletionResult> {
     return this.withRequestBoundary(signal, async (requestSignal) => {
       this.requireDirectAuthorization();
       const body = JSON.stringify({
@@ -292,13 +283,7 @@ export class OpenWebUIAdapter implements ChatGateway {
         throw new ChatGatewayError("INVALID_RESPONSE");
       }
 
-      return parseOpenWebUICompletionStream(
-        reader,
-        requestSignal,
-        this.maxResponseChars,
-        undefined,
-        observer
-      );
+      return parseOpenWebUICompletionStream(reader, requestSignal, this.maxResponseChars);
     });
   }
 

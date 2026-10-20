@@ -150,10 +150,11 @@ OLC Engine is fixed to `lexai-engine-local`. The Open WebUI build default is
 `olc-engine`; `OLC_WORD_MODEL_ID` may supply another public, non-secret Open
 WebUI model identifier that matches the repository's validation rule.
 
-Both SSE adapters forward non-empty content deltas to the controller and safe
-renderer. Only a validated terminal becomes a result with Copy/Refine/New
-search actions. There is no automatic provider fallback, cross-provider retry
-or requirement that the two providers return identical wording.
+The OLC Engine adapter forwards non-empty content deltas to the controller and
+safe renderer. Open WebUI preserves its existing final-only task-pane behavior.
+Only a validated terminal becomes a result with Copy/Refine/New search
+actions. There is no automatic provider fallback, cross-provider retry or
+requirement that the two providers return identical wording.
 
 The public contract and reference gateway details are specified in
 [Backend and gateway integration](INTEGRATION.md).

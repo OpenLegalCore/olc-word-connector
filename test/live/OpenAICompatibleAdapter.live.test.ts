@@ -67,15 +67,19 @@ describe.skipIf(!liveEnabled)("protected OLC Engine live contract", () => {
 
       diagnostic.stage("COMPLETION_POST_STARTED");
       const deltas: string[] = [];
-      const result = await gateway.complete({
-        question: syntheticText([
-          82, 101, 116, 117, 114, 110, 32, 112, 108, 97, 105, 110, 32, 116, 101, 120, 116, 46,
-        ]),
-        context: { type: "none" },
-        uiLocale: "en-US",
-      }, undefined, {
-        onTextDelta: (delta) => deltas.push(delta),
-      });
+      const result = await gateway.complete(
+        {
+          question: syntheticText([
+            82, 101, 116, 117, 114, 110, 32, 112, 108, 97, 105, 110, 32, 116, 101, 120, 116, 46,
+          ]),
+          context: { type: "none" },
+          uiLocale: "en-US",
+        },
+        undefined,
+        {
+          onTextDelta: (delta) => deltas.push(delta),
+        }
+      );
       diagnostic.stage("COMPLETION_POST_COMPLETED");
       diagnostic.stage("RESPONSE_VALIDATED");
 

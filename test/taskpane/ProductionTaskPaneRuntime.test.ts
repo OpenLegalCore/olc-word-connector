@@ -1501,27 +1501,29 @@ describe("production legal-source runtime", () => {
   });
 
   it("cancels and ignores a late response without mutating Word", async () => {
-    const { word, openWebUI, runtime } = setup();
+    const { word, olcEngine, runtime } = setup();
     activeRuntime = runtime;
-    openWebUI.pending = true;
-    click("select-open-webui");
+    olcEngine.pending = true;
+    click("select-olc-engine");
     await vi.waitFor(() => expect(viewState()).toBe("ready"));
     setQuestion("Question");
     click("search");
     await vi.waitFor(() => expect(viewState()).toBe("searching"));
     expect(root().textContent).toContain("Searching legislation and case law…");
 
-    openWebUI.emitDelta("Partial <script>alert(1)</script>");
-    await vi.waitFor(() => expect(root().textContent).toContain("Partial <script>alert(1)</script>"));
+    olcEngine.emitDelta("Partial <script>alert(1)</script>");
+    await vi.waitFor(() =>
+      expect(root().textContent).toContain("Partial <script>alert(1)</script>")
+    );
     expect(root().querySelector("script")).toBeNull();
     expect(root().querySelector('button[data-action-id="copy-answer"]')).toBeNull();
     expect(viewState()).toBe("searching");
 
     click("cancel");
     await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    expect(openWebUI.signals[0]?.aborted).toBe(true);
-    openWebUI.emitDelta("Late partial");
-    openWebUI.resolveLate();
+    expect(olcEngine.signals[0]?.aborted).toBe(true);
+    olcEngine.emitDelta("Late partial");
+    olcEngine.resolveLate();
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     expect(root().textContent).not.toContain("Late answer");
     expect(root().textContent).not.toContain("Late partial");

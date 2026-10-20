@@ -106,9 +106,8 @@ The connector posts one user message to `/api/chat/completions`:
 
 The response must be `text/event-stream`. The adapter concatenates textual
 `choices[].delta.content` values from valid `data:` events and requires a
-terminal `data: [DONE]` event. Every non-empty text delta is passed to the same
-safe task-pane renderer used for the final answer. Result actions appear only
-after the complete response has passed validation.
+terminal `data: [DONE]` event. Open WebUI streaming remains internal to its
+adapter; the task pane receives one normalized final answer.
 
 Open WebUI documents both required endpoints and Bearer API-key authentication
 in its [API reference](https://docs.openwebui.com/reference/api-endpoints/).

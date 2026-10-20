@@ -140,8 +140,18 @@ describe("dual-gateway legal-source parity", () => {
     expect(olc.calls[0].input).toContain("/v1/");
   });
 
-  it("keeps selection capture and analysis-only controller states equivalent", async () => {
-    for (const harness of [openWebUI(), engine()]) {
+  it("keeps selection capture and document safety while preserving provider display behavior", async () => {
+    const cases = [
+      {
+        harness: openWebUI(),
+        expectedStates: ["ready", "capturing", "searching", "result"],
+      },
+      {
+        harness: engine(),
+        expectedStates: ["ready", "capturing", "searching", "searching", "result"],
+      },
+    ];
+    for (const { harness, expectedStates } of cases) {
       const word = new FakeWordAdapter(SNAPSHOT);
       const controller = new TaskPaneController(word, harness.gateway);
       const states: string[] = [];
@@ -155,7 +165,7 @@ describe("dual-gateway legal-source parity", () => {
         })
       ).toBe(true);
 
-      expect(states).toEqual(["ready", "capturing", "searching", "searching", "result"]);
+      expect(states).toEqual(expectedStates);
       expect(word.captureCalls).toBe(1);
       expect(word.releaseCalls).toHaveLength(1);
       expect(word.applyCalls).toHaveLength(0);
