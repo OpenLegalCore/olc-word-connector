@@ -89,6 +89,7 @@ export const slSIMessages = {
     statusLabel: "Iskanje poteka",
     eyebrow: "ISKANJE PRAVNIH VIROV",
     heading: "Iskanje po zakonodaji in sodni praksi …",
+    streamingHeading: "Odgovor prihaja …",
     description: "Dokument ni bil spremenjen.",
     footerEyebrow: "MEJA DOSTOPA DO DOKUMENTA",
     footerMessage: "SAMO ANALIZA",
@@ -99,6 +100,9 @@ export const slSIMessages = {
     changeProvider: "Spremeni",
     eyebrow: "ISKANJE PRAVNIH VIROV",
     heading: "Odgovor",
+    usage: (input: number, output: number, total: number): string =>
+      `Poraba: ${input} vhodnih · ${output} izhodnih · ${total} žetonov skupaj`,
+    usageUnavailable: "Poraba: storitev je ni sporočila",
     copiedTitle: "Kopirano",
     copiedMessage: "Celoten odgovor je bil kopiran kot navadno besedilo.",
     copyFailedTitle: "Kopiranje ni uspelo",

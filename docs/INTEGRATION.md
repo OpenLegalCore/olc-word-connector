@@ -53,7 +53,7 @@ provider API key or infrastructure service token from the browser.
 | Provider path | Connection check | Completion | Completion transport |
 | --- | --- | --- | --- |
 | Open WebUI | `GET /api/models` | `POST /api/chat/completions` | Server-Sent Events; `stream: true` |
-| OLC Engine | `GET /v1/models` | `POST /v1/chat/completions` | JSON; `stream: false` |
+| OLC Engine | `GET /v1/models` | `POST /v1/chat/completions` | Server-Sent Events; `stream: true` |
 
 The connector rejects redirects, `401`, `403` and HTML responses from these
 same-origin calls as an expired protected session. It does not follow a login
@@ -67,7 +67,7 @@ ID:
 ```json
 {
   "data": [
-    { "id": "olc-engine" }
+    { "id": "lexai-engine-local" }
   ]
 }
 ```
@@ -106,20 +106,24 @@ The connector posts one user message to `/api/chat/completions`:
 
 The response must be `text/event-stream`. The adapter concatenates textual
 `choices[].delta.content` values from valid `data:` events and requires a
-terminal `data: [DONE]` event. Streaming is an internal transport detail; the
-task pane presents one normalized final answer.
+terminal `data: [DONE]` event. Every non-empty text delta is passed to the same
+safe task-pane renderer used for the final answer. Result actions appear only
+after the complete response has passed validation.
 
 Open WebUI documents both required endpoints and Bearer API-key authentication
 in its [API reference](https://docs.openwebui.com/reference/api-endpoints/).
 
 ### OLC Engine completion
 
-The connector posts one user message to `/v1/chat/completions`:
+The connector posts one user message to `/v1/chat/completions`. The task-pane
+locale is frozen at submission and mapped from `sl-SI`/`en-US` to `sl`/`en`:
 
 ```json
 {
-  "model": "olc-engine",
-  "stream": false,
+  "model": "lexai-engine-local",
+  "stream": true,
+  "stream_options": { "include_usage": true },
+  "response_language": "sl",
   "messages": [
     {
       "role": "user",
@@ -129,9 +133,13 @@ The connector posts one user message to `/v1/chat/completions`:
 }
 ```
 
-The response must be HTTP 200 JSON with non-empty text at
-`choices[0].message.content`. Optional model and usage metadata can be returned,
-but the connector does not require it for rendering.
+The response must be HTTP 200 `text/event-stream`. Every non-empty
+`choices[].delta.content` value is forwarded to the safe task-pane renderer as
+it arrives. A successful result requires `finish_reason: "stop"`, followed by
+`data: [DONE]`, with no error event. EOF, `length`, tool terminals, malformed
+events and interruptions remain failed or uncertain operations even when some
+text was already visible. The connector records the actual final usage
+aggregate or `null`; it never estimates tokens from text length.
 
 ## Request envelope
 
@@ -200,9 +208,10 @@ Aborted searches propagate an abort signal to the active fetch. The controller
 also invalidates the operation identity, so a late response cannot become the
 visible result after cancellation or timeout.
 
-## Configure the model ID
+## Configure the model IDs
 
-The default model ID is `olc-engine`. To build for another exact model:
+OLC Engine is fixed to the advertised `lexai-engine-local` model. The existing
+build setting configures only Open WebUI, whose default remains `olc-engine`:
 
 ```bash
 OLC_WORD_MODEL_ID=partner-model:latest npm run build:stage
@@ -214,9 +223,9 @@ The value must:
 - start with a letter or number; and
 - otherwise use only letters, numbers, `.`, `_`, `:`, `/`, `+` or `-`.
 
-The build embeds the ID in the browser bundle. Treat it as a public identifier,
-never as a secret. Verify that every enabled provider exposes the exact same ID
-through its model-list endpoint.
+The build embeds the Open WebUI ID in the browser bundle. Treat it as a public
+identifier, never as a secret. Each provider must expose its own exact expected
+ID through its model-list endpoint.
 
 Programmatic hosts can instead pass `modelId` through the production
 composition dependencies. That is an integration seam, not a user-facing
@@ -241,10 +250,11 @@ deployed correctly without explicit operator configuration.
 | `OWUI_ORIGIN` | variable | Exact HTTPS root origin of Open WebUI |
 | `ENGINE_ORIGIN` | variable | Exact HTTPS root origin of OLC Engine |
 | `OWUI_API_KEY` | secret | Server-side Open WebUI Bearer credential |
+| `ENGINE_API_KEY` | secret | Server-side OLC Engine Bearer credential |
 | `CF_ACCESS_CLIENT_ID` | secret | Service-token client ID for protected upstreams |
 | `CF_ACCESS_CLIENT_SECRET` | secret | Service-token client secret for protected upstreams |
 
-The checked-in Worker validates all six values before proxying and exposes both
+The checked-in Worker validates all seven values before proxying and exposes both
 provider paths. Configure all of them. If an operator needs only one provider
 or a different identity scheme, create a deliberately reduced gateway variant
 with equivalent tests; do not use dummy secrets or move credentials into the
@@ -262,14 +272,14 @@ The reference gateway accepts only:
 | --- | --- | --- |
 | `GET /api/models` | Open WebUI `GET /api/models` | Open WebUI Bearer key |
 | `POST /api/chat/completions` | Open WebUI `POST /api/chat/completions` | Open WebUI Bearer key |
-| `GET /v1/models` | OLC Engine `GET /v1/models` | none at application layer |
-| `POST /v1/chat/completions` | OLC Engine `POST /v1/chat/completions` | none at application layer |
+| `GET /v1/models` | OLC Engine `GET /v1/models` | Engine Bearer key |
+| `POST /v1/chat/completions` | OLC Engine `POST /v1/chat/completions` | Engine Bearer key |
 | `GET /api/session` | Repository-owned sign-in confirmation | none |
 
 The Cloudflare Access service-token headers are added to both upstream paths.
-If OLC Engine requires another application credential, extend the server-side
-gateway explicitly and add contract tests; the current example does not send
-one.
+The Engine Bearer is a separate application credential and is never replaced
+by the Access service-token pair. Both completion routes are streamed and
+bounded without buffering the complete answer.
 
 The gateway rejects query strings, unexpected methods and paths, non-JSON POST
 bodies, redirects, invalid upstream types, unexpected public hosts and
@@ -285,8 +295,9 @@ There are two different authentication relationships:
 | User → browser-facing add-in origin | Interactive browser session/cookie controlled by the operator |
 | Gateway → Access-protected upstream | `CF-Access-Client-Id` and `CF-Access-Client-Secret` stored only by the gateway |
 | Gateway → Open WebUI | Dedicated Open WebUI API key stored only by the gateway |
+| Gateway → OLC Engine | Dedicated Engine Bearer stored only by the gateway |
 
-Do not place service-token headers or the Open WebUI API key in JavaScript,
+Do not place service-token headers or either provider API key in JavaScript,
 Office settings, manifest URLs, Git, browser storage or support logs.
 Cloudflare documents the service-token header pair and rotation model in its
 [Access service-token guide](https://developers.cloudflare.com/cloudflare-one/access-controls/service-credentials/service-tokens/).
@@ -377,7 +388,7 @@ skipped unless these values are provided in a controlled environment:
 | `OLC_WORD_LIVE_OLC_ENGINE=1` | Explicitly enables the test |
 | `OLC_WORD_LIVE_OLC_ENGINE_TARGET_HOST` | Authorized target host for the temporary forward |
 | `OLC_WORD_LIVE_OLC_ENGINE_TARGET_PORT` | Authorized target TCP port |
-| `OLC_WORD_LIVE_OLC_ENGINE_MODEL_ID` | Exact model ID; defaults to `olc-engine` |
+| `OLC_WORD_LIVE_OLC_ENGINE_MODEL_ID` | Exact model ID; defaults to `lexai-engine-local` |
 
 Then run:
 

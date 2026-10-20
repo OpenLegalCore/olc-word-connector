@@ -130,8 +130,10 @@ Both adapters place the same serialized envelope in one user message:
 }
 ```
 
-`CompletionResult` returns normalized final text and optional model or usage
-metadata. It contains no URL, HTTP response, SSE event, Open WebUI chat
+`CompletionResult` returns normalized final text, optional model metadata and
+actual usage or `null` when the Engine does not report it. A provider-neutral
+observer carries untrusted text deltas to the controller while the operation is
+active. The result contains no URL, HTTP response, SSE event, Open WebUI chat
 identifier, Word object or credential.
 
 ## Provider transports
@@ -141,17 +143,17 @@ Deployable composition uses relative same-origin paths:
 | Provider | Connection check | Completion | Response |
 | --- | --- | --- | --- |
 | Open WebUI | `GET /api/models` | `POST /api/chat/completions` with `stream: true` and a fresh `local:<UUIDv4>` chat ID | `text/event-stream` with a required completion boundary |
-| OLC Engine | `GET /v1/models` | `POST /v1/chat/completions` with `stream: false` | HTTP 200 `application/json` with non-empty `choices[0].message.content` |
+| OLC Engine | `GET /v1/models` | `POST /v1/chat/completions` with `stream: true`, usage and `response_language` | `text/event-stream`; success requires `stop` then `[DONE]` without error |
 
-The exact configured model ID must appear in the selected provider's model
-list. The build default is `olc-engine`. `OLC_WORD_MODEL_ID` may supply another
-public, non-secret model identifier that matches the repository's validation
-rule.
+The exact expected model ID must appear in the selected provider's model list.
+OLC Engine is fixed to `lexai-engine-local`. The Open WebUI build default is
+`olc-engine`; `OLC_WORD_MODEL_ID` may supply another public, non-secret Open
+WebUI model identifier that matches the repository's validation rule.
 
-Open WebUI streaming is internal to its adapter. The controller and task pane
-receive one final normalized answer. There is no automatic provider fallback,
-cross-provider retry or requirement that the two providers return identical
-wording.
+Both SSE adapters forward non-empty content deltas to the controller and safe
+renderer. Only a validated terminal becomes a result with Copy/Refine/New
+search actions. There is no automatic provider fallback, cross-provider retry
+or requirement that the two providers return identical wording.
 
 The public contract and reference gateway details are specified in
 [Backend and gateway integration](INTEGRATION.md).

@@ -8,6 +8,7 @@ const maxResponseBytes = 1024 * 1024;
 const environment = {
   PUBLIC_HOST: "word.example.invalid",
   OWUI_API_KEY: "synthetic-owui-secret",
+  ENGINE_API_KEY: "synthetic-engine-secret",
   CF_ACCESS_CLIENT_ID: "synthetic-client-id",
   CF_ACCESS_CLIENT_SECRET: "synthetic-client-secret",
   OWUI_ORIGIN: "https://open-webui.example.invalid",
@@ -90,7 +91,7 @@ describe("Word gateway example routing", () => {
     ["GET", "/api/models", "application/json", "open-webui.example.invalid"],
     ["POST", "/api/chat/completions", "text/event-stream", "open-webui.example.invalid"],
     ["GET", "/v1/models", "application/json", "olc-engine.example.invalid"],
-    ["POST", "/v1/chat/completions", "application/json", "olc-engine.example.invalid"],
+    ["POST", "/v1/chat/completions", "text/event-stream", "olc-engine.example.invalid"],
   ] as const)("allows only %s %s", async (method, path, contentType, hostname) => {
     const fetchMock = vi.fn(async (upstream: Request) => {
       expect(new URL(upstream.url)).toMatchObject({ hostname, pathname: path });
@@ -323,9 +324,10 @@ describe("Word gateway example credential and response boundary", () => {
     expect(result.status).toBe(200);
   });
 
-  it("never sends the OWUI credential to the Engine", async () => {
+  it("sends only the server-side Engine bearer to the Engine", async () => {
     const fetchMock = vi.fn(async (upstream: Request) => {
-      expect(upstream.headers.get("Authorization")).toBeNull();
+      expect(upstream.headers.get("Authorization")).toBe("Bearer synthetic-engine-secret");
+      expect(upstream.headers.get("Authorization")).not.toContain("synthetic-owui-secret");
       expect(upstream.headers.get("CF-Access-Client-ID")).toBe("synthetic-client-id");
       expect(upstream.headers.get("CF-Access-Client-Secret")).toBe("synthetic-client-secret");
       return response("application/json", "{}");
@@ -360,7 +362,14 @@ describe("Word gateway example credential and response boundary", () => {
     expect(result.headers.get("Server")).toBeNull();
   });
 
-  it("passes Engine JSON through while stripping upstream metadata", async () => {
+  it("streams Engine SSE through while stripping upstream metadata", async () => {
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('data: {"choices":[]}\n\n'));
+        controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"));
+        controller.close();
+      },
+    });
     const result = await handleRequest(
       request("/v1/chat/completions", {
         method: "POST",
@@ -369,12 +378,12 @@ describe("Word gateway example credential and response boundary", () => {
       }),
       environment,
       vi.fn(async () =>
-        response("application/json", '{"choices":[]}', {
+        response("text/event-stream", stream, {
           headers: { "Set-Cookie": "forbidden", "X-Origin-ID": "private" },
         })
       )
     );
-    expect(await result.json()).toEqual({ choices: [] });
+    expect(await result.text()).toBe('data: {"choices":[]}\n\ndata: [DONE]\n\n');
     expect(result.headers.get("Set-Cookie")).toBeNull();
     expect(result.headers.get("X-Origin-ID")).toBeNull();
   });

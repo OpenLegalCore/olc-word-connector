@@ -41,7 +41,10 @@ function sseResponse(text: string, status = 200): Response {
   const chunks = [
     new TextEncoder().encode(
       status === 200
-        ? `data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\ndata: [DONE]\n\n`
+        ? `data: ${JSON.stringify({ model: MODEL_ID, choices: [{ delta: { content: text }, finish_reason: null }] })}\n\n` +
+            `data: ${JSON.stringify({ model: MODEL_ID, choices: [{ delta: {}, finish_reason: "stop" }] })}\n\n` +
+            `data: ${JSON.stringify({ model: MODEL_ID, choices: [], usage: null })}\n\n` +
+            "data: [DONE]\n\n"
         : ""
     ),
   ];
@@ -99,12 +102,7 @@ function engine(status = 200) {
         calls.push({ input, init });
         return input.endsWith("/models")
           ? jsonResponse({ object: "list", data: [{ id: MODEL_ID }] })
-          : jsonResponse(
-              status === 200
-                ? { model: MODEL_ID, choices: [{ message: { content: RESULT_TEXT } }] }
-                : {},
-              status
-            );
+          : sseResponse(RESULT_TEXT, status);
       },
     }
   );
@@ -117,7 +115,11 @@ describe("dual-gateway legal-source parity", () => {
     const olc = engine();
 
     expect(await owui.gateway.complete(REQUEST)).toEqual({ text: RESULT_TEXT });
-    expect(await olc.gateway.complete(REQUEST)).toEqual({ text: RESULT_TEXT, model: MODEL_ID });
+    expect(await olc.gateway.complete(REQUEST)).toEqual({
+      text: RESULT_TEXT,
+      model: MODEL_ID,
+      usage: null,
+    });
 
     const owuiPayload = body(owui.calls[0]);
     const enginePayload = body(olc.calls[0]);
@@ -128,7 +130,11 @@ describe("dual-gateway legal-source parity", () => {
       serializePromptEnvelope(REQUEST)
     );
     expect(owuiPayload).toMatchObject({ stream: true, chat_id: `local:${UUID_V4}` });
-    expect(enginePayload).toMatchObject({ stream: false });
+    expect(enginePayload).toMatchObject({
+      stream: true,
+      stream_options: { include_usage: true },
+      response_language: "en",
+    });
     expect(enginePayload).not.toHaveProperty("chat_id");
     expect(owui.calls[0].input).toContain("/api/");
     expect(olc.calls[0].input).toContain("/v1/");
@@ -149,7 +155,7 @@ describe("dual-gateway legal-source parity", () => {
         })
       ).toBe(true);
 
-      expect(states).toEqual(["ready", "capturing", "searching", "result"]);
+      expect(states).toEqual(["ready", "capturing", "searching", "searching", "result"]);
       expect(word.captureCalls).toBe(1);
       expect(word.releaseCalls).toHaveLength(1);
       expect(word.applyCalls).toHaveLength(0);

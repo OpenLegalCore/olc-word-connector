@@ -29,7 +29,7 @@ const ROUTES = new Map([
   ["/v1/models", { method: "GET", provider: "engine", responseType: "application/json" }],
   [
     "/v1/chat/completions",
-    { method: "POST", provider: "engine", responseType: "application/json" },
+    { method: "POST", provider: "engine", responseType: "text/event-stream" },
   ],
 ]);
 
@@ -189,6 +189,7 @@ function configuredEnvironment(env) {
   if (
     !env ||
     !exactSecret(env.OWUI_API_KEY) ||
+    !exactSecret(env.ENGINE_API_KEY) ||
     !exactSecret(env.CF_ACCESS_CLIENT_ID) ||
     !exactSecret(env.CF_ACCESS_CLIENT_SECRET)
   ) {
@@ -215,6 +216,8 @@ function upstreamHeaders(route, env) {
   }
   if (route.provider === "owui") {
     headers.set("Authorization", `Bearer ${env.OWUI_API_KEY}`);
+  } else {
+    headers.set("Authorization", `Bearer ${env.ENGINE_API_KEY}`);
   }
   return headers;
 }

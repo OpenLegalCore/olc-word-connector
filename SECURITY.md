@@ -53,6 +53,12 @@ project does not promise a response time.
 | Maintained tests and release artifacts | OLC Engine, Open WebUI and legal-source databases |
 | Documentation that changes the security boundary | Microsoft 365, Cloudflare and other third-party platforms |
 
+Production browser code uses only same-origin routes. Open WebUI and OLC Engine
+Bearer credentials, private upstream origins and Cloudflare Access service
+tokens belong only in the trusted gateway. The Engine Bearer is distinct from
+the Access service-token pair and must never enter the task-pane bundle,
+browser storage, manifest, URL or logs.
+
 A report may cross more than one boundary. Send connector findings here; also
 notify the responsible operator or upstream maintainer when their system is
 independently affected. This policy does not authorize testing of private or

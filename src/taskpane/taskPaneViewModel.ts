@@ -62,6 +62,8 @@ export interface TaskPaneViewModel {
   fields?: readonly TaskPaneFieldFixture[];
   choiceGroup?: TaskPaneChoiceGroup;
   legalAnswer?: string;
+  legalAnswerLive?: boolean;
+  legalAnswerMeta?: string;
   notice?: TaskPaneNotice;
   actions?: readonly TaskPaneAction[];
   footer: TaskPaneFooter;

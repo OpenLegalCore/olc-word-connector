@@ -212,11 +212,11 @@ reduced gateway instead of leaving dummy credentials or weakening validation.
 If Cloudflare is not your platform, implement the same narrow contract on your
 chosen server. The connector depends on the contract, not on Cloudflare.
 
-### 3. Choose the model ID
+### 3. Verify the model IDs
 
-The browser bundle defaults to `olc-engine`. Both configured provider paths
-must expose that exact ID, or the operator must select another non-secret model
-ID before building:
+OLC Engine must expose the exact fixed ID `lexai-engine-local`. The Open WebUI
+browser setting defaults to `olc-engine`; an operator can select another
+non-secret Open WebUI model ID before building:
 
 ```bash
 OLC_WORD_MODEL_ID=partner-model:latest npm run build:stage
@@ -224,7 +224,8 @@ OLC_WORD_MODEL_ID=partner-model:latest npm run build:stage
 
 The accepted value is 1–200 characters, starts with an alphanumeric character,
 and otherwise uses only letters, numbers, `.`, `_`, `:`, `/`, `+` or `-`.
-It is embedded in the browser bundle and must never contain a credential.
+It is embedded in the browser bundle and must never contain a credential. This
+setting does not change the Engine model.
 
 ### 4. Configure a matching manifest
 
@@ -274,6 +275,9 @@ confirms:
 - **Selected text** sends only the selection captured when Search begins;
 - empty, oversized and unsupported selections fail before completion;
 - answers render as text and only approved source links become clickable;
+- Engine answers appear incrementally but become successful only after the
+  validated `stop` and `[DONE]` terminal; actual usage or unavailable usage is
+  shown without estimation;
 - Copy answer, Refine question and New search work as documented;
 - Cancel and timeout suppress late results;
 - Session expired requires secure sign-in and an explicit Retry search;

@@ -131,28 +131,31 @@ Verify the direct engine contract:
 
 - `GET /v1/models` returns an OpenAI-compatible list object containing the exact
   configured model ID;
-- `POST /v1/chat/completions` accepts `stream: false` and one user message; and
-- the response is HTTP 200 `application/json` with non-empty text at
-  `choices[0].message.content`.
+- `POST /v1/chat/completions` accepts model `lexai-engine-local`, one user
+  message, `response_language`, `stream: true` and usage streaming; and
+- the response is HTTP 200 `text/event-stream` with content deltas, a
+  `finish_reason: "stop"` terminal and a following `[DONE]` event.
 
 A server that is generally described as “OpenAI-compatible” is not necessarily
-compatible with this exact contract. Redirects, HTML, malformed UTF-8, invalid
-JSON, missing content and oversized responses are rejected.
+compatible with this exact contract. Redirects, HTML, malformed UTF-8 or SSE,
+error/tool/length terminals, missing `stop` or `[DONE]`, and oversized responses
+are rejected.
 
 ## Model not available
 
 `MODEL_NOT_AVAILABLE` means that the configured model ID was not present in the
 selected provider's model list, or the selected route returned `404`.
 
-The default build-time ID is `olc-engine`. If the operator uses another ID,
-rebuild with an exact public identifier:
+The Engine ID is fixed to `lexai-engine-local`. The default configurable Open
+WebUI build-time ID is `olc-engine`. If Open WebUI uses another ID, rebuild with
+an exact public identifier:
 
 ```bash
 OLC_WORD_MODEL_ID=partner-model:latest npm run build:stage
 ```
 
-Verify the resulting artifact and both enabled provider model lists. Never use a
-credential as a model ID.
+Verify the resulting artifact and each provider's exact expected model. Never
+use a credential as a model ID.
 
 ## Search returns no useful result
 

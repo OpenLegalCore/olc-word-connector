@@ -86,6 +86,7 @@ export const enUSMessages = {
     statusLabel: "Searching",
     eyebrow: "LEGAL SOURCE SEARCH",
     heading: "Searching legislation and case law…",
+    streamingHeading: "Answer arriving…",
     description: "The document has not been changed.",
     footerEyebrow: "DOCUMENT BOUNDARY",
     footerMessage: "ANALYSIS ONLY",
@@ -96,6 +97,9 @@ export const enUSMessages = {
     changeProvider: "Change",
     eyebrow: "LEGAL SOURCE SEARCH",
     heading: "Answer",
+    usage: (input: number, output: number, total: number): string =>
+      `Usage: ${input} input · ${output} output · ${total} total tokens`,
+    usageUnavailable: "Usage: not reported by the service",
     copiedTitle: "Copied",
     copiedMessage: "The complete answer was copied as plain text.",
     copyFailedTitle: "Copy failed",

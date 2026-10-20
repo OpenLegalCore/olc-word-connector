@@ -19,6 +19,7 @@ import { TaskPaneView } from "./TaskPaneView";
 import type { TaskPaneEnvironment, TaskPaneViewModel } from "./taskPaneViewModel";
 
 export const DEFAULT_WORD_MODEL_ID = "olc-engine";
+export const OLC_ENGINE_MODEL_ID = "lexai-engine-local";
 export const SECURE_SIGN_IN_PATH = "/api/session";
 export const LEGAL_QUESTION_PLACEHOLDER = messagesFor("en-US").ready.questionPlaceholder;
 
@@ -112,7 +113,7 @@ export function createSameOriginProductionGateways(
       }
     ),
     olcEngine: new OpenAICompatibleAdapter(
-      { transport: "same-origin", modelId },
+      { transport: "same-origin", modelId: OLC_ENGINE_MODEL_ID },
       { fetch: dependencies.fetch as OpenAICompatibleFetch | undefined }
     ),
   };
@@ -242,6 +243,7 @@ function controllerModel(
     return readyModel(messages, backend, question, contextMode, environment);
   }
   if (state.kind === "capturing" || state.kind === "searching") {
+    const partialText = state.kind === "searching" ? state.partialText : "";
     return {
       id: state.kind,
       environment,
@@ -252,8 +254,11 @@ function controllerModel(
         tone: "info",
       },
       eyebrow: messages.searching.eyebrow,
-      heading: messages.searching.heading,
+      heading:
+        partialText.length > 0 ? messages.searching.streamingHeading : messages.searching.heading,
       description: messages.searching.description,
+      legalAnswer: partialText.length > 0 ? partialText : undefined,
+      legalAnswerLive: partialText.length > 0,
       footer: {
         eyebrow: messages.searching.footerEyebrow,
         message: messages.searching.footerMessage,
@@ -262,6 +267,16 @@ function controllerModel(
     };
   }
   if (state.kind === "result") {
+    const usage = state.result.usage;
+    const usageText =
+      usage === null
+        ? messages.result.usageUnavailable
+        : usage &&
+            usage.inputTokens !== undefined &&
+            usage.outputTokens !== undefined &&
+            usage.totalTokens !== undefined
+          ? messages.result.usage(usage.inputTokens, usage.outputTokens, usage.totalTokens)
+          : undefined;
     return {
       id: "result",
       environment,
@@ -278,6 +293,7 @@ function controllerModel(
       eyebrow: messages.result.eyebrow,
       heading: messages.result.heading,
       legalAnswer: state.result.text,
+      legalAnswerMeta: usageText,
       notice:
         copyFeedback === "copied"
           ? {
@@ -770,7 +786,7 @@ export class ProductionTaskPaneRuntime {
         );
         return;
       }
-      input = { question: this.question, contextMode: this.contextMode, uiLocale: "en-US" };
+      input = { question: this.question, contextMode: this.contextMode, uiLocale: this.locale };
     }
     this.resetCopyFeedback();
     this.lastInput = { ...input };

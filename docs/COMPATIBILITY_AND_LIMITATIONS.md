@@ -68,7 +68,7 @@ captures the then-current selection again.
 | Area | Status | Evidence and limitation |
 | --- | --- | --- |
 | Open WebUI adapter | `VERSION-QUALIFIED` | Verified against the exact Open WebUI `0.9.5` profile: model discovery, fresh non-persistent `local:<UUIDv4>`, `stream: true` SSE, valid content and a required completion boundary |
-| Direct OLC Engine adapter | `VERSION-QUALIFIED` | Exact-model `/v1/models` and non-streaming `/v1/chat/completions` passed against the accepted target; other OpenAI-compatible servers are not implied |
+| Direct OLC Engine adapter | `VERSION-QUALIFIED` | Exact `lexai-engine-local` discovery and native SSE contract are implemented from Engine `09171ea`; real Word runtime acceptance remains separate |
 | Shared `ChatGateway` behavior | `VERIFIED` | Deterministic parity covers normalized success, controlled failures, cancellation, late-result suppression and document safety |
 | Exact model discovery | `VERIFIED` | Connection succeeds only when the configured model ID appears in the selected provider's model list |
 | Automatic provider fallback | `NOT INCLUDED` | Provider selection is explicit; a failure is never silently retried through the other provider |
@@ -86,7 +86,7 @@ transports. Their answers need not be word-for-word identical.
 | Task-pane interface: English (`en-US`) | `VERIFIED` | Complete connector-owned message catalog and accepted Word for the web workflow |
 | Task-pane interface: Slovenian (`sl-SI`) | `VERIFIED` | Complete connector-owned message catalog and accepted Word for the web workflow |
 | Persistent language preference | `NOT INCLUDED` | Settings changes only the current task-pane instance; a new runtime resolves Office language, browser language, then English |
-| Provider-answer translation | `NOT INCLUDED` | UI language is not serialized to the provider; answer, source and clipboard language depend on the question and backend |
+| Provider answer language | `SUPPORTED CONTRACT` | The frozen `sl-SI`/`en-US` UI locale is sent to Engine as `sl`/`en`; final language quality remains backend-dependent |
 | Slovenian questions and Unicode transport | `VERIFIED` | Request serialization and accepted runtime evidence cover Slovenian text |
 | PISRS legislation | `OPERATOR-DEPENDENT` | The renderer recognizes approved PISRS links and the accepted workflow returned legislation sources; corpus completeness and temporal coverage remain external |
 | Slovenian case law | `OPERATOR-DEPENDENT` | The renderer recognizes approved sodnapraksa links and the accepted workflow returned case-law sources; retrieval is not proven exhaustive |
@@ -135,6 +135,7 @@ a limit is suitable for a particular backend.
 | Protected session expires | Task pane shows a controlled state and offers secure sign-in |
 | Sign-in completes | No legal question is automatically resubmitted |
 | User selects Retry search | Stored provider, question and context mode are reused; Selected text is captured again |
+| User selects Refine question | The form is preserved, but the next submission is a new independent search without prior conversation turns |
 | Provider fails | No automatic fallback or credential sharing occurs |
 | Copy fails | Visible answer remains available; Word is unchanged |
 

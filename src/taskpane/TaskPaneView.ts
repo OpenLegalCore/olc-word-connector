@@ -417,12 +417,18 @@ export class TaskPaneView {
     main.append(introduction);
 
     if (model.legalAnswer !== undefined) {
-      main.append(
-        createSafeLegalAnswer(document, model.legalAnswer, {
-          answerAriaLabel: messages.chrome.answerAriaLabel,
-          sourcesHeading: messages.chrome.sourcesHeading,
-        })
-      );
+      const answer = createSafeLegalAnswer(document, model.legalAnswer, {
+        answerAriaLabel: messages.chrome.answerAriaLabel,
+        sourcesHeading: messages.chrome.sourcesHeading,
+      });
+      if (model.legalAnswerLive) {
+        answer.setAttribute("aria-live", "polite");
+        answer.setAttribute("aria-atomic", "false");
+      }
+      main.append(answer);
+      if (model.legalAnswerMeta) {
+        main.append(element(document, "p", "olc-metadata", model.legalAnswerMeta));
+      }
     }
     const choices = createChoiceGroup(document, model);
     if (choices) {

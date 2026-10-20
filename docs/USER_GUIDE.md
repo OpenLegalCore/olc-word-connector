@@ -178,6 +178,12 @@ Selecting **Cancel** aborts the active request and returns the pane to a safe
 state. A response arriving later cannot replace that state or appear as a
 result. Cancellation, timeout and late responses leave the document unchanged.
 
+While a valid streaming response is in progress, received answer text appears
+incrementally through the same safe renderer used for completed answers. Copy,
+refine and new-search actions remain unavailable until the response ends with a
+valid success terminal. A cancelled, interrupted or invalid partial response is
+never promoted to a result.
+
 ## 6. Read the answer and sources
 
 The answer renderer allows only a narrow formatting subset: headings, lists,
@@ -188,7 +194,9 @@ Raw model HTML is never executed.
 - `S1`, `S2`, and similar references identify Slovenian case-law sources.
 
 When the backend follows the response contract, the task pane presents a
-separate **Sources** section.
+separate **Sources** section. For OLC Engine results, the pane also shows the
+token usage reported by the Engine, or states that usage is unavailable. It
+does not estimate token counts.
 
 <p align="center">
   <a href="assets/screenshots/v0.1/en-US/05-sources-and-actions.png">

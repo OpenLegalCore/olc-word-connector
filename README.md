@@ -74,6 +74,11 @@ answer quality depend on the configured backend and its data.
    references.
 5. Use **Copy answer**, **Refine question** or **New search**.
 
+SSE answers are rendered incrementally as untrusted text. Result actions become
+available only after a valid completion terminal. **Refine question** preserves
+the form for a new independent search; it does not continue a stored
+conversation.
+
 See the [English user guide](docs/USER_GUIDE.md),
 [Slovenian user guide](docs/USER_GUIDE.sl-SI.md) and
 [bilingual product gallery](docs/SCREENSHOTS.md) for the complete workflow.

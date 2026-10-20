@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { TaskPaneController, type SearchInput } from "../../src/app/TaskPaneController";
-import type { ChatGateway, CompletionRequest, CompletionResult } from "../../src/chat/ChatGateway";
+import type {
+  ChatGateway,
+  CompletionObserver,
+  CompletionRequest,
+  CompletionResult,
+} from "../../src/chat/ChatGateway";
 import { ChatGatewayError } from "../../src/chat/ChatGatewayError";
 import { WordAdapterError, type SelectionSnapshot } from "../../src/office/WordAdapter";
 import { FakeChatGateway } from "../fakes/FakeChatGateway";
@@ -109,6 +114,30 @@ describe("TaskPaneController legal-source contract", () => {
     });
   });
 
+  it("publishes ordered partial text before the validated terminal result", async () => {
+    const { chat, controller } = setup({ text: "Prvi drugi", usage: null });
+    chat.deltas = ["Prvi ", "drugi"];
+    const observed: string[] = [];
+    controller.subscribe((state) => {
+      if (state.kind === "searching") {
+        observed.push(state.partialText);
+      }
+    });
+
+    expect(await controller.search(noContextInput)).toBe(true);
+
+    expect(observed).toEqual(["", "Prvi ", "Prvi drugi"]);
+    expect(controller.getState()).toEqual({
+      kind: "result",
+      request: {
+        question: noContextInput.question,
+        context: { type: "none" },
+        uiLocale: "sl-SI",
+      },
+      result: { text: "Prvi drugi", model: undefined, usage: null },
+    });
+  });
+
   it("contains capture and completion failures without mutating Word", async () => {
     const capture = setup();
     capture.word.captureError = new WordAdapterError("NO_SELECTION");
@@ -145,11 +174,13 @@ describe("TaskPaneController legal-source contract", () => {
 
   it("ignores a late completion after cancellation", async () => {
     let resolveCompletion: (result: CompletionResult) => void = () => undefined;
+    let completionObserver: CompletionObserver | undefined;
     const requests: CompletionRequest[] = [];
     const chat: ChatGateway = {
       async checkConnection() {},
-      complete(request) {
+      complete(request, _signal, observer) {
         requests.push(request);
+        completionObserver = observer;
         return new Promise((resolve) => {
           resolveCompletion = resolve;
         });
@@ -160,7 +191,14 @@ describe("TaskPaneController legal-source contract", () => {
     const search = controller.search(noContextInput);
     await settle();
 
+    completionObserver?.onTextDelta?.("Visible before cancel");
+    expect(controller.getState()).toMatchObject({
+      kind: "searching",
+      partialText: "Visible before cancel",
+    });
+
     await controller.cancel();
+    completionObserver?.onTextDelta?.(" must be ignored");
     resolveCompletion({ text: "Late answer" });
 
     expect(await search).toBe(false);

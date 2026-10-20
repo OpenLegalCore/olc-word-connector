@@ -18,10 +18,18 @@ export interface CompletionUsage {
 export interface CompletionResult {
   readonly text: string;
   readonly model?: string;
-  readonly usage?: CompletionUsage;
+  readonly usage?: CompletionUsage | null;
+}
+
+export interface CompletionObserver {
+  readonly onTextDelta?: (delta: string) => void;
 }
 
 export interface ChatGateway {
   checkConnection(signal?: AbortSignal): Promise<void>;
-  complete(request: CompletionRequest, signal?: AbortSignal): Promise<CompletionResult>;
+  complete(
+    request: CompletionRequest,
+    signal?: AbortSignal,
+    observer?: CompletionObserver
+  ): Promise<CompletionResult>;
 }

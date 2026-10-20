@@ -5,7 +5,12 @@ import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppState } from "../../src/app/state";
-import type { ChatGateway, CompletionRequest, CompletionResult } from "../../src/chat/ChatGateway";
+import type {
+  ChatGateway,
+  CompletionObserver,
+  CompletionRequest,
+  CompletionResult,
+} from "../../src/chat/ChatGateway";
 import { ChatGatewayError } from "../../src/chat/ChatGatewayError";
 import type { SelectionSnapshot } from "../../src/office/WordAdapter";
 import {
@@ -15,6 +20,7 @@ import {
   SECURE_SIGN_IN_PATH,
   secureSignInUrlForOrigin,
   DEFAULT_WORD_MODEL_ID,
+  OLC_ENGINE_MODEL_ID,
   createSameOriginProductionGateways,
   type ProductionGateways,
 } from "../../src/taskpane/ProductionTaskPaneRuntime";
@@ -62,6 +68,7 @@ class ControlledGateway implements ChatGateway {
   pending = false;
   private lateResolve?: (result: CompletionResult) => void;
   private lateReject?: (reason?: unknown) => void;
+  private observer?: CompletionObserver;
 
   async checkConnection(): Promise<void> {
     this.connectionChecks++;
@@ -70,9 +77,14 @@ class ControlledGateway implements ChatGateway {
     }
   }
 
-  complete(request: CompletionRequest, signal?: AbortSignal): Promise<CompletionResult> {
+  complete(
+    request: CompletionRequest,
+    signal?: AbortSignal,
+    observer?: CompletionObserver
+  ): Promise<CompletionResult> {
     this.requests.push(request);
     this.signals.push(signal);
+    this.observer = observer;
     if (this.completionError) {
       return Promise.reject(this.completionError);
     }
@@ -91,6 +103,10 @@ class ControlledGateway implements ChatGateway {
 
   rejectLate(reason: unknown): void {
     this.lateReject?.(reason);
+  }
+
+  emitDelta(delta: string): void {
+    this.observer?.onTextDelta?.(delta);
   }
 
   disconnect(): void {
@@ -651,7 +667,7 @@ describe("production legal-source runtime", () => {
     expect(state.word.applyCalls).toHaveLength(0);
   });
 
-  it("creates semantically identical requests in en-US and sl-SI", async () => {
+  it("freezes the active en-US or sl-SI locale into each request", async () => {
     const english = setup({ locale: "en-US" });
     activeRuntime = english.runtime;
     click("select-olc-engine");
@@ -672,8 +688,8 @@ describe("production legal-source runtime", () => {
     click("search");
     await vi.waitFor(() => expect(viewState()).toBe("result"));
 
-    expect(slovenian.olcEngine.requests[0]).toEqual(englishRequest);
-    expect(slovenian.olcEngine.requests[0].uiLocale).toBe("en-US");
+    expect(englishRequest.uiLocale).toBe("en-US");
+    expect(slovenian.olcEngine.requests[0]).toEqual({ ...englishRequest, uiLocale: "sl-SI" });
     expect(slovenian.word.captureCalls).toBe(0);
     expect(slovenian.word.applyCalls).toHaveLength(0);
   });
@@ -765,7 +781,7 @@ describe("production legal-source runtime", () => {
       return new Response(
         JSON.stringify(
           input === "/v1/models"
-            ? { object: "list", data: [{ id: DEFAULT_WORD_MODEL_ID }] }
+            ? { object: "list", data: [{ id: OLC_ENGINE_MODEL_ID }] }
             : { data: [{ id: DEFAULT_WORD_MODEL_ID }] }
         ),
         { status: 200, headers: { "Content-Type": "application/json" } }
@@ -785,13 +801,13 @@ describe("production legal-source runtime", () => {
     }
   });
 
-  it("uses an operator-supplied model ID for both provider paths", async () => {
+  it("keeps the Engine model fixed while allowing the configured Open WebUI model", async () => {
     const modelId = "partner-legal-model";
     const fetch = vi.fn(async (input: string): Promise<Response> => {
       return new Response(
         JSON.stringify(
           input === "/v1/models"
-            ? { object: "list", data: [{ id: modelId }] }
+            ? { object: "list", data: [{ id: OLC_ENGINE_MODEL_ID }] }
             : { data: [{ id: modelId }] }
         ),
         { status: 200, headers: { "Content-Type": "application/json" } }
@@ -905,6 +921,35 @@ describe("production legal-source runtime", () => {
     expect(root().textContent).not.toMatch(
       /Original|Proposed|Apply to document|Discard|Regenerate|Improve|Shorten|Formalize/
     );
+  });
+
+  it("shows exact Engine usage and reports unavailable usage without estimates", async () => {
+    const first = setup();
+    activeRuntime = first.runtime;
+    first.olcEngine.result = {
+      text: ANSWER,
+      model: OLC_ENGINE_MODEL_ID,
+      usage: { inputTokens: 12, outputTokens: 34, totalTokens: 46 },
+    };
+    click("select-olc-engine");
+    await vi.waitFor(() => expect(viewState()).toBe("ready"));
+    setQuestion("Question");
+    click("search");
+    await vi.waitFor(() => expect(viewState()).toBe("result"));
+    expect(root().textContent).toContain("Usage: 12 input · 34 output · 46 total tokens");
+    first.runtime.dispose();
+    activeRuntime = undefined;
+
+    document.body.innerHTML = '<div id="taskpane-root"></div>';
+    const second = setup({ locale: "sl-SI" });
+    activeRuntime = second.runtime;
+    second.olcEngine.result = { text: ANSWER, model: OLC_ENGINE_MODEL_ID, usage: null };
+    click("select-olc-engine");
+    await vi.waitFor(() => expect(viewState()).toBe("ready"));
+    setQuestion("Vprašanje");
+    click("search");
+    await vi.waitFor(() => expect(viewState()).toBe("result"));
+    expect(root().textContent).toContain("Poraba: storitev je ni sporočila");
   });
 
   it.each([
@@ -1466,12 +1511,20 @@ describe("production legal-source runtime", () => {
     await vi.waitFor(() => expect(viewState()).toBe("searching"));
     expect(root().textContent).toContain("Searching legislation and case law…");
 
+    openWebUI.emitDelta("Partial <script>alert(1)</script>");
+    await vi.waitFor(() => expect(root().textContent).toContain("Partial <script>alert(1)</script>"));
+    expect(root().querySelector("script")).toBeNull();
+    expect(root().querySelector('button[data-action-id="copy-answer"]')).toBeNull();
+    expect(viewState()).toBe("searching");
+
     click("cancel");
     await vi.waitFor(() => expect(viewState()).toBe("ready"));
     expect(openWebUI.signals[0]?.aborted).toBe(true);
+    openWebUI.emitDelta("Late partial");
     openWebUI.resolveLate();
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     expect(root().textContent).not.toContain("Late answer");
+    expect(root().textContent).not.toContain("Late partial");
     expect(word.applyCalls).toHaveLength(0);
   });
 

@@ -7,6 +7,7 @@ import type { AppErrorCode } from "./errors";
 import {
   beginCapture,
   beginSearch,
+  appendSearchDelta,
   completeSearch,
   copyAppState,
   fail,
@@ -80,7 +81,19 @@ export class TaskPaneController {
       };
       errorCode = "COMPLETION_FAILED";
       this.setState(beginSearch(operationId, request));
-      const result = await this.chat.complete(request, abortController.signal);
+      const result = await this.chat.complete(request, abortController.signal, {
+        onTextDelta: (delta) => {
+          const current = this.getInternalState();
+          if (
+            delta.length > 0 &&
+            this.operationId === operationId &&
+            current.kind === "searching" &&
+            current.operationId === operationId
+          ) {
+            this.setState(appendSearchDelta(current, delta));
+          }
+        },
+      });
       if (this.operationId !== operationId || this.getInternalState().kind !== "searching") {
         return false;
       }

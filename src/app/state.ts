@@ -7,6 +7,7 @@ export type SearchingState = {
   readonly kind: "searching";
   readonly operationId: number;
   readonly request: CompletionRequest;
+  readonly partialText: string;
 };
 export type ResultState = {
   readonly kind: "result";
@@ -34,13 +35,16 @@ export function copyCompletionResult(result: CompletionResult): CompletionResult
   return {
     text: result.text,
     model: result.model,
-    usage: result.usage
-      ? {
-          inputTokens: result.usage.inputTokens,
-          outputTokens: result.usage.outputTokens,
-          totalTokens: result.usage.totalTokens,
-        }
-      : undefined,
+    usage:
+      result.usage === null
+        ? null
+        : result.usage
+          ? {
+              inputTokens: result.usage.inputTokens,
+              outputTokens: result.usage.outputTokens,
+              totalTokens: result.usage.totalTokens,
+            }
+          : undefined,
   };
 }
 
@@ -66,7 +70,16 @@ export function beginCapture(operationId: number): CapturingState {
 }
 
 export function beginSearch(operationId: number, request: CompletionRequest): SearchingState {
-  return { kind: "searching", operationId, request: copyCompletionRequest(request) };
+  return {
+    kind: "searching",
+    operationId,
+    request: copyCompletionRequest(request),
+    partialText: "",
+  };
+}
+
+export function appendSearchDelta(state: SearchingState, delta: string): SearchingState {
+  return { ...state, partialText: `${state.partialText}${delta}` };
 }
 
 export function completeSearch(request: CompletionRequest, result: CompletionResult): ResultState {

@@ -181,6 +181,12 @@ stanje. Odgovor, ki bi prispel pozneje, tega stanja ne more nadomestiti in se ne
 more prikazati kot rezultat. Preklic, časovna omejitev in pozen odgovor pustijo
 dokument nespremenjen.
 
+Med veljavnim pretočnim odzivom se prejeto besedilo odgovora sproti prikazuje z
+istim varnim prikazovalnikom kot dokončani odgovori. Dejanja za kopiranje,
+dopolnitev vprašanja in novo iskanje ostanejo nedostopna, dokler se odziv ne
+konča z veljavnim uspešnim zaključkom. Preklican, prekinjen ali neveljaven delni
+odziv nikoli ne postane rezultat.
+
 ## 6. Preberite odgovor in vire
 
 Prikaz odgovora dovoljuje le ozek nabor oblikovanja: naslove, sezname, krepko
@@ -191,6 +197,8 @@ modela se nikoli ne izvede.
 - `S1`, `S2` in podobne oznake označujejo vire slovenske sodne prakse.
 
 Ko zaledje spoštuje pogodbo odgovora, podokno prikaže ločen razdelek **Viri**.
+Pri rezultatih OLC Engine podokno prikaže tudi porabo žetonov, ki jo sporoči
+Engine, ali pa navede, da poraba ni na voljo. Števila žetonov ne ocenjuje.
 
 <p align="center">
   <a href="assets/screenshots/v0.1/sl-SI/05-sources-and-actions.png">

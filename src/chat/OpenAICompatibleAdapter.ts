@@ -1,7 +1,13 @@
-/* global AbortController, AbortSignal, RequestCredentials, RequestInit, Response, TextDecoder, URL, clearTimeout, globalThis, setTimeout */
+/* global AbortController, AbortSignal, ReadableStreamDefaultReader, RequestCredentials, RequestInit, Response, TextDecoder, URL, clearTimeout, globalThis, setTimeout */
 
-import type { ChatGateway, CompletionRequest, CompletionResult } from "./ChatGateway";
+import type {
+  ChatGateway,
+  CompletionObserver,
+  CompletionRequest,
+  CompletionResult,
+} from "./ChatGateway";
 import { ChatGatewayError, type ChatGatewayErrorCode } from "./ChatGatewayError";
+import { parseOpenAICompatibleCompletionStream } from "./openAICompatibleStream";
 import { serializePromptEnvelope } from "./promptEnvelope";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 120_000;
@@ -31,15 +37,6 @@ export interface OpenAICompatibleAdapterDependencies {
 interface ModelsResponse {
   readonly object: "list";
   readonly data: ReadonlyArray<{ readonly id: string }>;
-}
-
-interface CompletionResponse {
-  readonly model?: string;
-  readonly choices: ReadonlyArray<{
-    readonly message: {
-      readonly content: string;
-    };
-  }>;
 }
 
 function invalidConfiguration(): never {
@@ -148,19 +145,6 @@ function isModelsResponse(value: unknown): value is ModelsResponse {
   );
 }
 
-function isCompletionResponse(value: unknown): value is CompletionResponse {
-  if (!isRecord(value) || !Array.isArray(value.choices) || value.choices.length === 0) {
-    return false;
-  }
-
-  const firstChoice = value.choices[0];
-  return (
-    isRecord(firstChoice) &&
-    isRecord(firstChoice.message) &&
-    typeof firstChoice.message.content === "string"
-  );
-}
-
 function mediaType(response: Response): string {
   return (response.headers.get("content-type") ?? "").split(";", 1)[0].trim().toLowerCase();
 }
@@ -242,7 +226,7 @@ export class OpenAICompatibleAdapter implements ChatGateway {
         signal: requestSignal,
       });
 
-      this.requireSuccessfulJsonResponse(response);
+      this.requireSuccessfulResponse(response, "application/json");
       const payload = await this.parseJson(response);
       if (!isModelsResponse(payload)) {
         throw new ChatGatewayError("INVALID_RESPONSE");
@@ -253,11 +237,17 @@ export class OpenAICompatibleAdapter implements ChatGateway {
     });
   }
 
-  async complete(request: CompletionRequest, signal?: AbortSignal): Promise<CompletionResult> {
+  async complete(
+    request: CompletionRequest,
+    signal?: AbortSignal,
+    observer?: CompletionObserver
+  ): Promise<CompletionResult> {
     return this.withRequestBoundary(signal, async (requestSignal) => {
       const body = JSON.stringify({
         model: this.modelId,
-        stream: false,
+        stream: true,
+        stream_options: { include_usage: true },
+        response_language: request.uiLocale === "sl-SI" ? "sl" : "en",
         messages: [
           {
             role: "user",
@@ -267,31 +257,34 @@ export class OpenAICompatibleAdapter implements ChatGateway {
       });
       const response = await this.fetchImpl(`${this.baseUrl}/v1/chat/completions`, {
         method: "POST",
-        headers: this.headers("application/json", "application/json"),
+        headers: this.headers("text/event-stream", "application/json"),
         body,
         credentials: this.requestCredentials,
         redirect: this.requestRedirect,
         signal: requestSignal,
       });
 
-      this.requireSuccessfulJsonResponse(response);
-      const payload = await this.parseJson(response);
-      if (!isCompletionResponse(payload)) {
+      this.requireSuccessfulResponse(response, "text/event-stream");
+      if (!response.body || typeof response.body.getReader !== "function") {
+        this.cancelResponseBody(response);
         throw new ChatGatewayError("INVALID_RESPONSE");
       }
-
-      const text = payload.choices[0].message.content;
-      if (text.includes("\u0000")) {
+      let reader: ReadableStreamDefaultReader<Uint8Array>;
+      try {
+        reader = response.body.getReader();
+      } catch {
+        this.cancelResponseBody(response);
         throw new ChatGatewayError("INVALID_RESPONSE");
       }
-      if (text.trim().length === 0) {
-        throw new ChatGatewayError("EMPTY_RESPONSE");
-      }
-      if (text.length > this.maxResponseChars) {
-        throw new ChatGatewayError("INVALID_RESPONSE");
-      }
-
-      return typeof payload.model === "string" ? { text, model: payload.model } : { text };
+      const result = await parseOpenAICompatibleCompletionStream(
+        reader,
+        this.modelId,
+        requestSignal,
+        observer,
+        this.maxResponseChars,
+        this.maxResponseBytes
+      );
+      return { text: result.text, model: this.modelId, usage: result.usage };
     });
   }
 
@@ -313,7 +306,7 @@ export class OpenAICompatibleAdapter implements ChatGateway {
     return headers;
   }
 
-  private requireSuccessfulJsonResponse(response: Response): void {
+  private requireSuccessfulResponse(response: Response, expectedType: string): void {
     const responseType = mediaType(response);
     if (
       this.requestCredentials === "same-origin" &&
@@ -331,7 +324,7 @@ export class OpenAICompatibleAdapter implements ChatGateway {
       this.cancelResponseBody(response);
       throw statusError(response.status);
     }
-    if (response.redirected || responseType !== "application/json") {
+    if (response.redirected || responseType !== expectedType) {
       this.cancelResponseBody(response);
       throw new ChatGatewayError("INVALID_RESPONSE");
     }

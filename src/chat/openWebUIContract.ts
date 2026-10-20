@@ -1,6 +1,7 @@
 /* global AbortSignal, ReadableStreamDefaultReader, ReadableStreamReadResult, TextDecoder */
 
 import { ChatGatewayError } from "./ChatGatewayError";
+import type { CompletionObserver } from "./ChatGateway";
 
 export const DEFAULT_OPENWEBUI_SSE_MAX_BYTES = 1024 * 1024;
 export const DEFAULT_OPENWEBUI_RESPONSE_MAX_CHARS = 50_000;
@@ -39,7 +40,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function appendContentFromEvent(
   state: ParserState,
   value: unknown,
-  maxResponseChars: number
+  maxResponseChars: number,
+  observer?: CompletionObserver
 ): void {
   if (!isRecord(value)) {
     throw invalidResponse();
@@ -86,10 +88,17 @@ function appendContentFromEvent(
       throw invalidResponse();
     }
     state.textParts.push(content);
+    if (content.length > 0) {
+      observer?.onTextDelta?.(content);
+    }
   }
 }
 
-function dispatchEvent(state: ParserState, maxResponseChars: number): void {
+function dispatchEvent(
+  state: ParserState,
+  maxResponseChars: number,
+  observer?: CompletionObserver
+): void {
   if (state.dataLines.length === 0) {
     return;
   }
@@ -109,14 +118,19 @@ function dispatchEvent(state: ParserState, maxResponseChars: number): void {
     throw invalidResponse();
   }
 
-  appendContentFromEvent(state, value, maxResponseChars);
+  appendContentFromEvent(state, value, maxResponseChars, observer);
 }
 
-function consumeLine(state: ParserState, rawLine: string, maxResponseChars: number): void {
+function consumeLine(
+  state: ParserState,
+  rawLine: string,
+  maxResponseChars: number,
+  observer?: CompletionObserver
+): void {
   const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
 
   if (line === "") {
-    dispatchEvent(state, maxResponseChars);
+    dispatchEvent(state, maxResponseChars, observer);
     return;
   }
   if (line.startsWith(":")) {
@@ -139,7 +153,8 @@ function consumeDecodedText(
   state: ParserState,
   decoded: string,
   completeTrailingCr: boolean,
-  maxResponseChars: number
+  maxResponseChars: number,
+  observer?: CompletionObserver
 ): void {
   if (state.completed) {
     return;
@@ -164,7 +179,7 @@ function consumeDecodedText(
     const line = state.pendingText.slice(0, lineBreak.index);
     state.pendingText = state.pendingText.slice(lineBreak.index + lineBreak.width);
     state.lineScanOffset = 0;
-    consumeLine(state, line, maxResponseChars);
+    consumeLine(state, line, maxResponseChars, observer);
     if (state.completed) {
       return;
     }
@@ -215,13 +230,14 @@ function consumeEncodedChunk(
   chunk: Uint8Array,
   maxResponseChars: number,
   bytesRead: number,
-  maxBytes: number
+  maxBytes: number,
+  observer?: CompletionObserver
 ): number {
   let segmentStart = 0;
   let consumedBytes = 0;
 
   if (state.pendingText.endsWith("\r") && chunk.byteLength > 0 && chunk[0] !== 0x0a) {
-    consumeDecodedText(state, "", true, maxResponseChars);
+    consumeDecodedText(state, "", true, maxResponseChars, observer);
     if (state.completed) {
       return consumedBytes;
     }
@@ -252,7 +268,8 @@ function consumeEncodedChunk(
       state,
       decoder.decode(chunk.subarray(segmentStart, segmentEnd), { stream: true }),
       completeTrailingCr,
-      maxResponseChars
+      maxResponseChars,
+      observer
     );
     if (state.completed) {
       return consumedBytes;
@@ -269,7 +286,8 @@ function consumeEncodedChunk(
       state,
       decoder.decode(chunk.subarray(segmentStart), { stream: true }),
       false,
-      maxResponseChars
+      maxResponseChars,
+      observer
     );
   }
 
@@ -280,7 +298,8 @@ export async function parseOpenWebUICompletionStream(
   reader: ReadableStreamDefaultReader<Uint8Array>,
   signal?: AbortSignal,
   maxResponseChars = DEFAULT_OPENWEBUI_RESPONSE_MAX_CHARS,
-  maxBytes = DEFAULT_OPENWEBUI_SSE_MAX_BYTES
+  maxBytes = DEFAULT_OPENWEBUI_SSE_MAX_BYTES,
+  observer?: CompletionObserver
 ): Promise<OpenWebUIStreamResult> {
   validatePositiveLimit(maxResponseChars);
   validatePositiveLimit(maxBytes);
@@ -372,7 +391,7 @@ export async function parseOpenWebUICompletionStream(
       }
 
       if (readResult.done) {
-        consumeDecodedText(state, decoder.decode(), true, maxResponseChars);
+        consumeDecodedText(state, decoder.decode(), true, maxResponseChars, observer);
         break;
       }
 
@@ -384,7 +403,8 @@ export async function parseOpenWebUICompletionStream(
         chunk,
         maxResponseChars,
         bytesRead,
-        maxBytes
+        maxBytes,
+        observer
       );
     }
 
