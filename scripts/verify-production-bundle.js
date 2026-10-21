@@ -65,7 +65,7 @@ const forbiddenContent = [
   {
     label: "gateway server runtime marker",
     pattern:
-      /(?:private-upstream\.example\.invalid|word-gateway-example|OWUI_API_KEY|CF_ACCESS_CLIENT_ID|CF_ACCESS_CLIENT_SECRET)/i,
+      /(?:private-upstream\.example\.invalid|word-gateway-example|OWUI_API_KEY|OWUI_ORIGIN|CF_ACCESS_CLIENT_ID|CF_ACCESS_CLIENT_SECRET)/i,
   },
   {
     label: "document mutation primitive",
@@ -100,11 +100,6 @@ const requiredProductionImports = [
     label: "TaskPaneController",
     entry: "src/taskpane/ProductionTaskPaneRuntime.ts",
     pattern: /from ["']\.\.\/app\/TaskPaneController["']/,
-  },
-  {
-    label: "OpenWebUIAdapter",
-    entry: "src/taskpane/ProductionTaskPaneRuntime.ts",
-    pattern: /from ["']\.\.\/chat\/OpenWebUIAdapter["']/,
   },
   {
     label: "OpenAICompatibleAdapter",

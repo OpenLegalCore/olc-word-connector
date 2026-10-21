@@ -40,12 +40,11 @@ export const enUSMessages = {
   },
   providerSelection: {
     statusLabel: "Word connection ready",
-    statusDetail: "CHOOSE SERVICE",
+    statusDetail: "ENGINE READY",
     eyebrow: "LEGAL SOURCE SEARCH",
-    heading: "Choose a legal source service",
+    heading: "Connect to OLC Engine",
     description:
-      "The protected browser session connects to one service at a time. No provider credential is stored in this task pane.",
-    useOpenWebUI: "Use Open WebUI",
+      "The protected browser session connects to OLC Engine. No Engine credential is stored in this task pane.",
     useOlcEngine: "Use OLC Engine",
     footerEyebrow: "DOCUMENT BOUNDARY",
     footerMessage: "NO DOCUMENT CONTENT READ",
@@ -63,7 +62,6 @@ export const enUSMessages = {
   ready: {
     connectedStatus: (provider: string): string => `${provider} connected`,
     statusDetail: "CONNECTED",
-    changeProvider: "Change",
     eyebrow: "LEGAL SOURCE SEARCH",
     heading: "Search legal sources",
     description: "Ask a question based on Slovenian legislation and case law.",
@@ -94,7 +92,6 @@ export const enUSMessages = {
   },
   result: {
     statusLabel: "Answer ready",
-    changeProvider: "Change",
     eyebrow: "LEGAL SOURCE SEARCH",
     heading: "Answer",
     usage: (input: number, output: number, total: number): string =>
@@ -115,7 +112,7 @@ export const enUSMessages = {
     statusLabel: "Search failed safely",
     eyebrow: "RECOVERY",
     heading: "The document is unchanged",
-    description: "Retry is explicit. There is no provider fallback.",
+    description: "Retry is explicit. There is no automatic retry.",
     noticeTitle: "No document change",
     noticeMessage: "Review the service and question, then retry the search.",
     retrySearch: "Retry search",
@@ -143,9 +140,8 @@ export const enUSMessages = {
     statusLabel: (provider: string): string => `${provider} is unavailable`,
     eyebrow: "SERVICE CONNECTION",
     heading: "Connection check failed",
-    description: "No document content was read. Choose the service explicitly to retry.",
+    description: "No document content was read. Retry the OLC Engine connection explicitly.",
     tryAgain: "Try again",
-    chooseService: "Choose service",
     footerEyebrow: "DOCUMENT BOUNDARY",
     footerMessage: "UNCHANGED",
   },

@@ -11,10 +11,10 @@ testing means for this repository.
 supported only when the repository contains its tag and corresponding GitHub
 Release. Candidate commits and private builds remain unreleased.
 
-| Release line | Security support |
-| --- | --- |
-| Latest published `0.1.x` beta | Supported |
-| Earlier betas, development snapshots and unofficial forks | Not supported |
+| Release line                                              | Security support |
+| --------------------------------------------------------- | ---------------- |
+| Latest published `0.1.x` beta                             | Supported        |
+| Earlier betas, development snapshots and unofficial forks | Not supported    |
 
 A later release notice may replace this policy for a newer line. Operators of a
 fork or modified deployment are responsible for the changes they introduce.
@@ -45,16 +45,16 @@ project does not promise a response time.
 
 ## Security boundary
 
-| In this repository's scope | Outside this repository's scope |
-| --- | --- |
-| Connector source and browser bundles | A separately operated hosted service |
-| Office manifests and build configuration | Operator identity, DNS, logging and retention policy |
-| Generic same-origin gateway example | Private staging or production infrastructure |
-| Maintained tests and release artifacts | OLC Engine, Open WebUI and legal-source databases |
+| In this repository's scope                       | Outside this repository's scope                           |
+| ------------------------------------------------ | --------------------------------------------------------- |
+| Connector source and browser bundles             | A separately operated hosted service                      |
+| Office manifests and build configuration         | Operator identity, DNS, logging and retention policy      |
+| Generic same-origin gateway example              | Private staging or production infrastructure              |
+| Maintained tests and release artifacts           | OLC Engine and legal-source databases                     |
 | Documentation that changes the security boundary | Microsoft 365, Cloudflare and other third-party platforms |
 
-Production browser code uses only same-origin routes. Open WebUI and OLC Engine
-Bearer credentials, private upstream origins and Cloudflare Access service
+Production browser code uses only same-origin routes. OLC Engine Bearer
+credentials, private upstream origins and Cloudflare Access service
 tokens belong only in the trusted gateway. The Engine Bearer is distinct from
 the Access service-token pair and must never enter the task-pane bundle,
 browser storage, manifest, URL or logs.

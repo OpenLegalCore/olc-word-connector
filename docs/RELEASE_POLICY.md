@@ -6,13 +6,13 @@ publication.
 
 ## Release identity
 
-| Identity | Rule |
-| --- | --- |
-| Product and Git version | Semantic prerelease version; the first public release is `v0.1.0-beta.1` |
-| npm package version | Matches the product version, but the package is marked `private` and is not an npm publication |
-| Office manifest version | Independent four-part Office deployment version; it is not the Git release number |
-| Source identity | Exact Git tag and commit SHA named in the GitHub Release |
-| License | [Apache License 2.0](../LICENSE), subject to third-party notices and trademark policy |
+| Identity                | Rule                                                                                           |
+| ----------------------- | ---------------------------------------------------------------------------------------------- |
+| Product and Git version | Semantic prerelease version; the first public release is `v0.1.0-beta.1`                       |
+| npm package version     | Matches the product version, but the package is marked `private` and is not an npm publication |
+| Office manifest version | Independent four-part Office deployment version; it is not the Git release number              |
+| Source identity         | Exact Git tag and commit SHA named in the GitHub Release                                       |
+| License                 | [Apache License 2.0](../LICENSE), subject to third-party notices and trademark policy          |
 
 A branch, build, screenshot, private preview, CI run or candidate commit is not
 a public release. Publication requires the reviewed public repository state,
@@ -23,7 +23,7 @@ an exact version tag and a corresponding GitHub Release.
 The beta release contains:
 
 - the Microsoft Word task-pane connector source;
-- explicit Open WebUI and direct OLC Engine transport adapters;
+- the direct OLC Engine transport adapter;
 - development, staging-template and reserved production Office manifests;
 - a generic same-origin gateway example;
 - deterministic tests and local development harnesses; and
@@ -39,7 +39,7 @@ by the user. The connector is a client, not a standalone legal-AI system.
 The beta does not include or imply:
 
 - a publicly hosted OpenLegalCore service;
-- OLC Engine source, Open WebUI, a model or legal databases;
+- OLC Engine source, a model or legal databases;
 - private staging, credentials, private origin names or operator configuration;
 - Microsoft AppSource or Office Store distribution;
 - an uptime or support service level;

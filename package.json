@@ -2,7 +2,7 @@
   "name": "olc-word-connector",
   "version": "0.1.0-beta.1",
   "private": true,
-  "description": "Source-only Apache-2.0 Microsoft Word add-in for verifiable Slovenian legislation and case-law research through Open WebUI or OLC Engine.",
+  "description": "Source-only Apache-2.0 Microsoft Word add-in for verifiable Slovenian legislation and case-law research through OLC Engine.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/OpenLegalCore/olc-word-connector.git"

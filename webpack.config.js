@@ -5,10 +5,8 @@ const path = require("path");
 const devCerts = require("office-addin-dev-certs");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const webpack = require("webpack");
 
 const OFFICE_ASSET_VERSION = "1.0.0.2";
-const DEFAULT_WORD_MODEL_ID = "olc-engine";
 const BUILD_TARGETS = Object.freeze({
   development: {
     outputDirectory: "dev",
@@ -43,16 +41,6 @@ const BUILD_TARGETS = Object.freeze({
 async function getHttpsOptions() {
   const httpsOptions = await devCerts.getHttpsServerOptions();
   return { ca: httpsOptions.ca, key: httpsOptions.key, cert: httpsOptions.cert };
-}
-
-function resolveWordModelId(value) {
-  if (value === undefined) {
-    return DEFAULT_WORD_MODEL_ID;
-  }
-  if (typeof value !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:/+-]{0,199}$/.test(value)) {
-    throw new Error("OLC_WORD_MODEL_ID must be a non-empty printable model identifier.");
-  }
-  return value;
 }
 
 function resolveBuildTarget(env, options = {}) {
@@ -104,7 +92,6 @@ function staticPatterns(target) {
 
 async function webpackConfig(env, options) {
   const target = resolveBuildTarget(env, options);
-  const wordModelId = resolveWordModelId(process.env.OLC_WORD_MODEL_ID);
   const moduleRules = [
     {
       test: /\.ts$/,
@@ -185,9 +172,6 @@ async function webpackConfig(env, options) {
     },
     module: { rules: moduleRules },
     plugins: [
-      new webpack.DefinePlugin({
-        __OLC_WORD_MODEL_ID__: JSON.stringify(wordModelId),
-      }),
       new HtmlWebpackPlugin({
         filename: "taskpane.html",
         template: target.wordHarness
@@ -207,8 +191,6 @@ async function webpackConfig(env, options) {
 }
 
 webpackConfig.BUILD_TARGETS = BUILD_TARGETS;
-webpackConfig.DEFAULT_WORD_MODEL_ID = DEFAULT_WORD_MODEL_ID;
 webpackConfig.OFFICE_ASSET_VERSION = OFFICE_ASSET_VERSION;
 webpackConfig.resolveBuildTarget = resolveBuildTarget;
-webpackConfig.resolveWordModelId = resolveWordModelId;
 module.exports = webpackConfig;

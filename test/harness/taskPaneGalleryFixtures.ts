@@ -57,10 +57,9 @@ function connectedFixture(
     id,
     {
       status: {
-        label: "Open WebUI connected",
+        label: "OLC Engine connected",
         detail: "CONNECTED",
         tone: "success",
-        action: { id: "change", label: "Change", variant: "quiet" },
       },
       eyebrow: "LEGAL SOURCE SEARCH",
       heading: "Search legal sources",
@@ -86,14 +85,11 @@ export const galleryFixtures: Readonly<Record<GalleryFixtureId, TaskPaneViewMode
   "backend-selection": base(
     "backend-selection",
     {
-      status: { label: "Word connection ready", detail: "CHOOSE SERVICE", tone: "success" },
+      status: { label: "Word connection ready", detail: "ENGINE READY", tone: "success" },
       eyebrow: "LEGAL SOURCE SEARCH",
-      heading: "Choose a legal source service",
-      description: "Connect to one protected service without reading document content.",
-      actions: [
-        { id: "select-open-webui", label: "Use Open WebUI", variant: "primary" },
-        { id: "select-olc-engine", label: "Use OLC Engine", variant: "secondary" },
-      ],
+      heading: "Connect to OLC Engine",
+      description: "Connect to protected OLC Engine without reading document content.",
+      actions: [{ id: "select-olc-engine", label: "Use OLC Engine", variant: "primary" }],
       footer: { eyebrow: "DOCUMENT BOUNDARY", message: "NO DOCUMENT CONTENT READ" },
     },
     "STAGING"
@@ -104,7 +100,7 @@ export const galleryFixtures: Readonly<Record<GalleryFixtureId, TaskPaneViewMode
     "searching",
     {
       busy: true,
-      status: { label: "Searching", detail: "OPEN WEBUI", tone: "info" },
+      status: { label: "Searching", detail: "OLC ENGINE", tone: "info" },
       eyebrow: "LEGAL SOURCE SEARCH",
       heading: "Searching legislation and case law…",
       description: "The document has not been changed.",
@@ -119,7 +115,7 @@ export const galleryFixtures: Readonly<Record<GalleryFixtureId, TaskPaneViewMode
   result: base(
     "result",
     {
-      status: { label: "Answer ready", detail: "OPEN WEBUI", tone: "success" },
+      status: { label: "Answer ready", detail: "OLC ENGINE", tone: "success" },
       eyebrow: "LEGAL SOURCE SEARCH",
       heading: "Answer",
       legalAnswer:
@@ -136,7 +132,7 @@ export const galleryFixtures: Readonly<Record<GalleryFixtureId, TaskPaneViewMode
   "session-expired": base(
     "session-expired",
     {
-      status: { label: "Session expired", detail: "OPEN WEBUI", tone: "warning" },
+      status: { label: "Session expired", detail: "OLC ENGINE", tone: "warning" },
       eyebrow: "PROTECTED SESSION",
       heading: "Session expired",
       description:
@@ -152,7 +148,7 @@ export const galleryFixtures: Readonly<Record<GalleryFixtureId, TaskPaneViewMode
     heading: "The document is unchanged",
     notice: {
       title: "No document change",
-      message: "Retry remains explicit and there is no provider fallback.",
+      message: "Retry remains explicit and there is no automatic retry.",
       tone: "danger",
       role: "alert",
     },

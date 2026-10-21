@@ -21,7 +21,6 @@ import webpackConfig = require("../../webpack.config.js");
 const productionBundleVerifier = require("../../scripts/verify-production-bundle.js");
 
 const resolveBuildTarget = webpackConfig.resolveBuildTarget;
-const resolveWordModelId = webpackConfig.resolveWordModelId;
 const manifestVersion = "1.0.0.3";
 const officeAssetVersion = "1.0.0.2";
 const iconOutputDirectory = `assets/office/${officeAssetVersion}`;
@@ -198,38 +197,6 @@ describe("explicit fail-closed webpack targets", () => {
     for (const target of ["staging", "production"] as const) {
       const config = await webpackConfig({ target, WEBPACK_BUILD: true }, { mode: "production" });
       expect(config.devtool).toBe(false);
-    }
-  });
-
-  it("uses a public default model ID and validates build-time overrides", () => {
-    expect(resolveWordModelId(undefined)).toBe("olc-engine");
-    expect(resolveWordModelId("partner-model:latest")).toBe("partner-model:latest");
-    for (const invalid of ["", " leading", "trailing ", "line\nbreak", "model?id=1"]) {
-      expect(() => resolveWordModelId(invalid)).toThrow(/OLC_WORD_MODEL_ID/);
-    }
-  });
-
-  it("embeds the selected non-secret model ID in deployable bundles", async () => {
-    const previousModelId = process.env.OLC_WORD_MODEL_ID;
-    try {
-      process.env.OLC_WORD_MODEL_ID = "partner-model:latest";
-      const config = await webpackConfig(
-        { target: "staging", WEBPACK_BUILD: true },
-        { mode: "production" }
-      );
-      const definePlugin = config.plugins.find(
-        (plugin: { constructor: { name: string } }) => plugin.constructor.name === "DefinePlugin"
-      ) as { definitions?: Record<string, string> } | undefined;
-
-      expect(definePlugin?.definitions?.__OLC_WORD_MODEL_ID__).toBe(
-        JSON.stringify("partner-model:latest")
-      );
-    } finally {
-      if (previousModelId === undefined) {
-        delete process.env.OLC_WORD_MODEL_ID;
-      } else {
-        process.env.OLC_WORD_MODEL_ID = previousModelId;
-      }
     }
   });
 });

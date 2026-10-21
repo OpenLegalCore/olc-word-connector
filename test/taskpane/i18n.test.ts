@@ -19,8 +19,8 @@ describe("task-pane i18n catalogs", () => {
     const englishKeys = messageKeyPaths(enUSMessages);
     const slovenianKeys = messageKeyPaths(slSIMessages);
 
-    expect(englishKeys).toHaveLength(119);
-    expect(slovenianKeys).toHaveLength(119);
+    expect(englishKeys).toHaveLength(115);
+    expect(slovenianKeys).toHaveLength(115);
     expect(slovenianKeys).toEqual(englishKeys);
     expect(messagesFor("sl-SI")).toBe(slSIMessages);
     expect(messagesFor("en-US")).toBe(enUSMessages);
@@ -98,13 +98,13 @@ describe("task-pane i18n catalogs", () => {
     expect(slSIMessages.connecting.statusLabel("OLC Engine")).toBe(
       "Preverjanje storitve OLC Engine"
     );
-    expect(enUSMessages.ready.connectedStatus("Open WebUI")).toBe("Open WebUI connected");
-    expect(slSIMessages.ready.connectedStatus("Open WebUI")).toBe("Open WebUI je povezan");
-    expect(enUSMessages.connectionError.statusLabel("Open WebUI")).toBe(
-      "Open WebUI is unavailable"
+    expect(enUSMessages.ready.connectedStatus("OLC Engine")).toBe("OLC Engine connected");
+    expect(slSIMessages.ready.connectedStatus("OLC Engine")).toBe("OLC Engine je povezan");
+    expect(enUSMessages.connectionError.statusLabel("OLC Engine")).toBe(
+      "OLC Engine is unavailable"
     );
-    expect(slSIMessages.connectionError.statusLabel("Open WebUI")).toBe(
-      "Storitev Open WebUI ni na voljo"
+    expect(slSIMessages.connectionError.statusLabel("OLC Engine")).toBe(
+      "Storitev OLC Engine ni na voljo"
     );
   });
 

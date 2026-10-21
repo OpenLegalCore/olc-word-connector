@@ -6,14 +6,14 @@
 OpenLegalCore Word Connector is a source-only beta. Choose the path that matches
 what you want to evaluate:
 
-| Path | Result | Word required | Live backend required |
-| --- | --- | --- | --- |
-| [A. Local UI preview](#path-a-local-ui-preview) | Synthetic task-pane states in a browser | no | no |
-| [B. Word for the web sideload](#path-b-word-for-the-web-development-sideload) | The real add-in loaded from local HTTPS | yes | only for live search |
-| [C. Connected deployment](#path-c-connected-self-hosted-deployment) | Live search through an operator gateway | yes | yes |
+| Path                                                                          | Result                                  | Word required | Live backend required |
+| ----------------------------------------------------------------------------- | --------------------------------------- | ------------- | --------------------- |
+| [A. Local UI preview](#path-a-local-ui-preview)                               | Synthetic task-pane states in a browser | no            | no                    |
+| [B. Word for the web sideload](#path-b-word-for-the-web-development-sideload) | The real add-in loaded from local HTTPS | yes           | only for live search  |
+| [C. Connected deployment](#path-c-connected-self-hosted-deployment)           | Live search through an operator gateway | yes           | yes                   |
 
 The repository does not include a one-click installer, AppSource listing,
-hosted OpenLegalCore service, legal database, Open WebUI or OLC Engine instance.
+hosted OpenLegalCore service, legal database or OLC Engine instance.
 A successful frontend build is only one part of a working deployment.
 
 ## Prerequisites
@@ -31,7 +31,7 @@ administrator can disable sideloading.
 
 Path C additionally requires:
 
-- a compatible Open WebUI and/or OLC Engine deployment;
+- a compatible OLC Engine deployment;
 - the expected legal-research model and legal-source corpus;
 - an HTTPS origin for the add-in;
 - a same-origin gateway that implements the connector contract; and
@@ -75,11 +75,11 @@ npm run verify:bundle
 
 These checks do not call a protected backend. Deployable outputs are:
 
-| Command | Output | Purpose |
-| --- | --- | --- |
-| `npm run build:dev` | `dist/dev/` | Local development build |
-| `npm run build:stage` | `dist/stage/` | Staging build and staging manifest |
-| `npm run build` | `dist/prod/` | Production-shaped build and reserved production manifest |
+| Command               | Output        | Purpose                                                  |
+| --------------------- | ------------- | -------------------------------------------------------- |
+| `npm run build:dev`   | `dist/dev/`   | Local development build                                  |
+| `npm run build:stage` | `dist/stage/` | Staging build and staging manifest                       |
+| `npm run build`       | `dist/prod/`  | Production-shaped build and reserved production manifest |
 
 Do not commit `dist/`. A passing build does not prove that identity, the
 gateway, a backend, legal-source coverage or the Word runtime works.
@@ -194,38 +194,26 @@ shapes, identity separation, model selection and live contract tests.
 Serve the static add-in and gateway from the same HTTPS origin. The browser
 uses only relative same-origin routes:
 
-| Provider | Connection check | Completion |
-| --- | --- | --- |
-| Open WebUI | `GET /api/models` | `POST /api/chat/completions` |
+| Provider   | Connection check | Completion                  |
+| ---------- | ---------------- | --------------------------- |
 | OLC Engine | `GET /v1/models` | `POST /v1/chat/completions` |
 
 The browser must not receive provider API keys, Cloudflare service-token
 headers, private backend origins or arbitrary user-configurable backend URLs.
 
-### 2. Configure the selected backend paths
+### 2. Configure the Engine path
 
 The checked-in Cloudflare Worker is a generic fail-closed gateway example. It
-expects both provider paths and all of its documented server-side values. An
-operator who needs only one provider should implement and test a deliberately
-reduced gateway instead of leaving dummy credentials or weakening validation.
+expects only the OLC Engine path and all documented server-side values. Do not
+leave dummy credentials or weaken validation.
 
 If Cloudflare is not your platform, implement the same narrow contract on your
 chosen server. The connector depends on the contract, not on Cloudflare.
 
-### 3. Verify the model IDs
+### 3. Verify the model ID
 
-OLC Engine must expose the exact fixed ID `lexai-engine-local`. The Open WebUI
-browser setting defaults to `olc-engine`; an operator can select another
-non-secret Open WebUI model ID before building:
-
-```bash
-OLC_WORD_MODEL_ID=partner-model:latest npm run build:stage
-```
-
-The accepted value is 1–200 characters, starts with an alphanumeric character,
-and otherwise uses only letters, numbers, `.`, `_`, `:`, `/`, `+` or `-`.
-It is embedded in the browser bundle and must never contain a credential. This
-setting does not change the Engine model.
+OLC Engine must expose the exact fixed ID `lexai-engine-local`. There is no
+build-time model override.
 
 ### 4. Configure a matching manifest
 
@@ -270,7 +258,7 @@ Sideload the exact hosted manifest into an authorized Word for the web test
 environment. A connected deployment is not accepted until a real walkthrough
 confirms:
 
-- both enabled provider choices connect to the intended backend;
+- the OLC Engine connection reaches the intended backend;
 - **No document context** sends no Word text;
 - **Selected text** sends only the selection captured when Search begins;
 - empty, oversized and unsupported selections fail before completion;
@@ -290,15 +278,15 @@ backend version, model and policy configuration used for acceptance.
 
 ## Common problems
 
-| Symptom | First check |
-| --- | --- |
-| `npm ci` fails | Node is `v24.x`, `package-lock.json` exists and registry access works |
-| Browser rejects localhost | Install the development certificate; never bypass a non-local TLS warning |
-| Add-in command is missing | The intended manifest is sideloaded and every manifest URL is reachable |
-| Provider fails immediately | The same origin exposes the exact route and configured model ID |
-| Word Web lost the add-in | The browser profile or cache changed; sideload the manifest again |
-| Session expired repeats | Complete sign-in in the opened tab, return to Word, then select Retry search |
-| Result lacks reliable sources | Stop relying on it and verify the authoritative source directly |
+| Symptom                       | First check                                                                  |
+| ----------------------------- | ---------------------------------------------------------------------------- |
+| `npm ci` fails                | Node is `v24.x`, `package-lock.json` exists and registry access works        |
+| Browser rejects localhost     | Install the development certificate; never bypass a non-local TLS warning    |
+| Add-in command is missing     | The intended manifest is sideloaded and every manifest URL is reachable      |
+| Provider fails immediately    | The same origin exposes the exact route and configured model ID              |
+| Word Web lost the add-in      | The browser profile or cache changed; sideload the manifest again            |
+| Session expired repeats       | Complete sign-in in the opened tab, return to Word, then select Retry search |
+| Result lacks reliable sources | Stop relying on it and verify the authoritative source directly              |
 
 See [Troubleshooting](TROUBLESHOOTING.md) for controlled recovery paths.
 
@@ -306,7 +294,6 @@ See [Troubleshooting](TROUBLESHOOTING.md) for controlled recovery paths.
 
 - [Sideload Office Add-ins to Office on the web](https://learn.microsoft.com/en-us/office/dev/add-ins/testing/sideload-office-add-ins-for-testing)
 - [Test and debug Office Add-ins on a non-local server](https://learn.microsoft.com/en-us/office/dev/add-ins/testing/test-debug-non-local-server)
-- [Open WebUI API endpoints](https://docs.openwebui.com/reference/api-endpoints/)
 - [Cloudflare Access service tokens](https://developers.cloudflare.com/cloudflare-one/access-controls/service-credentials/service-tokens/)
 
 Microsoft's current interface and tenant policy remain authoritative if labels

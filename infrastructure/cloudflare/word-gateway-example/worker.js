@@ -21,16 +21,8 @@ const SESSION_HTML = Object.freeze({
 });
 
 const ROUTES = new Map([
-  ["/api/models", { method: "GET", provider: "owui", responseType: "application/json" }],
-  [
-    "/api/chat/completions",
-    { method: "POST", provider: "owui", responseType: "text/event-stream" },
-  ],
-  ["/v1/models", { method: "GET", provider: "engine", responseType: "application/json" }],
-  [
-    "/v1/chat/completions",
-    { method: "POST", provider: "engine", responseType: "text/event-stream" },
-  ],
+  ["/v1/models", { method: "GET", responseType: "application/json" }],
+  ["/v1/chat/completions", { method: "POST", responseType: "text/event-stream" }],
 ]);
 
 function responseHeaders(contentType = "application/json; charset=utf-8") {
@@ -188,7 +180,6 @@ function exactSecret(value) {
 function configuredEnvironment(env) {
   if (
     !env ||
-    !exactSecret(env.OWUI_API_KEY) ||
     !exactSecret(env.ENGINE_API_KEY) ||
     !exactSecret(env.CF_ACCESS_CLIENT_ID) ||
     !exactSecret(env.CF_ACCESS_CLIENT_SECRET)
@@ -197,12 +188,11 @@ function configuredEnvironment(env) {
   }
 
   const publicHost = exactPublicHost(env.PUBLIC_HOST);
-  const owuiOrigin = exactHttpsOrigin(env.OWUI_ORIGIN);
   const engineOrigin = exactHttpsOrigin(env.ENGINE_ORIGIN);
-  if (!publicHost || !owuiOrigin || !engineOrigin) {
+  if (!publicHost || !engineOrigin) {
     return undefined;
   }
-  return { publicHost, owuiOrigin, engineOrigin };
+  return { publicHost, engineOrigin };
 }
 
 function upstreamHeaders(route, env) {
@@ -214,11 +204,7 @@ function upstreamHeaders(route, env) {
   if (route.method === "POST") {
     headers.set("Content-Type", "application/json");
   }
-  if (route.provider === "owui") {
-    headers.set("Authorization", `Bearer ${env.OWUI_API_KEY}`);
-  } else {
-    headers.set("Authorization", `Bearer ${env.ENGINE_API_KEY}`);
-  }
+  headers.set("Authorization", `Bearer ${env.ENGINE_API_KEY}`);
   return headers;
 }
 
@@ -473,8 +459,7 @@ export async function handleRequest(request, env, fetchImpl = fetch) {
     body = parsed.body;
   }
 
-  const base = route.provider === "owui" ? configuration.owuiOrigin : configuration.engineOrigin;
-  const upstreamUrl = new URL(url.pathname, base);
+  const upstreamUrl = new URL(url.pathname, configuration.engineOrigin);
   let upstream;
   try {
     upstream = await fetchImpl(

@@ -3,16 +3,15 @@ main = "worker.js"
 compatibility_date = "2026-08-30"
 workers_dev = false
 
-# Replace every example value before deployment. Keep OWUI_API_KEY,
-# ENGINE_API_KEY and the Cloudflare Access service-token values in Worker
+# Replace every example value before deployment. Keep ENGINE_API_KEY and the
+# Cloudflare Access service-token values in Worker
 # secrets; never add them to this file or to browser code.
 [vars]
 PUBLIC_HOST = "word.example.invalid"
-OWUI_ORIGIN = "https://open-webui.example.invalid"
 ENGINE_ORIGIN = "https://olc-engine.example.invalid"
 
 # Add explicit routes only after PUBLIC_HOST, DNS and TLS are configured.
 # Example:
 # [[routes]]
-# pattern = "word.example.org/api/*"
+# pattern = "word.example.org/v1/*"
 # zone_name = "example.org"

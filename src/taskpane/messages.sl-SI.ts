@@ -43,12 +43,11 @@ export const slSIMessages = {
   },
   providerSelection: {
     statusLabel: "Povezava z Wordom je pripravljena",
-    statusDetail: "IZBERITE STORITEV",
+    statusDetail: "ENGINE JE PRIPRAVLJEN",
     eyebrow: "ISKANJE PRAVNIH VIROV",
-    heading: "Izberite storitev za iskanje pravnih virov",
+    heading: "Povežite se z OLC Engine",
     description:
-      "Zaščitena seja brskalnika se lahko hkrati poveže le z eno storitvijo. V tem podoknu niso shranjene nobene poverilnice za storitev.",
-    useOpenWebUI: "Uporabi Open WebUI",
+      "Zaščitena seja brskalnika se poveže z OLC Engine. V tem podoknu niso shranjene nobene poverilnice za Engine.",
     useOlcEngine: "Uporabi OLC Engine",
     footerEyebrow: "MEJA DOSTOPA DO DOKUMENTA",
     footerMessage: "VSEBINA DOKUMENTA NI PREBRANA",
@@ -66,7 +65,6 @@ export const slSIMessages = {
   ready: {
     connectedStatus: (provider: string): string => `${provider} je povezan`,
     statusDetail: "POVEZANO",
-    changeProvider: "Spremeni",
     eyebrow: "ISKANJE PRAVNIH VIROV",
     heading: "Iskanje pravnih virov",
     description: "Zastavite vprašanje na podlagi slovenske zakonodaje in sodne prakse.",
@@ -97,7 +95,6 @@ export const slSIMessages = {
   },
   result: {
     statusLabel: "Odgovor je pripravljen",
-    changeProvider: "Spremeni",
     eyebrow: "ISKANJE PRAVNIH VIROV",
     heading: "Odgovor",
     usage: (input: number, output: number, total: number): string =>
@@ -118,8 +115,7 @@ export const slSIMessages = {
     statusLabel: "Iskanje se je varno ustavilo",
     eyebrow: "OBNOVITEV",
     heading: "Dokument je nespremenjen",
-    description:
-      "Ponovni poskus se izvede samo na vašo zahtevo. Samodejnega preklopa na drugo storitev ni.",
+    description: "Ponovni poskus se izvede samo na vašo zahtevo. Samodejnega ponavljanja ni.",
     noticeTitle: "Dokument ni bil spremenjen",
     noticeMessage: "Preverite storitev in vprašanje, nato ponovite iskanje.",
     retrySearch: "Ponovi iskanje",
@@ -148,10 +144,8 @@ export const slSIMessages = {
     statusLabel: (provider: string): string => `Storitev ${provider} ni na voljo`,
     eyebrow: "POVEZAVA S STORITVIJO",
     heading: "Preverjanje povezave ni uspelo",
-    description:
-      "Vsebina dokumenta ni bila prebrana. Storitev morate za ponovni poskus izbrati sami.",
+    description: "Vsebina dokumenta ni bila prebrana. Povezavo z OLC Engine morate ponoviti sami.",
     tryAgain: "Poskusi znova",
-    chooseService: "Izberi storitev",
     footerEyebrow: "MEJA DOSTOPA DO DOKUMENTA",
     footerMessage: "NESPREMENJENO",
   },

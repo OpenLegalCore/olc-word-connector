@@ -4,7 +4,7 @@
 [Namestitev](INSTALLATION.md) · [Odpravljanje težav](TROUBLESHOOTING.md)
 
 OpenLegalCore Word Connector v podokno Microsoft Worda prinaša osredotočen
-postopek iskanja po slovenskih pravnih virih. Izberete storitev, odločite se,
+postopek iskanja po slovenskih pravnih virih. Povežete se z OLC Engine, odločite se,
 ali se sme uporabiti izbrano besedilo iz Worda, zastavite pravno vprašanje ter
 pregledate odgovor in vire. Beta različica Wordovega dokumenta ne spreminja.
 
@@ -18,7 +18,7 @@ pregledate odgovor in vire. Beta različica Wordovega dokumenta ne spreminja.
 Potrebujete:
 
 - Word za splet z nameščenim ali stransko naloženim dodatkom;
-- dostop do poti Open WebUI ali OLC Engine, ki jo je nastavil upravljavec;
+- dostop do poti OLC Engine, ki jo je nastavil upravljavec;
 - morebitno prijavo v brskalniku, ki jo zahteva upravljavec; in
 - dovoljenje za pošiljanje vprašanja ter morebitnega izbranega besedila v to
   okolje.
@@ -30,7 +30,7 @@ dokumentom [Installation and deployment](INSTALLATION.md).
 ## Postopek na kratko
 
 1. Na Wordovem traku **Osnovno** odprite **Open OpenLegalCore**.
-2. Izberite **Uporabi Open WebUI** ali **Uporabi OLC Engine**.
+2. Izberite **Uporabi OLC Engine**.
 3. Izberite **Brez konteksta dokumenta** ali **Izbrano besedilo**.
 4. Vnesite pravno vprašanje in izberite **Išči pravne vire**.
 5. Odgovor preverite v navedenih virih.
@@ -58,29 +58,14 @@ Posnetki v tem priročniku so bili narejeni v zasebnem staging okolju. Vidna
 oznaka `STAGING` je namerna in ne pomeni, da repozitorij vključuje javno
 storitev. S klikom na predogled odprete sliko v polni velikosti.
 
-## 2. Izrecno izberite storitev
+## 2. Povežite se z OLC Engine
 
-Izberite eno od poti:
+Izberite **Uporabi OLC Engine**. Komponenta pred prikazom iskalnega obrazca
+preveri fiksni model `lexai-engine-local`. Nadomestnega ponudnika ni in iskanje
+se nikoli ne ponovi samodejno.
 
-| Izbira | Kaj uporabi komponenta |
-| --- | --- |
-| **Uporabi Open WebUI** | Nastavljeno združljivo končno točko Open WebUI |
-| **Uporabi OLC Engine** | Nastavljeno končno točko OLC Engine, združljivo z OpenAI |
-
-Komponenta pred prikazom iskalnega obrazca preveri izbrano storitev. Ponudnika
-ne zamenja samodejno, ob napaki ne poskusi druge poti in med ponudnikoma ne deli
-poverilnic.
-
-<p align="center">
-  <a href="assets/screenshots/v0.1/sl-SI/06-open-webui-sources-and-actions.png">
-    <img src="assets/screenshots/v0.1/sl-SI/06-open-webui-sources-and-actions.png" width="640" alt="Rezultat Open WebUI z viri in nadaljnjimi dejanji">
-  </a>
-</p>
-
-<p align="center"><sub>Obe poti ponudnikov uporabljata isti postopek pregleda in varovanja dokumenta.</sub></p>
-
-Če preverjanje povezave ne uspe, potrdite, da ste izbrali pravo storitev, in
-upravljavca okolja prosite, naj preveri pot, model in pravila dostopa.
+Če preverjanje povezave ne uspe, upravljavca okolja prosite, naj preveri
+same-origin pot `/v1/models`, model in pravilo dostopa.
 
 ## 3. Izberite kontekst dokumenta
 

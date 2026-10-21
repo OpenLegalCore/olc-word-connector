@@ -12,13 +12,11 @@ import {
   OpenAICompatibleAdapter,
   type OpenAICompatibleFetch,
 } from "../chat/OpenAICompatibleAdapter";
-import { OpenWebUIAdapter, type OpenWebUIFetch } from "../chat/OpenWebUIAdapter";
 import type { WordAdapter } from "../office/WordAdapter";
 import { applyDocumentLocale, messagesFor, type MessageCatalog, type UiLocale } from "./i18n";
 import { TaskPaneView } from "./TaskPaneView";
 import type { TaskPaneEnvironment, TaskPaneViewModel } from "./taskPaneViewModel";
 
-export const DEFAULT_WORD_MODEL_ID = "olc-engine";
 export const OLC_ENGINE_MODEL_ID = "lexai-engine-local";
 export const SECURE_SIGN_IN_PATH = "/api/session";
 export const LEGAL_QUESTION_PLACEHOLDER = messagesFor("en-US").ready.questionPlaceholder;
@@ -77,41 +75,29 @@ export function openSecureSignInWindow(
   }
 }
 
-export type RuntimeBackend = "open-webui" | "olc-engine";
+export type RuntimeBackend = "olc-engine";
 
 type RuntimeGateway = ChatGateway & { disconnect(): void };
 type CopyFeedback = "copied" | "failed";
 type SignInFeedback = "idle" | "opened" | "failed";
 
 export interface ProductionGateways {
-  readonly openWebUI: RuntimeGateway;
   readonly olcEngine: RuntimeGateway;
 }
 
 export interface ProductionGatewayDependencies {
   readonly fetch?: (input: string, init?: RequestInit) => Promise<Response>;
-  readonly uuidV4?: () => string;
   readonly initialLocale?: UiLocale;
-  readonly modelId?: string;
 }
 
 const backendLabels: Readonly<Record<RuntimeBackend, string>> = {
-  "open-webui": "Open WebUI",
   "olc-engine": "OLC Engine",
 };
 
 export function createSameOriginProductionGateways(
   dependencies: ProductionGatewayDependencies = {}
 ): ProductionGateways {
-  const modelId = dependencies.modelId ?? DEFAULT_WORD_MODEL_ID;
   return {
-    openWebUI: new OpenWebUIAdapter(
-      { transport: "same-origin", modelId },
-      {
-        fetch: dependencies.fetch as OpenWebUIFetch | undefined,
-        uuidV4: dependencies.uuidV4,
-      }
-    ),
     olcEngine: new OpenAICompatibleAdapter(
       { transport: "same-origin", modelId: OLC_ENGINE_MODEL_ID },
       { fetch: dependencies.fetch as OpenAICompatibleFetch | undefined }
@@ -136,14 +122,9 @@ function backendSelectionModel(
     description: messages.providerSelection.description,
     actions: [
       {
-        id: "select-open-webui",
-        label: messages.providerSelection.useOpenWebUI,
-        variant: "primary",
-      },
-      {
         id: "select-olc-engine",
         label: messages.providerSelection.useOlcEngine,
-        variant: "secondary",
+        variant: "primary",
       },
     ],
     footer: {
@@ -196,7 +177,6 @@ function readyModel(
       label: messages.ready.connectedStatus(backendLabels[backend]),
       detail: messages.ready.statusDetail,
       tone: "success",
-      action: { id: "change-backend", label: messages.ready.changeProvider, variant: "quiet" },
     },
     eyebrow: messages.ready.eyebrow,
     heading: messages.ready.heading,
@@ -284,11 +264,6 @@ function controllerModel(
         label: messages.result.statusLabel,
         detail: backendLabels[backend].toUpperCase(),
         tone: "success",
-        action: {
-          id: "change-backend",
-          label: messages.result.changeProvider,
-          variant: "quiet",
-        },
       },
       eyebrow: messages.result.eyebrow,
       heading: messages.result.heading,
@@ -471,15 +446,14 @@ export class ProductionTaskPaneRuntime {
     this.connectionAbort?.abort();
     void this.controller?.cancel();
     this.unsubscribe?.();
-    this.gateways.openWebUI.disconnect();
     this.gateways.olcEngine.disconnect();
     this.view.setActionHandler(undefined);
     this.view.configureLocale(this.locale);
     this.currentRender = undefined;
   }
 
-  private gateway(backend: RuntimeBackend): RuntimeGateway {
-    return backend === "open-webui" ? this.gateways.openWebUI : this.gateways.olcEngine;
+  private gateway(): RuntimeGateway {
+    return this.gateways.olcEngine;
   }
 
   private renderView(createModel: (messages: MessageCatalog) => TaskPaneViewModel): void {
@@ -693,14 +667,14 @@ export class ProductionTaskPaneRuntime {
     this.connectionAbort = new AbortController();
     this.renderView((messages) => connectingModel(messages, backend, this.environment));
     try {
-      await this.gateway(backend).checkConnection(this.connectionAbort.signal);
+      await this.gateway().checkConnection(this.connectionAbort.signal);
       if (connectionId !== this.connectionId) {
         return;
       }
       this.unsubscribe?.();
       this.selectedBackend = backend;
       this.signInFeedback = "idle";
-      this.controller = new TaskPaneController(this.word, this.gateway(backend));
+      this.controller = new TaskPaneController(this.word, this.gateway());
       this.unsubscribe = this.controller.subscribe((state) => this.renderControllerState(state));
     } catch (error) {
       if (connectionId !== this.connectionId) {
@@ -730,11 +704,6 @@ export class ProductionTaskPaneRuntime {
               id: `select-${backend}`,
               label: messages.connectionError.tryAgain,
               variant: "primary",
-            },
-            {
-              id: "change-backend",
-              label: messages.connectionError.chooseService,
-              variant: "secondary",
             },
           ],
           footer: {
@@ -794,28 +763,7 @@ export class ProductionTaskPaneRuntime {
     await this.controller.search(input);
   }
 
-  private resetToBackendSelection(): void {
-    this.resetCopyFeedback();
-    this.connectionId++;
-    this.connectionAbort?.abort();
-    this.connectionAbort = undefined;
-    void this.controller?.cancel();
-    this.unsubscribe?.();
-    this.unsubscribe = undefined;
-    if (this.selectedBackend) {
-      this.gateway(this.selectedBackend).disconnect();
-    }
-    this.selectedBackend = undefined;
-    this.controller = undefined;
-    this.lastInput = undefined;
-    this.renderView((messages) => backendSelectionModel(messages, this.environment));
-  }
-
   private async handleAction(actionId: string): Promise<void> {
-    if (actionId === "select-open-webui") {
-      await this.connect("open-webui");
-      return;
-    }
     if (actionId === "select-olc-engine") {
       await this.connect("olc-engine");
       return;
@@ -825,11 +773,6 @@ export class ProductionTaskPaneRuntime {
       this.connectionAbort?.abort();
       this.connectionAbort = undefined;
       this.renderView((messages) => backendSelectionModel(messages, this.environment));
-      return;
-    }
-    if (actionId === "change-backend") {
-      this.captureFormState();
-      this.resetToBackendSelection();
       return;
     }
     if (actionId === "search") {

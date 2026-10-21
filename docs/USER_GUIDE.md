@@ -4,7 +4,7 @@
 [Installation](INSTALLATION.md) · [Troubleshooting](TROUBLESHOOTING.md)
 
 OpenLegalCore Word Connector brings a focused Slovenian legal-source search
-workflow into a Microsoft Word task pane. You choose the service, decide
+workflow into a Microsoft Word task pane. You connect to OLC Engine, decide
 whether any selected Word text may be used, ask a legal question, and review an
 answer with sources. The beta does not change the Word document.
 
@@ -18,7 +18,7 @@ answer with sources. The beta does not change the Word document.
 You need:
 
 - Word for the web with the add-in installed or sideloaded;
-- access to an operator-configured Open WebUI or OLC Engine path;
+- access to an operator-configured OLC Engine path;
 - any browser sign-in required by that operator; and
 - permission to submit the question and any selected text to that deployment.
 
@@ -29,7 +29,7 @@ start with [Installation and deployment](INSTALLATION.md).
 ## The workflow at a glance
 
 1. Open **Open OpenLegalCore** from the Word Home ribbon.
-2. Choose **Use Open WebUI** or **Use OLC Engine**.
+2. Choose **Use OLC Engine**.
 3. Choose **No document context** or **Selected text**.
 4. Enter a legal question and select **Search legal sources**.
 5. Verify the answer against its cited sources.
@@ -56,29 +56,14 @@ The screenshots in this guide were captured against private staging. The
 visible `STAGING` label is intentional and does not imply that a public service
 is included. Select a preview to open its full-size image.
 
-## 2. Choose the service explicitly
+## 2. Connect to OLC Engine
 
-Select one provider path:
+Select **Use OLC Engine**. The connector checks the fixed `lexai-engine-local`
+model before showing the search form. It has no fallback backend and never
+retries automatically.
 
-| Choice | What the connector uses |
-| --- | --- |
-| **Use Open WebUI** | The configured Open WebUI compatibility endpoint |
-| **Use OLC Engine** | The configured OpenAI-compatible OLC Engine endpoint |
-
-The connector checks the selected service before showing the search form. It
-does not switch providers automatically, retry against the other provider or
-share one provider's credentials with the other.
-
-<p align="center">
-  <a href="assets/screenshots/v0.1/en-US/06-open-webui-sources-and-actions.png">
-    <img src="assets/screenshots/v0.1/en-US/06-open-webui-sources-and-actions.png" width="640" alt="Open WebUI result with sources and follow-up actions">
-  </a>
-</p>
-
-<p align="center"><sub>Both provider paths use the same review and document-safety workflow.</sub></p>
-
-If the connection check fails, confirm that you selected the intended service
-and ask the deployment operator to verify its route, model and access policy.
+If the connection check fails, ask the deployment operator to verify the
+same-origin `/v1/models` route, model and access policy.
 
 ## 3. Choose the document context
 

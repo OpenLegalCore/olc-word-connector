@@ -14,17 +14,17 @@ its security or document-safety boundaries.
 
 ## Start with the failing layer
 
-| Symptom | Most likely layer | First check |
-| --- | --- | --- |
-| Add-in or ribbon command is missing | Word registration / manifest | Correct XML manifest and permitted sideload method |
-| Task pane opens but never reaches the service chooser | Static hosting / JavaScript | Task-pane URL, HTTPS trust, browser console without sensitive data |
-| Connection check fails | Gateway / session / model discovery | Explicit provider, same-origin route, session and exact model ID |
-| Search starts but fails | Completion route / backend contract | Status code, content type, provider availability and response limits |
-| **Session expired** appears | Browser-facing identity | Complete secure sign-in, return to Word, select **Retry search** |
-| No useful source is returned | Backend corpus / retrieval | Refine the question and verify backend coverage |
-| Source text is visible but not clickable | Renderer URL policy | Exact HTTPS PISRS or sodnapraksa hostname |
-| **Selected text** is rejected | Word selection policy | Non-empty supported selection within one body or table cell |
-| Answer is visible but cannot be copied | Browser / host clipboard | Task-pane focus and clipboard permission |
+| Symptom                                               | Most likely layer                   | First check                                                          |
+| ----------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------- |
+| Add-in or ribbon command is missing                   | Word registration / manifest        | Correct XML manifest and permitted sideload method                   |
+| Task pane opens but never reaches the service chooser | Static hosting / JavaScript         | Task-pane URL, HTTPS trust, browser console without sensitive data   |
+| Connection check fails                                | Gateway / session / model discovery | Explicit provider, same-origin route, session and exact model ID     |
+| Search starts but fails                               | Completion route / backend contract | Status code, content type, provider availability and response limits |
+| **Session expired** appears                           | Browser-facing identity             | Complete secure sign-in, return to Word, select **Retry search**     |
+| No useful source is returned                          | Backend corpus / retrieval          | Refine the question and verify backend coverage                      |
+| Source text is visible but not clickable              | Renderer URL policy                 | Exact HTTPS PISRS or sodnapraksa hostname                            |
+| **Selected text** is rejected                         | Word selection policy               | Non-empty supported selection within one body or table cell          |
+| Answer is visible but cannot be copied                | Browser / host clipboard            | Task-pane focus and clipboard permission                             |
 
 A successful static build proves none of the gateway, identity, model, corpus or
 Word-runtime layers.
@@ -54,16 +54,13 @@ non-loopback host.
 ## The task pane loads but live search does not work
 
 The stock development server serves the frontend but does not implement the
-same-origin `/api/*` or `/v1/*` provider routes. It can validate loading, Office
+same-origin `/v1/*` Engine routes. It can validate loading, Office
 integration and UI behavior without providing a legal backend.
 
 For live search, confirm that the operator deployment includes:
 
 - the same HTTPS origin for task-pane assets and gateway routes;
-- `GET /api/models` and `POST /api/chat/completions` for Open WebUI, when
-  enabled;
-- `GET /v1/models` and `POST /v1/chat/completions` for OLC Engine, when
-  enabled;
+- `GET /v1/models` and `POST /v1/chat/completions` for OLC Engine;
 - the exact configured model ID; and
 - a valid browser-facing identity session.
 
@@ -76,15 +73,14 @@ provider's model-list route and exact model ID.
 
 Check, in order:
 
-1. the provider selected in the task pane;
+1. the OLC Engine connection selected in the task pane;
 2. whether the browser session is valid;
 3. whether the corresponding same-origin route exists;
 4. whether the route returns HTTP 200 with the expected JSON content type and
    shape; and
 5. whether the configured model ID appears exactly in `data[].id`.
 
-Select **Try again** only after correcting the cause. The connector never falls
-back from Open WebUI to OLC Engine or in the opposite direction.
+Select **Try again** only after correcting the cause. The connector has no fallback backend and never retries automatically.
 
 ## Session expired
 
@@ -104,26 +100,6 @@ connector preserves the selected provider, exact question and context mode. If
 If the identity page reports an invalid redirect URL, the operator must correct
 the identity application's allowed redirect/return configuration for the exact
 public origin and `/api/session` flow. Do not add a wildcard redirect.
-
-## Open WebUI is unavailable or rejects the request
-
-Verify the exact Open WebUI adapter profile:
-
-- `GET /api/models` returns JSON and includes the configured model;
-- `POST /api/chat/completions` accepts one user message, a fresh
-  `local:<UUIDv4>` chat ID and `stream: true`;
-- the completion response is `text/event-stream`;
-- the stream contains textual `choices[].delta.content` events; and
-- it ends with the required completion boundary.
-
-The browser must not hold the Open WebUI API key. In the reference topology,
-the gateway adds the Bearer credential server-side. A mismatched content type,
-malformed stream, missing completion boundary or oversized response fails
-closed.
-
-Compatibility is verified against the exact documented profile, not every Open
-WebUI version. Check release-specific behavior before upgrading an upstream
-deployment.
 
 ## OLC Engine is unavailable or rejects the request
 
@@ -146,16 +122,7 @@ are rejected.
 `MODEL_NOT_AVAILABLE` means that the configured model ID was not present in the
 selected provider's model list, or the selected route returned `404`.
 
-The Engine ID is fixed to `lexai-engine-local`. The default configurable Open
-WebUI build-time ID is `olc-engine`. If Open WebUI uses another ID, rebuild with
-an exact public identifier:
-
-```bash
-OLC_WORD_MODEL_ID=partner-model:latest npm run build:stage
-```
-
-Verify the resulting artifact and each provider's exact expected model. Never
-use a credential as a model ID.
+The Engine ID is fixed to `lexai-engine-local`; there is no build-time model override. Never use a credential as a model ID.
 
 ## Search returns no useful result
 
@@ -269,11 +236,11 @@ network failure.
 
 Key distinctions:
 
-| Manifest | Expected role |
-| --- | --- |
-| `manifest.xml` / `manifests/manifest.dev.xml` | Local development; `ReadWriteDocument` for the isolated development harness |
-| `manifests/manifest.stage.xml` | Inert example staging manifest; replace every `.example.invalid` URL before use |
-| `manifests/manifest.prod.xml` | Reserved production identity; this repository does not operate the referenced service |
+| Manifest                                      | Expected role                                                                         |
+| --------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `manifest.xml` / `manifests/manifest.dev.xml` | Local development; `ReadWriteDocument` for the isolated development harness           |
+| `manifests/manifest.stage.xml`                | Inert example staging manifest; replace every `.example.invalid` URL before use       |
+| `manifests/manifest.prod.xml`                 | Reserved production identity; this repository does not operate the referenced service |
 
 Staging and production manifests use `ReadDocument`. The active legal-source
 workflow does not mutate Word.
@@ -332,22 +299,22 @@ ad hoc server repair.
 
 The task pane exposes a content-free status code for controlled failures.
 
-| Code | Meaning | Safe next step |
-| --- | --- | --- |
-| `SESSION_EXPIRED` | Browser-facing protected session is no longer accepted | Secure sign-in, return to Word, explicit Retry |
-| `AUTH_REQUIRED` / `ACCESS_DENIED` | Direct credential or upstream authorization failed | Operator checks server-side identity; do not place keys in the browser |
-| `MODEL_NOT_AVAILABLE` | Exact model ID is absent or model route returned `404` | Compare build-time ID with `data[].id` |
-| `RATE_LIMITED` | Provider returned `429` | Wait according to operator policy; retry once explicitly |
-| `SERVICE_UNAVAILABLE` | Provider returned a server error | Check provider health; do not switch providers silently |
-| `NETWORK_ERROR` | Fetch failed before a valid response | Check HTTPS, DNS, route and gateway availability |
-| `TIMEOUT` | Bounded request expired | Check backend latency; retry explicitly after diagnosis |
-| `INVALID_RESPONSE` | Status, content type, structure, encoding or size violated the contract | Compare the response with the integration guide |
-| `EMPTY_RESPONSE` | Completion text was empty | Check model/backend behavior |
-| `NO_SELECTION` | Selected-text mode found no visible text | Select text and retry |
-| `SELECTION_TOO_LARGE` | Selection exceeded 20,000 characters | Reduce the selection |
-| `UNSUPPORTED_SELECTION` | Selection crossed an unsupported structure | Use plain body text or one table cell |
-| `WORD_READ_FAILED` | Word selection capture failed | Retry with a simple synthetic selection; report if repeatable |
-| `COMPLETION_FAILED` / `CONNECTION_FAILED` | Unexpected completion or connection failure | Capture only non-sensitive state and inspect the responsible layer |
+| Code                                      | Meaning                                                                 | Safe next step                                                         |
+| ----------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `SESSION_EXPIRED`                         | Browser-facing protected session is no longer accepted                  | Secure sign-in, return to Word, explicit Retry                         |
+| `AUTH_REQUIRED` / `ACCESS_DENIED`         | Direct credential or upstream authorization failed                      | Operator checks server-side identity; do not place keys in the browser |
+| `MODEL_NOT_AVAILABLE`                     | Exact model ID is absent or model route returned `404`                  | Compare build-time ID with `data[].id`                                 |
+| `RATE_LIMITED`                            | Provider returned `429`                                                 | Wait according to operator policy; retry once explicitly               |
+| `SERVICE_UNAVAILABLE`                     | Provider returned a server error                                        | Check provider health; do not switch providers silently                |
+| `NETWORK_ERROR`                           | Fetch failed before a valid response                                    | Check HTTPS, DNS, route and gateway availability                       |
+| `TIMEOUT`                                 | Bounded request expired                                                 | Check backend latency; retry explicitly after diagnosis                |
+| `INVALID_RESPONSE`                        | Status, content type, structure, encoding or size violated the contract | Compare the response with the integration guide                        |
+| `EMPTY_RESPONSE`                          | Completion text was empty                                               | Check model/backend behavior                                           |
+| `NO_SELECTION`                            | Selected-text mode found no visible text                                | Select text and retry                                                  |
+| `SELECTION_TOO_LARGE`                     | Selection exceeded 20,000 characters                                    | Reduce the selection                                                   |
+| `UNSUPPORTED_SELECTION`                   | Selection crossed an unsupported structure                              | Use plain body text or one table cell                                  |
+| `WORD_READ_FAILED`                        | Word selection capture failed                                           | Retry with a simple synthetic selection; report if repeatable          |
+| `COMPLETION_FAILED` / `CONNECTION_FAILED` | Unexpected completion or connection failure                             | Capture only non-sensitive state and inspect the responsible layer     |
 
 `CANCELLED` is normally an intentional transition back to ready state rather
 than a user-facing error.

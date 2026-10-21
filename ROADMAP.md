@@ -12,20 +12,19 @@ authoritative in
 
 ## Status vocabulary
 
-| Status | Meaning |
-| --- | --- |
-| **Current beta** | Implemented in `v0.1.0-beta.1` and subject to its documented limitations |
+| Status                  | Meaning                                                                                       |
+| ----------------------- | --------------------------------------------------------------------------------------------- |
+| **Current beta**        | Implemented in `v0.1.0-beta.1` and subject to its documented limitations                      |
 | **Validation priority** | Existing or proposed work that still needs bounded implementation or client-specific evidence |
-| **Exploration** | A product direction under consideration; no release or support commitment |
-| **Separate initiative** | Related OpenLegalCore work with its own architecture, evidence and release decision |
+| **Exploration**         | A product direction under consideration; no release or support commitment                     |
+| **Separate initiative** | Related OpenLegalCore work with its own architecture, evidence and release decision           |
 
 ## Current beta
 
 The first source-only beta is centered on:
 
 - Microsoft Word for the web;
-- Slovenian legislation and case-law research through an explicitly selected
-  Open WebUI or OLC Engine backend;
+- Slovenian legislation and case-law research through OLC Engine;
 - **No document context** or only the exact **Selected text**;
 - safely rendered answers and restricted legal-source links;
 - English and Slovenian task-pane interfaces; and
@@ -37,10 +36,10 @@ document-editing system.
 
 ## Validation priorities
 
-| Direction | Current boundary |
-| --- | --- |
-| Word for Windows | Not tested and not supported until a client-specific acceptance run passes |
-| Word for Mac | Not tested and not supported until a client-specific acceptance run passes |
+| Direction                                | Current boundary                                                                                      |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Word for Windows                         | Not tested and not supported until a client-specific acceptance run passes                            |
+| Word for Mac                             | Not tested and not supported until a client-specific acceptance run passes                            |
 | Persistent interface-language preference | The current language choice is runtime-only; persistence needs an explicit privacy and storage design |
 
 These items do not block the source-only Word Web beta unless a later release

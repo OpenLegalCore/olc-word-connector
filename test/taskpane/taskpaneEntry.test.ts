@@ -209,7 +209,7 @@ describe("production task-pane entry initialization", () => {
     expect(document.querySelectorAll('.olc-app[data-view-state="backend-selection"]')).toHaveLength(
       1
     );
-    expect(document.querySelectorAll('button[data-action-id^="select-"]')).toHaveLength(2);
+    expect(document.querySelectorAll('button[data-action-id^="select-"]')).toHaveLength(1);
     expect(wordRun).not.toHaveBeenCalled();
     expect(fetch).not.toHaveBeenCalled();
   });
@@ -238,7 +238,7 @@ describe("production task-pane entry initialization", () => {
       expect(document.querySelector(".olc-app")?.getAttribute("data-view-state")).toBe(
         "backend-selection"
       );
-      expect(document.body.textContent).toContain("Choose a legal source service");
+      expect(document.body.textContent).toContain("Connect to OLC Engine");
       expect(wordRun).not.toHaveBeenCalled();
       expect(fetch).not.toHaveBeenCalled();
     }

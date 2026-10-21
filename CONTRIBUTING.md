@@ -35,8 +35,8 @@ or marks beyond the descriptive use addressed in
 - Treat model output as untrusted text; never render it as model-provided HTML.
 - Keep provider credentials and private-origin credentials out of frontend
   source, bundles, manifests, URLs, browser storage, Office settings, and logs.
-- Keep provider selection explicit; do not add automatic fallback or credential
-  sharing.
+- Keep OLC Engine as the sole backend; do not add automatic retry, fallback or
+  credential sharing.
 - Cancellation, timeout, validation failure, session expiry, backend failure,
   and late responses must fail closed.
 
