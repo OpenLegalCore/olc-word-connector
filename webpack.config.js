@@ -165,6 +165,7 @@ async function webpackConfig(env, options) {
         ? ["./test/word-harness/wordHarness.ts", "./test/word-harness/taskpane.html"]
         : ["./src/taskpane/taskpane.ts", "./src/taskpane/taskpane.html"],
       commands: "./src/commands/commands.ts",
+      signin: "./src/taskpane/signin.ts",
     },
     output,
     resolve: {
@@ -184,6 +185,11 @@ async function webpackConfig(env, options) {
         filename: "commands.html",
         template: "./src/commands/commands.html",
         chunks: ["polyfill", "commands"],
+      }),
+      new HtmlWebpackPlugin({
+        filename: "signin.html",
+        template: "./src/taskpane/signin.html",
+        chunks: ["polyfill", "signin"],
       }),
     ],
     devServer,

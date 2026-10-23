@@ -1,8 +1,9 @@
 # OLC-72 explicit document proposal candidate
 
-Status: IN REVIEW, reviewed successor of `1d86fd7c21695730c64d8de91118c49e2a324eb6`.
+Status: IN REVIEW. The document profile was reviewed at `8d96dbf`; the local
+access-recovery follow-up is described in [its evidence and qualification record](WORD_WEB_ACCESS_RECOVERY.md).
 The owner confirmed that candidate's visual PASS; its CSS, assets and layout are
-unchanged. This review is authorized for push to draft PR #2, not deployment,
+unchanged. The 8d96dbf review was pushed to draft PR #2; its access follow-up is local, without deployment,
 merge or native Word acceptance. See [access recovery](WORD_WEB_ACCESS_RECOVERY.md)
 for the separate production-login blocker and reviewed implementation plan.
 

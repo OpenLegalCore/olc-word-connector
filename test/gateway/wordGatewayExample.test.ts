@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createHash } from "node:crypto";
+import { runInNewContext } from "node:vm";
 
 import { handleRequest } from "../../infrastructure/cloudflare/word-gateway-example/worker.js";
 
@@ -32,15 +34,15 @@ async function errorCode(result: Response): Promise<string> {
 const sessionCopy = {
   "en-US": [
     '<html lang="en-US">',
-    "<title>Sign-in complete</title>",
-    "<h1>Sign-in complete</h1>",
+    "<title>Sign-in return page</title>",
+    "<h1>Sign-in return page</h1>",
     "Return to Word, check the connection, review the form, then select “Send”.",
     "You can close this tab.",
   ],
   "sl-SI": [
     '<html lang="sl-SI">',
-    "<title>Prijava je končana</title>",
-    "<h1>Prijava je končana</h1>",
+    "<title>Povratna stran prijave</title>",
+    "<h1>Povratna stran prijave</h1>",
     "Vrnite se v Word, preverite povezavo in obrazec ter nato izberite »Pošlji«.",
     "Ta zavihek lahko zaprete.",
   ],
@@ -66,8 +68,11 @@ async function expectSessionPage(
   expect(result.headers.get("Referrer-Policy")).toBe("no-referrer");
   expect(result.headers.get("X-Content-Type-Options")).toBe("nosniff");
   expect(result.headers.get("Access-Control-Allow-Origin")).toBeNull();
+  const script = body.match(/<script>([\s\S]+?)<\/script>/)?.[1];
+  expect(script).toBeTruthy();
+  const digest = createHash("sha256").update(script!).digest("base64");
   expect(result.headers.get("Content-Security-Policy")).toBe(
-    "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    `default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; script-src https://appsforoffice.microsoft.com 'sha256-${digest}'`
   );
   for (const text of sessionCopy[expectedLocale]) {
     expect(body).toContain(text);
@@ -76,15 +81,35 @@ async function expectSessionPage(
   for (const text of sessionCopy[otherLocale]) {
     expect(body).not.toContain(text);
   }
-  expect(body).not.toMatch(
-    /<script|<form|https?:\/\/|synthetic-|OWUI_|ENGINE_|CF_ACCESS_|credential|exception/i
-  );
+  expect(body).not.toMatch(/<form|synthetic-|OWUI_|ENGINE_|CF_ACCESS_|credential|exception/i);
   expect(fetchMock).not.toHaveBeenCalled();
 }
 
 afterEach(() => vi.restoreAllMocks());
 
 describe("Word gateway example routing", () => {
+  it("sends only a same-origin, nonce-bound landing message, never an identity/token or provider call", async () => {
+    const fetch = vi.fn();
+    const page = await handleRequest(request("/api/session"), environment, fetch);
+    const script = (await page.text()).match(/<script>([\s\S]+?)<\/script>/)![1];
+    const messageParent = vi.fn();
+    for (const hash of ["", "#invalid", "#" + "ab".repeat(16)]) {
+      runInNewContext(script, {
+        location: { origin: publicOrigin, hash },
+        Office: {
+          onReady: async () => undefined,
+          context: { ui: { messageParent } },
+        },
+      });
+      await Promise.resolve();
+    }
+    expect(messageParent).toHaveBeenCalledTimes(1);
+    expect(messageParent).toHaveBeenCalledWith(
+      JSON.stringify({ type: "olc-word-session-landing", nonce: "ab".repeat(16) }),
+      { targetOrigin: publicOrigin }
+    );
+    expect(fetch).not.toHaveBeenCalled();
+  });
   it.each([
     ["GET", "/v1/models", "application/json", "olc-engine.example.invalid"],
     ["POST", "/v1/chat/completions", "text/event-stream", "olc-engine.example.invalid"],

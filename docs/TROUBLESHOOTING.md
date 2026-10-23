@@ -99,13 +99,19 @@ session expiry. See [Word Web access recovery](WORD_WEB_ACCESS_RECOVERY.md) for
 the read-only evidence, missing browser evidence and production remediation plan.
 
 1. Select **Open secure sign-in**.
-2. Complete the operator-provided browser login.
-3. Confirm that the sign-in landing reports completion.
+2. Complete the operator-provided login in the Office dialog.
+3. Treat its return only as a landing event; it does not prove pane cookie access.
 4. Return to Word.
 5. Select **Check connection** explicitly, review the form, then select **Send**.
 
 Sign-in completion does not automatically send the message again. Review the
 current message and displayed **Selected text** attachment before Send.
+
+When a dialog return is followed by another pane login challenge, the local
+candidate offers an explicit Storage Access API cookie-permission request.
+Denial/unsupported Word sandbox keeps the draft and points to a narrow managed
+browser exception. A grant still needs explicit checks of both protected route
+prefixes; never claim that the dialog or permission alone restored the session.
 
 If the identity page reports an invalid redirect URL, the operator must correct
 the identity application's allowed redirect/return configuration for the exact

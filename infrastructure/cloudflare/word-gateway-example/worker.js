@@ -4,18 +4,20 @@ const MAX_STREAM_RESPONSE_BYTES = 1024 * 1024;
 const GATEWAY_RESPONSE_MARKER = "1";
 const SESSION_PATH = "/api/session";
 const SESSION_CSP =
-  "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+  "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; script-src https://appsforoffice.microsoft.com 'sha256-R6h/OsApy/6RRqjK3PksSxHPKthLS/iu3I53MFc50os='";
+const SESSION_DIALOG_SCRIPT =
+  'if (/^#[a-f0-9]{32}$/.test(location.hash)) { Office.onReady().then(function () { Office.context.ui.messageParent(JSON.stringify({type:"olc-word-session-landing",nonce:location.hash.slice(1)}),{targetOrigin:location.origin}); }).catch(function () {}); }';
 const SESSION_HTML = Object.freeze({
   "en-US":
     '<!doctype html><html lang="en-US"><head><meta charset="UTF-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
-    "<title>Sign-in complete</title></head><body><main><h1>Sign-in complete</h1>" +
+    "<title>Sign-in return page</title></head><body><main><h1>Sign-in return page</h1>" +
     "<p>Return to Word, check the connection, review the form, then select “Send”.</p>" +
     "<p>You can close this tab.</p></main></body></html>",
   "sl-SI":
     '<!doctype html><html lang="sl-SI"><head><meta charset="UTF-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
-    "<title>Prijava je končana</title></head><body><main><h1>Prijava je končana</h1>" +
+    "<title>Povratna stran prijave</title></head><body><main><h1>Povratna stran prijave</h1>" +
     "<p>Vrnite se v Word, preverite povezavo in obrazec ter nato izberite »Pošlji«.</p>" +
     "<p>Ta zavihek lahko zaprete.</p></main></body></html>",
 });
@@ -46,7 +48,12 @@ function gatewayError(status, code, extraHeaders) {
 
 function sessionHeaders(contentType) {
   const headers = responseHeaders(contentType);
-  headers.set("Content-Security-Policy", SESSION_CSP);
+  headers.set(
+    "Content-Security-Policy",
+    contentType.startsWith("text/html")
+      ? SESSION_CSP
+      : "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+  );
   headers.set("Referrer-Policy", "no-referrer");
   return headers;
 }
@@ -104,7 +111,14 @@ function sessionResponse(request) {
     });
   }
   const locale = sessionLocale(request.headers.get("Accept-Language"));
-  return new Response(SESSION_HTML[locale], {
+  const html = SESSION_HTML[locale].replace(
+    "</body>",
+    '<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>' +
+      "<script>" +
+      SESSION_DIALOG_SCRIPT +
+      "</script></body>"
+  );
+  return new Response(html, {
     status: 200,
     headers: sessionHeaders("text/html; charset=UTF-8"),
   });

@@ -12,12 +12,10 @@ import { ChatGatewayError } from "../../src/chat/ChatGatewayError";
 import { WordAdapterError, type SelectionSnapshot } from "../../src/office/WordAdapter";
 import {
   createSameOriginProductionGateways,
+  createProductionTaskPaneRuntime,
   LEGAL_QUESTION_PLACEHOLDER,
   OLC_ENGINE_MODEL_ID,
-  openSecureSignInWindow,
   ProductionTaskPaneRuntime,
-  SECURE_SIGN_IN_PATH,
-  secureSignInUrlForOrigin,
   type ProductionGateways,
 } from "../../src/taskpane/ProductionTaskPaneRuntime";
 import type { UiLocale } from "../../src/taskpane/i18n";
@@ -142,7 +140,8 @@ function setup(
     completionError?: Error;
     pending?: boolean;
     clipboard?: Pick<Navigator["clipboard"], "writeText">;
-    openSignIn?: () => boolean;
+    openSignIn?: () =>
+      boolean | Promise<import("../../src/taskpane/OfficeSignInDialog").SignInOutcome>;
   } = {}
 ) {
   const word = new FakeWordAdapter(options.selection ?? SNAPSHOT);
@@ -176,6 +175,11 @@ async function waitForReady(): Promise<void> {
 }
 
 let activeRuntime: ProductionTaskPaneRuntime | undefined;
+const originalRequestStorageAccess = Object.getOwnPropertyDescriptor(
+  document,
+  "requestStorageAccess"
+);
+const originalHasStorageAccess = Object.getOwnPropertyDescriptor(document, "hasStorageAccess");
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="taskpane-root"></div>';
@@ -185,9 +189,142 @@ afterEach(() => {
   activeRuntime?.dispose();
   activeRuntime = undefined;
   vi.restoreAllMocks();
+  for (const [name, descriptor] of [
+    ["requestStorageAccess", originalRequestStorageAccess],
+    ["hasStorageAccess", originalHasStorageAccess],
+  ] as const) {
+    if (descriptor) Object.defineProperty(document, name, descriptor);
+    else Reflect.deleteProperty(document, name);
+  }
 });
 
 describe("production Engine-only task-pane runtime", () => {
+  it("reports dialog close/disconnection without claiming authentication, losing the draft or retrying", async () => {
+    const state = setup({ locale: "sl-SI", openSignIn: async () => "closed" as const });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    setQuestion("Sintetični vnos po zaprtem oknu.");
+    state.olcEngine.completionError = new ChatGatewayError("SESSION_EXPIRED");
+    click("send");
+    await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+    click("open-secure-sign-in");
+    await vi.waitFor(() =>
+      expect(root().textContent).toContain("Prijavno okno je zaprto ali prekinjeno")
+    );
+    expect(state.olcEngine.connectionChecks).toBe(1);
+    expect(state.olcEngine.requests).toHaveLength(1);
+    click("retry-search");
+    await waitForReady();
+    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+      "Sintetični vnos po zaprtem oknu."
+    );
+    expect(state.olcEngine.requests).toHaveLength(1);
+    expect(state.word.applyCalls).toHaveLength(0);
+  });
+  it.each([true, false])(
+    "checks both protected route prefixes from the pane only when its session landing is accepted: %s",
+    async (accepted) => {
+      const paths: string[] = [];
+      activeRuntime = createProductionTaskPaneRuntime(
+        root(),
+        new FakeWordAdapter(SNAPSHOT),
+        "STAGING",
+        new TaskPaneView(root()),
+        {
+          fetch: async (url) => {
+            paths.push(url);
+            return url === "/api/session"
+              ? new Response(null, {
+                  status: accepted ? 200 : 302,
+                  headers: { "Content-Type": "text/html", "X-OLC-Word-Gateway": "1" },
+                })
+              : new Response(
+                  JSON.stringify({ object: "list", data: [{ id: OLC_ENGINE_MODEL_ID }] }),
+                  { headers: { "Content-Type": "application/json" } }
+                );
+          },
+        }
+      );
+      activeRuntime.start();
+      await vi.waitFor(() => expect(viewState()).toBe(accepted ? "ready" : "session-expired"));
+      expect(paths).toEqual(accepted ? ["/api/session", "/v1/models"] : ["/api/session"]);
+    }
+  );
+
+  it.each(["granted", "denied", "unsupported"] as const)(
+    "preserves draft, locale and removed selection through dialog + %s pane-cookie access, never auto-resubmitting",
+    async (permission) => {
+      const request = vi.fn(async () => {
+        if (permission === "denied") throw new Error("blocked");
+      });
+      Object.defineProperty(document, "requestStorageAccess", {
+        configurable: true,
+        value: permission === "unsupported" ? undefined : request,
+      });
+      Object.defineProperty(document, "hasStorageAccess", {
+        configurable: true,
+        value: async () => true,
+      });
+      const state = setup({ locale: "sl-SI", openSignIn: async () => "completed" as const });
+      activeRuntime = state.runtime;
+      await waitForReady();
+      setQuestion("Ohranjen sintetični vnos.\nDruga vrstica.");
+      click("remove-selection");
+      state.olcEngine.completionError = new ChatGatewayError("SESSION_EXPIRED");
+      click("send");
+      await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+      click("open-secure-sign-in");
+      await vi.waitFor(() => expect(root().textContent).toContain("Prijavna stran je dosežena"));
+      expect(state.olcEngine.connectionChecks).toBe(1);
+      state.olcEngine.connectionError = new ChatGatewayError("SESSION_EXPIRED");
+      click("retry-search");
+      await vi.waitFor(() =>
+        expect(root().textContent).toContain("Dostop iz Word podokna je še zavrnjen")
+      );
+      click("allow-pane-cookies");
+      expect(request).toHaveBeenCalledTimes(permission === "unsupported" ? 0 : 1);
+      await vi.waitFor(() =>
+        expect(root().textContent).toContain(
+          permission === "granted"
+            ? "Dostop do piškotkov aplikacije je dovoljen"
+            : "Dostop do piškotkov aplikacije ni na voljo"
+        )
+      );
+      expect(state.olcEngine.connectionChecks).toBe(2);
+      expect(state.olcEngine.requests).toHaveLength(1);
+      state.olcEngine.connectionError = undefined;
+      click("retry-search");
+      await waitForReady();
+      expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+        "Ohranjen sintetični vnos.\nDruga vrstica."
+      );
+      expect(root().querySelector(".olc-selection-attachment")).toBeNull();
+      expect(document.documentElement.lang).toBe("sl-SI");
+      expect(state.olcEngine.requests).toHaveLength(1);
+      expect(state.word.applyCalls).toHaveLength(0);
+    }
+  );
+
+  it("ignores a late dialog completion after runtime disposal without a connection or submission", async () => {
+    let finish!: (value: "completed") => void;
+    const state = setup({
+      connectionError: new ChatGatewayError("SESSION_EXPIRED"),
+      openSignIn: () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    });
+    activeRuntime = state.runtime;
+    await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+    click("open-secure-sign-in");
+    state.runtime.dispose();
+    const before = root().innerHTML;
+    finish("completed");
+    await Promise.resolve();
+    expect(root().innerHTML).toBe(before);
+    expect(state.olcEngine.connectionChecks).toBe(1);
+    expect(state.olcEngine.requests).toHaveLength(0);
+  });
   it("previews an exact explicit proposal separately and applies it only through a localized click", async () => {
     const s = setup({ locale: "sl-SI" });
     activeRuntime = s.runtime;
@@ -518,36 +655,6 @@ describe("production Engine-only task-pane runtime", () => {
 });
 
 describe("secure same-origin composition", () => {
-  it("builds only the exact HTTPS sign-in URL", () => {
-    expect(secureSignInUrlForOrigin("https://word-staging.openlegalcore.org")).toBe(
-      `https://word-staging.openlegalcore.org${SECURE_SIGN_IN_PATH}`
-    );
-    for (const unsafe of [
-      "http://word-staging.openlegalcore.org",
-      "https://user@example.org",
-      "https://example.org:8443",
-      "https://example.org/path",
-    ]) {
-      expect(() => secureSignInUrlForOrigin(unsafe)).toThrow();
-    }
-  });
-
-  it("opens sign-in without an opener", () => {
-    const clickLink = vi
-      .spyOn(HTMLAnchorElement.prototype, "click")
-      .mockImplementation(() => undefined);
-    const popup = {
-      opener: window,
-      document,
-      close: vi.fn(),
-    } as unknown as Window;
-    const openWindow = vi.fn(() => popup);
-
-    expect(openSecureSignInWindow("https://word-staging.openlegalcore.org", openWindow)).toBe(true);
-    expect(popup.opener).toBeNull();
-    expect(clickLink).toHaveBeenCalledTimes(1);
-  });
-
   it("uses same-origin session credentials without exposing Engine or Access headers", async () => {
     const fetch = vi.fn(async (_input: string, _init?: RequestInit): Promise<Response> => {
       return new Response(JSON.stringify({ object: "list", data: [{ id: OLC_ENGINE_MODEL_ID }] }), {

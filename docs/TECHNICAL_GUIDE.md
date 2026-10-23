@@ -75,8 +75,12 @@ connector UI and `response_language`; it does not rewrite the question.
 The browser sends only same-origin credentials. Redirects, HTML and `401`
 become the legacy `SESSION_EXPIRED` code, displayed as **Access required**;
 these signals do not prove session expiry. Non-HTML `403` is `ACCESS_DENIED`.
-Sign-in uses `/api/session` and never auto-resubmits a question. The existing
-tab flow needs production Word Web qualification; see the
+Sign-in uses a same-origin Office Dialog bootstrap and `/api/session`, followed
+by explicit pane-context checks of both `/api/session` and `/v1/models`.
+Only an explicit user click can request app cookie permission through Storage
+Access API; neither a dialog message nor a cookie grant submits a question or
+proves a valid session. The new landing callback is a local Worker-example
+change, requiring a matched future delivery and production Word Web qualification; see the
 [access recovery evidence and plan](WORD_WEB_ACCESS_RECOVERY.md).
 
 Document-review JSON has the same bounded 1 MiB ceiling as the SSE wire, plus

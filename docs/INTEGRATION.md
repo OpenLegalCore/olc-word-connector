@@ -141,9 +141,16 @@ A redirect, HTML login response or `401` maps to legacy `SESSION_EXPIRED`
 (**Access required**); this does not prove expiry. Non-HTML `403` is
 `ACCESS_DENIED`. See the [Word Web recovery plan](WORD_WEB_ACCESS_RECOVERY.md)
 for the required production identity/cookie qualification.
-The task pane opens the fixed `/api/session` path in a separate disowned window.
-Completing sign-in never resubmits the message; the user explicitly checks the
-connection and returns to the form before sending.
+The local recovery candidate opens same-origin `signin.html` in an Office
+dialog, then the fixed `/api/session` landing. The Worker example's exact-CSP
+callback reports only a nonce-bound landing event. The pane checks the landing
+and model discovery separately on explicit recovery; no completion is sent.
+If the pane still cannot use the session, the user can explicitly request app
+cookie access via Storage Access API. A grant does not authenticate, retry or
+submit: another explicit connection check is required. Unsupported/denied grants
+retain the message and explain the narrow managed-browser fallback. Word sandbox,
+cookie/policy and real-browser qualification remain mandatory. This requires
+matching future frontend/Worker delivery; no live change was made here.
 
 Cancel, timeout and supersession abort the active fetch and invalidate its
 operation identity. Late deltas, resolution and rejection cannot become a

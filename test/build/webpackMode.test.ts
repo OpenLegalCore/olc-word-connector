@@ -368,12 +368,13 @@ describe("isolated hosted outputs", () => {
     for (const target of ["production", "staging"] as const) {
       const outputPath = outputPaths.get(target)!;
       const files = readdirSync(outputPath);
-      expect(files.filter((file) => file.endsWith(".js"))).toHaveLength(3);
+      expect(files.filter((file) => file.endsWith(".js"))).toHaveLength(4);
       expect(files.filter((file) => file.endsWith(".js"))).toEqual(
         expect.arrayContaining([
           expect.stringMatching(/^commands\.[a-f0-9]{20}\.js$/),
           expect.stringMatching(/^polyfill\.[a-f0-9]{20}\.js$/),
           expect.stringMatching(/^taskpane\.[a-f0-9]{20}\.js$/),
+          expect.stringMatching(/^signin\.[a-f0-9]{20}\.js$/),
         ])
       );
       expect(files.filter((file) => file.endsWith(".css"))).toEqual([
@@ -413,9 +414,9 @@ describe("isolated hosted outputs", () => {
 
   it("preserves source-map diagnostics for development and both harnesses", () => {
     const expectedMaps = {
-      development: ["commands.js.map", "polyfill.js.map", "taskpane.js.map"],
+      development: ["commands.js.map", "polyfill.js.map", "signin.js.map", "taskpane.js.map"],
       harness: ["harness.js.map"],
-      "word-harness": ["commands.js.map", "polyfill.js.map", "taskpane.js.map"],
+      "word-harness": ["commands.js.map", "polyfill.js.map", "signin.js.map", "taskpane.js.map"],
     } as const;
 
     for (const [target, maps] of Object.entries(expectedMaps)) {

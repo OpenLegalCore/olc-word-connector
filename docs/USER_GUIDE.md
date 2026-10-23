@@ -254,14 +254,22 @@ A plain/JSON access denial is reported separately. If recovery repeats, use
 the [Word Web diagnosis](WORD_WEB_ACCESS_RECOVERY.md), rather than repeating Send.
 
 1. Select **Open secure sign-in**.
-2. Complete the operator's sign-in in the newly opened browser tab.
-3. Wait for the confirmation that sign-in is complete, then close that tab.
+2. Complete the operator's sign-in in the Office dialog. Canceling it retains your message.
+3. The return page closes the dialog when its bound message is accepted. That
+   event alone does not prove that Word can use the session.
 4. Return to Word.
 5. Select **Check connection** explicitly, review the form, then select **Send**.
 
 The connector never retries automatically and has no fallback provider. Sign-in
 recovery does not send the previous message. Review the current message and
 selection attachment before explicitly selecting **Send**.
+
+If the dialog returns but the pane still needs access, **Allow app cookies in
+this pane** requests only app cookie access through the browser's Storage
+Access API. After a grant, select **Check connection** yourself. A grant is not
+authentication. If unavailable or denied, keep the draft and follow the
+operator's narrow app/team-domain cookie exception procedure; do not disable
+privacy globally. This local candidate still needs actual Word Web qualification.
 
 The repository controls only its post-login confirmation page. The external
 identity-provider or access page belongs to the deployment operator.

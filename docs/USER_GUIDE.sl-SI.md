@@ -256,14 +256,22 @@ prijavna preusmeritev. Zavrnjeni dostop z navadnim/JSON odzivom je prikazan loč
 ne ponavljajte oddaje sporočila.
 
 1. Izberite **Odpri varno prijavo**.
-2. V novem zavihku brskalnika dokončajte prijavo upravljavca.
-3. Počakajte na potrdilo, da je prijava končana, nato zavihek zaprite.
+2. V pogovornem oknu Office dokončajte prijavo upravljavca. Preklic ohrani vaš vnos.
+3. Povratna stran zapre okno ob sprejetem vezanem sporočilu. To še ne dokazuje,
+   da Word podokno lahko uporablja sejo.
 4. Vrnite se v Word.
 5. Izrecno izberite **Preveri povezavo**, preglejte obrazec in nato **Pošlji**.
 
 Komponenta zahteve nikoli ne ponovi samodejno in nima nadomestnega ponudnika.
 Obnova prijave ne pošlje prejšnjega sporočila. Pred izrecno izbiro **Pošlji**
 preglejte trenutno sporočilo in priponko izbora.
+
+Če se prijavno okno vrne, podokno pa še potrebuje dostop, **Dovoli piškotke
+aplikacije v podoknu** prek Storage Access API zahteva samo dostop do piškotkov
+aplikacije. Po dovoljenju sami izberite **Preveri povezavo**; dovoljenje še ni
+prijava. Ob nepodprtem ali zavrnjenem dostopu ohranite vnos in z upravljavcem
+preverite ozko izjemo za domeni aplikacije in Access ekipe. Ne izklapljajte
+zasebnosti brskalnika v celoti. Lokalni kandidat še potrebuje pravi Word Web sprejem.
 
 Repozitorij nadzoruje samo potrditveno stran po prijavi. Zunanja stran
 ponudnika identitete ali dostopa pripada upravljavcu okolja.

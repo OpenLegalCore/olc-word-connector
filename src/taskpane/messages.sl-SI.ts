@@ -131,12 +131,28 @@ export const slSIMessages = {
       "Zaščiteni dostop ni bil sprejet. Prijavite se in preverite povezavo. Vaš vnos je ohranjen; dokument ni bil spremenjen.",
     signInOpenedTitle: "Varna prijava je odprta",
     signInOpenedMessage:
-      "Dokončajte prijavo v novem zavihku, vrnite se v Word in preverite povezavo.",
+      "Dokončajte prijavo v pogovornem oknu Office in nato preverite povezavo iz tega podokna. Vaš vnos je ohranjen.",
     signInFailedTitle: "Varne prijave ni bilo mogoče odpreti",
     signInFailedMessage:
-      "Dovolite pojavna okna za to podokno in nato znova poskusite odpreti varno prijavo.",
+      "Prijavnega okna Office ni bilo mogoče odpreti ali vrniti. Preverite dovoljenje za pojavna okna in podporo Office Dialog. Vaš vnos je ohranjen.",
     retrySearch: "Preveri povezavo",
     openSecureSignIn: "Odpri varno prijavo",
+    completedTitle: "Prijavna stran je dosežena",
+    closedTitle: "Prijavno okno je zaprto ali prekinjeno",
+    closedMessage:
+      "Dostop še ni preverjen. Ohranite vnos in izrecno preverite povezavo ali znova odprite prijavo.",
+    completedMessage:
+      "Zdaj preverite povezavo v Wordu. Dosežena prijavna stran v pogovornem oknu še ne dokazuje dostopa iz tega podokna.",
+    paneRejectedTitle: "Dostop iz Word podokna je še zavrnjen",
+    paneRejectedMessage:
+      "Prijavno okno se je vrnilo, podokno pa še potrebuje dostop. Piškotki aplikacije so morda blokirani ali pravilnik zahteva prijavo. Zahtevate lahko dostop do piškotkov te aplikacije; če ga Word blokira, naj upravljavec preveri dokumentirano ozko izjemo brskalnika. Vaš vnos je ohranjen.",
+    allowPaneCookies: "Dovoli piškotke aplikacije v podoknu",
+    cookieGrantedTitle: "Dostop do piškotkov aplikacije je dovoljen",
+    cookieGrantedMessage:
+      "Izrecno preverite povezavo. Dovoljenje za piškotke še ne potrjuje veljavne seje; nič ni bilo poslano.",
+    cookieFailedTitle: "Dostop do piškotkov aplikacije ni na voljo",
+    cookieFailedMessage:
+      "Word, brskalnik ali vaša izbira dostopa niso dovolili. Ohranite vnos; upravljavec naj preveri nastavitve piškotkov in ozko izjemo za domeni aplikacije in Access ekipe. Ne izklapljajte zasebnosti brskalnika v celoti.",
     footerEyebrow: "MEJA DOSTOPA DO DOKUMENTA",
     footerMessage: "NESPREMENJENO",
   },

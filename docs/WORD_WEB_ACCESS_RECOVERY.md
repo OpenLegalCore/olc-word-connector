@@ -1,11 +1,136 @@
 # OLC-72 Word Web access recovery — reviewed plan
 
-Status: IN REVIEW, 2026-10-23. No Access, cookie, Worker, tunnel or Engine
-configuration is changed by this review. The owner-confirmed visual PASS is
+Status: LOCAL FOLLOW-UP IN REVIEW, based on `8d96dbf`, 2026-10-23. No live
+Access, cookie, Worker, tunnel or Engine configuration is changed. The owner-confirmed visual PASS is
 preserved. Word for Mac is backlog. Native Word document-write acceptance is
 still pending; synthetic tests are not a Word PASS.
 
-## Findings and evidence boundaries
+## Current read-only discovery
+
+The owner authorized only account application discovery with a mandatory
+server-side Word-domain filter. The Cloudflare OpenAPI confirms `domain`
+(string) and `exact` (boolean) on `GET /accounts/{account_id}/access/apps`.
+The executed request was account `82209a4cf04d77c6ca8cf2f9e6a81a40`,
+`domain=word-staging.openlegalcore.org`, `exact=false`, `page=1`, `per_page=100`.
+It succeeded with **count=0, total_count=0, total_pages=0**. No unfiltered
+account list or client-side filtering was used. No application or policy was
+read by guessing an ID.
+
+Eighteen existing sanitized local records plus OLC-72 comments yielded no
+frontend application ID. The known Engine-origin ID is a different boundary.
+Retained delivery evidence records Access 302 to
+`lexai-si.cloudflareaccess.com` on both `/api/session` and `/v1/models`.
+That historical HTTP evidence does not establish today's effective policy,
+cookie attributes or TTL. A zero result for the requested domain is not proof
+that a wildcard, alternate-domain destination or legacy zone application cannot
+cover it. The exact frontend app and effective policies remain a prerequisite
+for production acceptance. A separately requested equally filtered zone read
+can narrow the legacy-zone possibility without an account-wide list.
+
+| Frontend fact | Current conclusion |
+| --- | --- |
+| `/api/*` and `/v1/*` Worker routes | Both retained routes target the gateway; this is routing, not Access-policy proof |
+| Browser Access coverage of those paths | Historical 302 on both representative GETs; current effective app/policies unverified |
+| Browser application/policy session duration | Unknown; Engine-origin 24h must not be substituted |
+| SameSite, Secure, HttpOnly, cookie Path, binding cookie | Frontend settings and actual browser attributes unknown |
+| Owner's idle failure root cause | Unresolved; do not conflate expiry, denial, iframe cookies and diagnostic-client 1010 |
+
+## Implemented local recovery candidate
+
+Production composition now uses `OfficeSignInDialog`, not `window.open`.
+Its same-origin public `signin.html` bootstrap opens as a top-level Office
+dialog (`displayInIframe=false`), then navigates to the existing `/api/session`
+landing. A random 128-bit correlation nonce travels only in the fragment,
+never a credential or document text. The repository Worker example's landing
+returns a fixed Office message with that nonce; its script has an exact CSP
+hash, no unsafe-inline, and retains `frame-ancestors 'none'`. The API/Engine
+protection and task-pane hosting CSP are not loosened.
+
+Only exact same-origin, closed-shape, nonce-matching dialog messages are
+accepted. Duplicate opens, close, failure, a five-minute deadline, disposal and
+late-created dialogs are bounded/cleaned up. The return message means only
+**landing reached**, not authenticated identity or usable pane cookies. It
+never submits a message or automatically checks the connection.
+
+On startup and explicit **Check connection**, the actual pane separately GETs
+`/api/session` then `/v1/models`, with same-origin credentials, no-store and
+manual redirects. The landing must be HTTP 200 HTML with the existing gateway
+marker; its body is canceled without reading/logging it. A marked public
+landing is still not identity proof: effective Access policies must be checked.
+The model preflight still requires the exact model. A rejected landing stops
+before model discovery; neither request is a completion. The landing read has
+a 15-second timeout and suppresses even transport responses arriving after abort.
+
+If the dialog landing was reached but the pane still sees a login challenge,
+the pane exposes **Allow app cookies in this pane / Dovoli piškotke aplikacije
+v podoknu**. Only that explicit user gesture invokes
+`document.requestStorageAccess()` without options; it does not request other
+storage types, read cookie values or persist application data. A subsequent
+`hasStorageAccess()` must confirm the permission. A grant still requires an
+explicit connection check; there is no automatic request/replay.
+
+This is a real cookie-boundary mechanism, not a claim that Office Dialog fixes
+third-party cookies. Word's iframe sandbox/Permissions Policy, browser support,
+first-party login interaction and actual cookie attributes may prevent it.
+Unsupported API, denial or a missing grant gives an actionable failure while
+retaining the draft. Production qualification must verify the actual host
+permits `allow-storage-access-by-user-activation`, scripts and same-origin
+access where sandboxed. No parent-frame policy or browser setting is changed
+by this code. A narrow managed app/team-domain exception remains the documented
+fallback; a third-party-cookie-independent application session is still a
+separate architecture decision, not implemented here.
+
+The multiline draft, locale and removed-selection choice survive dialog,
+failed checks and granted/denied/unsupported cookie requests. Late events and
+pending callbacks after disposal cannot check or submit. Ready form layout,
+CSS, logo, selection/Send/Stop and Engine SSE/document behavior are unchanged.
+There are no browser Engine keys, service tokens, stored conversation or new
+authentication credentials.
+
+### Delivery boundary and actual Word checks still required
+
+This local candidate changes the Worker **example** landing as well as adding
+the frontend bootstrap. It is not the prior frontend-only 8d96dbf artifact and
+must not reuse that packet's checksums or no-Worker-change activation recipe.
+A future separately approved delivery must prepare/verify the backward-compatible
+landing callback Worker first, then its matching Pages artifact; preserve the
+current Pages/Worker rollback pair. Old frontends with no nonce keep the manual
+landing flow. If only the frontend changes against the old landing, the dialog
+cannot signal nonce completion; it must not be called successful. No live
+deployment or settings change is performed here.
+
+Still NOT_RUN: actual Word Web Dialog Origin messaging and fragment preservation
+through Access; idle/expiry and denied-policy cases; Storage Access grant,
+denial and Word sandbox behavior; real cookie send/blocked reasons on both API
+prefixes; preservation of a real draft and selected-text attachment throughout.
+Use provider-free GET checks only. No synthetic result is a Word PASS.
+
+### Local qualification
+
+Node 24.21.0, base `8d96dbfd86909f65c6b072e428937dc1d885a11c`, same dedicated
+`codex/olc-72-word-native-sse` branch. The full local Contributing command set
+passed: deterministic tests, typecheck, lint, exact CI formatting command,
+production audit (0 vulnerabilities), four official manifest validations,
+five builds and production bundle isolation. After distinguishing a closed or
+disconnected dialog from a successful landing, final full regression is
+**559 PASS / 1 protected live SKIP**, 32 passing files; typecheck, lint,
+production build/isolation and affected formatting also passed. The new
+bootstrap HTML was explicitly formatted/checked in addition to the existing
+CI pattern. There was no new dependency installation or remote CI run; the
+earlier CI success on 8d96dbf must not be claimed for this local successor.
+
+Tests cover same-origin/nonce/shape checks, duplicate dialog opens, close/error,
+deadline and late creation, dual-prefix read gating, canceled/late HTTP bodies,
+grant/denial/unsupported cookie APIs, and retained multiline draft/locale/removed
+selection with no automatic completion or Word write. Gateway tests execute the
+actual fixed landing script in isolation and verify its exact CSP hash; they do
+not contact identity or Engine. Accepted task-pane HTML/CSS, manifests, hosting
+CSP, icons, Engine transport, Word operations and dependency files are unchanged.
+`git diff --check` and changed local Markdown file links passed. Exact commands,
+exit codes, final Git identities and the sanitized API result are retained in
+the local handoff. The original user's checkout and both edits are preserved.
+
+## Historical findings — baseline 8d96dbf
 
 The current runtime opens `/api/session` with `window.open`, then requires the
 user to return and select **Check connection**. That check only reads
@@ -98,10 +223,9 @@ justifies extending sessions, changing policies or rotating credentials.
    Record real browser/Word build and actual network evidence. Until these
    checks pass, production login remains blocked.
 
-Implementation would affect the sign-in dependency in
-`ProductionTaskPaneRuntime`, its production Office composition, a minimal
-same-origin dialog start/return page and associated tests/docs. It requires a
-separately reviewed staging delivery; none is implemented or deployed here.
+The local follow-up above implements the bounded launcher, landing callback,
+dual-prefix checks and explicit cookie-permission branch of this plan. It still
+requires a separately reviewed staging delivery and real Word qualification.
 Changing the application session duration alone is not this plan.
 
 ### If third-party-cookie-independent access is required
@@ -128,3 +252,4 @@ managed-browser option above is the smaller deployment scope when acceptable.
 - [Cloudflare: Access cookies, durations and third-party cookie behavior](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/)
 - [Cloudflare: validate the Access JWT at the origin](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/)
 - [Cloudflare: error 1010](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-1xxx-errors/error-1010/)
+- [Storage Access API specification: cookie permission and sandbox constraints](https://privacycg.github.io/storage-access/)

@@ -8,13 +8,14 @@ const staticRequiredFiles = new Set([
   "commands.html",
   "manifest.xml",
   "taskpane.html",
+  "signin.html",
   "assets/icon-128.png",
   "assets/office/1.0.0.2/openlegalcore-mark-16.png",
   "assets/office/1.0.0.2/openlegalcore-mark-32.png",
   "assets/office/1.0.0.2/openlegalcore-mark-64.png",
   "assets/office/1.0.0.2/openlegalcore-mark-80.png",
 ]);
-const productionScript = /^(commands|polyfill|taskpane)\.[a-f0-9]{20}\.js$/;
+const productionScript = /^(commands|polyfill|taskpane|signin)\.[a-f0-9]{20}\.js$/;
 const productionLicense = /^taskpane\.[a-f0-9]{20}\.js\.LICENSE\.txt$/;
 const productionStyle = /^[a-f0-9]{20}\.css$/;
 const sourceMapReference = /sourceMappingURL\s*=/;
@@ -132,7 +133,7 @@ function assertExpectedOutputs(files, outputDirectory) {
     throw new Error(`Forbidden production source map: ${sourceMaps.join(", ")}`);
   }
 
-  for (const name of ["commands", "polyfill", "taskpane"]) {
+  for (const name of ["commands", "polyfill", "taskpane", "signin"]) {
     const scripts = relativeFiles.filter(
       (file) => productionScript.test(file) && file.startsWith(`${name}.`)
     );

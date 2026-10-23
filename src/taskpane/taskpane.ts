@@ -13,6 +13,7 @@ import {
 } from "./ProductionTaskPaneRuntime";
 import { applyDocumentLocale, messagesFor, resolveUiLocale, type UiLocale } from "./i18n";
 import { TaskPaneView } from "./TaskPaneView";
+import { OfficeSignInDialog } from "./OfficeSignInDialog";
 
 let productionWordAdapter: WordAdapter | undefined;
 let productionTaskPaneRuntime: ProductionTaskPaneRuntime | undefined;
@@ -104,7 +105,7 @@ function handleOfficeReady(info: { host: Office.HostType; platform: Office.Platf
       productionWordAdapter,
       environment,
       view,
-      { initialLocale: locale }
+      { initialLocale: locale, signIn: new OfficeSignInDialog(location.origin, Office.context.ui) }
     );
     productionTaskPaneRuntime.start();
     officeReadyHandled = true;

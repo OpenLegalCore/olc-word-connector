@@ -128,11 +128,28 @@ export const enUSMessages = {
       "Protected access was not accepted. Sign in and check the connection. Your message is retained; the document has not been changed.",
     signInOpenedTitle: "Secure sign-in opened",
     signInOpenedMessage:
-      "Complete sign-in in the new tab, return to Word, then check the connection.",
+      "Complete sign-in in the Office dialog, then check the connection from this pane. Your message is retained.",
     signInFailedTitle: "Secure sign-in could not open",
-    signInFailedMessage: "Allow pop-ups for this task pane, then try opening secure sign-in again.",
+    signInFailedMessage:
+      "Office sign-in could not open or return. Check popup permission and Office dialog support. Your message is retained.",
     retrySearch: "Check connection",
     openSecureSignIn: "Open secure sign-in",
+    completedTitle: "Sign-in landing reached",
+    closedTitle: "Sign-in dialog closed or disconnected",
+    closedMessage:
+      "Access has not been verified. Keep your message and check the connection explicitly, or open sign-in again.",
+    completedMessage:
+      "Now check the connection in Word. Reaching the dialog landing does not prove that this pane can use the session.",
+    paneRejectedTitle: "Word pane access still rejected",
+    paneRejectedMessage:
+      "The dialog returned, but this pane still needs access. App cookies may be blocked or policy may require sign-in. You can request cookie access for this app; if Word blocks it, ask the operator for the documented narrow browser exception. Your message is retained.",
+    allowPaneCookies: "Allow app cookies in this pane",
+    cookieGrantedTitle: "App cookie access allowed",
+    cookieGrantedMessage:
+      "Check the connection explicitly. Cookie permission alone does not establish a valid session; nothing was sent.",
+    cookieFailedTitle: "App cookie access unavailable",
+    cookieFailedMessage:
+      "Word, the browser, or your choice did not allow access. Keep your draft and ask the operator to check the app cookie settings and a narrow app/team-domain exception. Do not disable browser privacy globally.",
     footerEyebrow: "DOCUMENT BOUNDARY",
     footerMessage: "UNCHANGED",
   },

@@ -1,4 +1,4 @@
-/* global AbortController, Event, HTMLButtonElement, HTMLElement, HTMLInputElement, HTMLTextAreaElement, KeyboardEvent, Navigator, RequestInit, Response, URL, Window, clearTimeout, navigator, setTimeout, window */
+/* global AbortController, AbortSignal, Event, HTMLButtonElement, HTMLElement, HTMLInputElement, HTMLTextAreaElement, KeyboardEvent, Navigator, RequestInit, Response, clearTimeout, globalThis, navigator, setTimeout */
 
 import { TaskPaneController, type SearchInput } from "../app/TaskPaneController";
 import type { AppState } from "../app/state";
@@ -17,6 +17,12 @@ import {
 import { applyDocumentLocale, messagesFor, type MessageCatalog, type UiLocale } from "./i18n";
 import { TaskPaneView } from "./TaskPaneView";
 import type { TaskPaneEnvironment, TaskPaneViewModel } from "./taskPaneViewModel";
+import type { SecureSignIn, SignInOutcome } from "./OfficeSignInDialog";
+import {
+  checkProtectedSession,
+  canRequestPaneCookieAccess,
+  requestPaneCookieAccess,
+} from "./protectedSession";
 
 export const OLC_ENGINE_MODEL_ID = "lexai-engine-local";
 export const SECURE_SIGN_IN_PATH = "/api/session";
@@ -24,63 +30,19 @@ export const LEGAL_QUESTION_PLACEHOLDER = messagesFor("en-US").ready.questionPla
 
 const COPY_CONFIRMATION_DURATION_MS = 2_000;
 
-type WindowOpen = (url: string, target: string) => Window | null;
-
-export function secureSignInUrlForOrigin(origin: string): string {
-  let parsedOrigin: URL;
-  try {
-    parsedOrigin = new URL(origin);
-  } catch {
-    throw new Error("Invalid secure sign-in origin.");
-  }
-  if (
-    parsedOrigin.origin !== origin ||
-    parsedOrigin.protocol !== "https:" ||
-    parsedOrigin.username !== "" ||
-    parsedOrigin.password !== "" ||
-    parsedOrigin.port !== ""
-  ) {
-    throw new Error("Unsafe secure sign-in origin.");
-  }
-  return new URL(SECURE_SIGN_IN_PATH, parsedOrigin.origin).href;
-}
-
-export function openSecureSignInWindow(
-  origin: string,
-  openWindow: WindowOpen = (url, target) => window.open(url, target)
-): boolean {
-  let popup: Window | null = null;
-  try {
-    const targetUrl = secureSignInUrlForOrigin(origin);
-    popup = openWindow("", "_blank");
-    if (!popup) {
-      return false;
-    }
-    popup.opener = null;
-    const link = popup.document.createElement("a");
-    link.href = targetUrl;
-    link.target = "_self";
-    link.rel = "noopener noreferrer";
-    link.referrerPolicy = "no-referrer";
-    popup.document.documentElement.append(link);
-    link.click();
-    link.remove();
-    return true;
-  } catch {
-    try {
-      popup?.close();
-    } catch {
-      // A failed sign-in popup is reported in the task pane below.
-    }
-    return false;
-  }
-}
-
 export type RuntimeBackend = "olc-engine";
 
 type RuntimeGateway = ChatGateway & { disconnect(): void };
 type CopyFeedback = "copied" | "failed";
-type SignInFeedback = "idle" | "opened" | "failed";
+type SignInFeedback =
+  | "idle"
+  | "opened"
+  | "closed"
+  | "failed"
+  | "completed"
+  | "pane-rejected"
+  | "cookie-granted"
+  | "cookie-failed";
 
 export interface ProductionGateways {
   readonly olcEngine: RuntimeGateway;
@@ -89,6 +51,7 @@ export interface ProductionGateways {
 export interface ProductionGatewayDependencies {
   readonly fetch?: (input: string, init?: RequestInit) => Promise<Response>;
   readonly initialLocale?: UiLocale;
+  readonly signIn?: SecureSignIn;
 }
 
 const backendLabels: Readonly<Record<RuntimeBackend, string>> = {
@@ -377,7 +340,16 @@ function sessionExpiredModel(
   environment: TaskPaneEnvironment | undefined,
   signInFeedback: SignInFeedback
 ): TaskPaneViewModel {
-  const opened = signInFeedback === "opened";
+  const opened = signInFeedback !== "idle" && signInFeedback !== "failed";
+  const notices = {
+    closed: [messages.session.closedTitle, messages.session.closedMessage],
+    completed: [messages.session.completedTitle, messages.session.completedMessage],
+    "pane-rejected": [messages.session.paneRejectedTitle, messages.session.paneRejectedMessage],
+    "cookie-granted": [messages.session.cookieGrantedTitle, messages.session.cookieGrantedMessage],
+    "cookie-failed": [messages.session.cookieFailedTitle, messages.session.cookieFailedMessage],
+  };
+  const feedback =
+    signInFeedback in notices ? notices[signInFeedback as keyof typeof notices] : undefined;
   return {
     id: "session-expired",
     environment,
@@ -389,8 +361,9 @@ function sessionExpiredModel(
     eyebrow: messages.session.eyebrow,
     heading: messages.session.heading,
     description: messages.session.description,
-    notice:
-      signInFeedback === "opened"
+    notice: feedback
+      ? { title: feedback[0], message: feedback[1], tone: "warning", role: "status" }
+      : signInFeedback === "opened"
         ? {
             title: messages.session.signInOpenedTitle,
             message: messages.session.signInOpenedMessage,
@@ -413,6 +386,15 @@ function sessionExpiredModel(
             label: messages.session.openSecureSignIn,
             variant: "quiet",
           },
+          ...(signInFeedback === "pane-rejected" || signInFeedback === "cookie-failed"
+            ? [
+                {
+                  id: "allow-pane-cookies",
+                  label: messages.session.allowPaneCookies,
+                  variant: "secondary" as const,
+                },
+              ]
+            : []),
         ]
       : [
           {
@@ -439,6 +421,10 @@ export class ProductionTaskPaneRuntime {
   private selectionError?: WordAdapterErrorCode;
   private selectionRemoved = false;
   private signInFeedback: SignInFeedback = "idle";
+  private signInAttempt = 0;
+  private signInPending = false;
+  private signInLandingReached = false;
+  private cookieRequestPending = false;
   private copyFeedback?: CopyFeedback;
   private copyFeedbackTimeout?: ReturnType<typeof setTimeout>;
   private copyOperationId = 0;
@@ -477,9 +463,10 @@ export class ProductionTaskPaneRuntime {
     private readonly gateways: ProductionGateways,
     private readonly environment?: TaskPaneEnvironment,
     private readonly clipboard?: Pick<Navigator["clipboard"], "writeText">,
-    private readonly openSecureSignIn: () => boolean = () =>
-      openSecureSignInWindow(window.location.origin),
-    initialLocale: UiLocale = "en-US"
+    private readonly openSecureSignIn: () => boolean | Promise<SignInOutcome> = () => false,
+    initialLocale: UiLocale = "en-US",
+    private readonly closeSecureSignIn: () => void = () => undefined,
+    private readonly checkSession?: (signal?: AbortSignal) => Promise<void>
   ) {
     this.locale = initialLocale;
   }
@@ -501,6 +488,8 @@ export class ProductionTaskPaneRuntime {
 
   dispose(): void {
     this.disposed = true;
+    this.signInAttempt++;
+    this.closeSecureSignIn();
     this.signInFeedback = "idle";
     this.resetCopyFeedback();
     this.root.removeEventListener("input", this.formInputHandler);
@@ -733,18 +722,25 @@ export class ProductionTaskPaneRuntime {
   }
 
   private async connect(backend: RuntimeBackend): Promise<void> {
+    this.signInAttempt++;
+    this.closeSecureSignIn();
+    this.signInPending = false;
     const connectionId = ++this.connectionId;
     this.connectionAbort?.abort();
-    this.connectionAbort = new AbortController();
+    const abort = new AbortController();
+    this.connectionAbort = abort;
     this.renderView((messages) => connectingModel(messages, backend, this.environment));
     try {
-      await this.gateway().checkConnection(this.connectionAbort.signal);
+      await this.checkSession?.(abort.signal);
+      if (connectionId !== this.connectionId || this.disposed) return;
+      await this.gateway().checkConnection(abort.signal);
       if (connectionId !== this.connectionId) {
         return;
       }
       this.unsubscribe?.();
       this.controller?.dispose();
       this.signInFeedback = "idle";
+      this.signInLandingReached = false;
       this.controller = new TaskPaneController(this.word, this.gateway());
       this.unsubscribe = this.controller.subscribe((state) => this.renderControllerState(state));
       await this.startSelectionMonitoring();
@@ -754,9 +750,9 @@ export class ProductionTaskPaneRuntime {
       }
       const code = error instanceof ChatGatewayError ? error.code : "CONNECTION_FAILED";
       if (code === "SESSION_EXPIRED") {
-        this.signInFeedback = "idle";
+        this.signInFeedback = this.signInLandingReached ? "pane-rejected" : "idle";
         this.renderView((messages) =>
-          sessionExpiredModel(messages, backend, this.environment, "idle")
+          sessionExpiredModel(messages, backend, this.environment, this.signInFeedback)
         );
       } else {
         this.renderView((messages) => ({
@@ -946,22 +942,58 @@ export class ProductionTaskPaneRuntime {
       return;
     }
     if (actionId === "open-secure-sign-in") {
-      let opened = false;
+      if (this.signInPending) return;
+      const attempt = ++this.signInAttempt;
+      this.signInPending = true;
+      this.signInFeedback = "opened";
+      this.renderControllerState();
+      let outcome: boolean | SignInOutcome = false;
       try {
-        opened = this.openSecureSignIn();
+        const result = this.openSecureSignIn();
+        if (!this.controller)
+          this.renderView((messages) =>
+            sessionExpiredModel(messages, this.selectedBackend, this.environment, "opened")
+          );
+        outcome = await result;
       } catch {
-        opened = false;
+        outcome = false;
       }
-      if (this.disposed) {
+      if (this.disposed || attempt !== this.signInAttempt) {
         return;
       }
-      this.signInFeedback = opened ? "opened" : "failed";
+      this.signInPending = false;
+      this.signInLandingReached = outcome === "completed";
+      this.signInFeedback =
+        outcome === "completed"
+          ? "completed"
+          : outcome === "closed"
+            ? "closed"
+            : outcome === true
+              ? "opened"
+              : "failed";
       this.renderControllerState();
       if (!this.controller) {
         this.renderView((messages) =>
           sessionExpiredModel(messages, this.selectedBackend, this.environment, this.signInFeedback)
         );
       }
+      return;
+    }
+    if (actionId === "allow-pane-cookies") {
+      if (this.cookieRequestPending || !this.signInLandingReached) return;
+      this.cookieRequestPending = true;
+      const attempt = this.signInAttempt;
+      const granted =
+        canRequestPaneCookieAccess(this.root.ownerDocument) &&
+        (await requestPaneCookieAccess(this.root.ownerDocument));
+      this.cookieRequestPending = false;
+      if (this.disposed || attempt !== this.signInAttempt) return;
+      this.signInFeedback = granted ? "cookie-granted" : "cookie-failed";
+      this.renderControllerState();
+      if (!this.controller)
+        this.renderView((messages) =>
+          sessionExpiredModel(messages, this.selectedBackend, this.environment, this.signInFeedback)
+        );
       return;
     }
     if (actionId === "retry-search" && !this.controller) {
@@ -979,6 +1011,7 @@ export class ProductionTaskPaneRuntime {
     ) {
       this.unsubscribe?.();
       this.unsubscribe = undefined;
+      this.controller.dispose();
       this.controller = undefined;
       await this.connect(this.selectedBackend);
     } else if (actionId === "cancel") {
@@ -1029,7 +1062,13 @@ export function createProductionTaskPaneRuntime(
     createSameOriginProductionGateways(dependencies),
     environment,
     clipboard,
-    undefined,
-    dependencies.initialLocale
+    () => dependencies.signIn?.open() ?? false,
+    dependencies.initialLocale,
+    () => dependencies.signIn?.close(),
+    (signal) =>
+      checkProtectedSession(
+        dependencies.fetch ?? ((url, init) => globalThis.fetch(url, init)),
+        signal
+      )
   );
 }
