@@ -596,6 +596,7 @@ describe("Cloudflare Pages static policy", () => {
     expect(frameAncestors?.split(/\s+/)).toEqual([
       "'self'",
       "https://word.cloud.microsoft",
+      "https://inclient.store.office.com",
       "https://*.officeapps.live.com",
     ]);
     for (const forbiddenAncestor of [

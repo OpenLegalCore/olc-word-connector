@@ -39,6 +39,13 @@ Word-runtime layers.
 5. For the verified development path, follow
    [Word for the web sideload](INSTALLATION.md#path-b-word-for-the-web-development-sideload).
 
+For a hosted Word for the web build, the task-pane response must retain a
+`frame-ancestors` policy that permits the observed Word host chain. The
+maintained Cloudflare policy names `word.cloud.microsoft` and
+`inclient.store.office.com` explicitly and permits the regional
+`*.officeapps.live.com` editor hosts. Do not remove the directive or replace
+these bounded sources with a general wildcard.
+
 The root `manifest.xml` expects the development task pane at
 `https://localhost:3002`. Start that server with:
 
