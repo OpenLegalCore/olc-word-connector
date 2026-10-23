@@ -100,7 +100,11 @@ export function createSameOriginProductionGateways(
 ): ProductionGateways {
   return {
     olcEngine: new OpenAICompatibleAdapter(
-      { transport: "same-origin", modelId: OLC_ENGINE_MODEL_ID },
+      {
+        transport: "same-origin",
+        modelId: OLC_ENGINE_MODEL_ID,
+        responseProfile: "document-review",
+      },
       { fetch: dependencies.fetch as OpenAICompatibleFetch | undefined }
     ),
   };
@@ -273,6 +277,7 @@ function controllerModel(
       eyebrow: messages.result.eyebrow,
       heading: messages.result.heading,
       legalAnswer: state.result.text,
+      legalSources: state.result.sources,
       legalAnswerMeta: usageText,
       proposal: proposal
         ? {

@@ -111,7 +111,7 @@ The current connector supports only the documented direct OLC Engine transport. 
 | Multi-document workflow                            | `NOT INCLUDED` | No document set, workspace or background indexing exists                                                                    |
 | Safe answer and source rendering                   | `VERIFIED`     | Model HTML is not executed; only a narrow formatting subset and exact approved HTTPS source hosts are activated             |
 | Copy answer                                        | `VERIFIED`     | Copies through the clipboard boundary and does not mutate Word                                                              |
-| Explicit proposal replacement/insertion             | `LOCAL CANDIDATE` | Guarded user-clicked plain-text writes; basic Engine returns no proposal; native formatting and Undo/Redo not yet verified; see [proposal contract](WORD_DOCUMENT_PROPOSAL.md) |
+| Explicit proposal replacement/insertion             | `LOCAL CANDIDATE` | Document-review adapter integrated with guarded user-clicked plain-text writes; not deployed; native formatting and Undo/Redo not yet verified; see [proposal contract](WORD_DOCUMENT_PROPOSAL.md) |
 | Drafting, redlining and tracked changes            | `ROADMAP`      | Require a separate product contract and cross-client evidence                                                               |
 
 ## Request and response limits

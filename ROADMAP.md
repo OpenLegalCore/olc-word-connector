@@ -5,8 +5,8 @@ verifiable Slovenian legal-source research beside a document, with explicit
 control over document context and no document mutation.
 
 The owner-approved OLC-72 local [explicit proposal candidate](docs/WORD_DOCUMENT_PROPOSAL.md)
-now prepares guarded replacement and cursor insertion. Its basic Engine path
-still returns no proposal, and native Word formatting and Undo/Redo evidence
+now integrates the documented Engine profile and guarded replacement/cursor
+insertion. Native Word formatting and Undo/Redo evidence
 remain pending. This is not a released or deployed editing capability.
 
 This roadmap shows intended directions, not delivery dates or contractual

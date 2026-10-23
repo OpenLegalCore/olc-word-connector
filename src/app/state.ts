@@ -39,6 +39,8 @@ export function copyCompletionRequest(request: CompletionRequest): CompletionReq
 export function copyCompletionResult(result: CompletionResult): CompletionResult {
   return {
     text: result.text,
+    sources: result.sources?.map((source) => ({ ...source })),
+    rawResponse: result.rawResponse,
     model: result.model,
     usage:
       result.usage === null

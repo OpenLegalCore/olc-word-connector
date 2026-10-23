@@ -13,6 +13,28 @@ function createSafeLegalAnswer(document: Document, text: string): HTMLElement {
 }
 
 describe("safe legal answer rendering", () => {
+  it("keeps structured explanation and sources separate without inventing links or interpreting source HTML", () => {
+    const rendered = renderSafeLegalAnswer(
+      document,
+      "Explanation\nSources\nStill explanation",
+      { answerAriaLabel: "Answer", sourcesHeading: "Sources" },
+      [
+        { label: "Z1", title: "<img src=x>", locator: "fixture", url: "" },
+        { label: "S1", title: "Safe source", locator: "fixture", url: "https://pisrs.si/test" },
+        {
+          label: "L1",
+          title: "Disallowed URL",
+          locator: "fixture",
+          url: "https://evil.example/test",
+        },
+      ]
+    );
+    expect(rendered.querySelector(".olc-legal-answer")?.textContent).toContain("Still explanation");
+    expect(rendered.querySelector(".olc-legal-sources")?.textContent).toContain("<img src=x>");
+    expect(rendered.querySelectorAll("img")).toHaveLength(0);
+    expect(rendered.querySelectorAll("a")).toHaveLength(1);
+    expect(rendered.querySelector("a")?.href).toBe("https://pisrs.si/test");
+  });
   it("localizes only renderer chrome and leaves provider text and links unchanged", () => {
     const text = "Exact provider answer [Z1]\n\nSources\n- [Z1] [Act](https://pisrs.si/source)";
     const rendered = renderSafeLegalAnswer(document, text, {

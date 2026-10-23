@@ -1,4 +1,4 @@
-/* global DOMParser, Office, OfficeExtension, Word */
+/* global DOMParser, Office, OfficeExtension, TextEncoder, Word */
 
 import { WordAdapterError, type SelectionSnapshot, type WordAdapter } from "./WordAdapter";
 import { validateInsertionCursor, validateSelection, type SelectionFacts } from "./selectionPolicy";
@@ -120,7 +120,12 @@ function snapshotsMatch(left: SelectionSnapshot, right: SelectionSnapshot): bool
 }
 
 function validateWriteText(text: string): void {
-  if (typeof text !== "string" || !text.trim() || text.includes("\u0000") || text.length > 32_768) {
+  if (
+    typeof text !== "string" ||
+    !text.trim() ||
+    text.includes("\u0000") ||
+    new TextEncoder().encode(text).byteLength > 32_768
+  ) {
     throw new WordAdapterError("WORD_WRITE_FAILED");
   }
 }

@@ -3,6 +3,14 @@ import { OfficeWordAdapter } from "../../src/office/OfficeWordAdapter";
 import { FakeOfficeWordRuntime } from "./FakeOfficeWordRuntime";
 
 describe("production document writer boundaries", () => {
+  it("rejects an oversized UTF-8 proposal before either write operation", async () => {
+    const host = new FakeOfficeWordRuntime({ text: "Original" });
+    const adapter = new OfficeWordAdapter(host);
+    const snapshot = await adapter.captureSelection();
+    await expect(adapter.applyReplacement(snapshot, "ž".repeat(16_385))).rejects.toBeDefined();
+    await expect(adapter.insertAtCursor("ž".repeat(16_385))).rejects.toBeDefined();
+    expect(host.mutationCount).toBe(0);
+  });
   it("replaces only the retained original range and consumes it", async () => {
     const host = new FakeOfficeWordRuntime({ text: "Original", locationId: "original" });
     const adapter = new OfficeWordAdapter(host);

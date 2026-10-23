@@ -91,7 +91,7 @@ See the [English user guide](docs/USER_GUIDE.md),
   the message and quoted selection remain separate fields.
 - The deployed basic answer flow does not edit Word. A local OLC-72 candidate
   adds explicit proposal preview and guarded, user-clicked replacement/insertion;
-  [Engine integration and native Word qualification are pending](docs/WORD_DOCUMENT_PROPOSAL.md).
+  [the documented Engine profile is integrated locally; native Word qualification and activation remain pending](docs/WORD_DOCUMENT_PROPOSAL.md).
   Redlining and tracked-change management are not included.
 - Cancellation, timeout, session expiry, backend failure and late responses
   leave the Word document unchanged.

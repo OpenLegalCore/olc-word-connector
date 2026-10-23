@@ -7,7 +7,8 @@ OpenLegalCore Word Connector lets you ask a question or write an instruction
 beside your document. It checks OLC Engine automatically and shows any selected
 Word text as a removable attachment. Review the answer and any sources it
 contains. Receiving an answer does not change the Word document. The current
-basic Engine path has no document proposal. The local OLC-72 candidate previews
+deployed basic Engine path has no document proposal. The local OLC-72 candidate uses
+Engine's documented document-review profile and previews
 an explicitly supplied proposal separately, then offers **Replace selected
 text** and **Insert at cursor** only after success and only on your click.
 Replacement requires the unchanged original selection; insertion requires an
@@ -313,7 +314,7 @@ Current boundaries:
 - The repository does not include a hosted service, backend, legal database or
   AppSource distribution.
 - Whole-document and multi-document context are not included.
-- Live Engine proposal integration and native Word write qualification remain
+- Activation and native Word write qualification remain
   pending; redlining and tracked-change management are not included.
 - Broader EU sources, literature and internal firm sources are roadmap items.
 - The connector does not guarantee backend coverage or legal correctness.

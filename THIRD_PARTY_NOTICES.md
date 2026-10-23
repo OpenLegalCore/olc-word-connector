@@ -111,6 +111,15 @@ Source: [regenerator-runtime 0.14.1 license](https://github.com/facebook/regener
 
 ## Build and development dependencies
 
+### Separate OLC Engine service
+
+OLC Engine is not vendored or bundled. Its proprietary implementation and Python
+reference adapter are not redistributed by this Word change. The independently
+implemented Word client follows the pinned documented document-review interface;
+[protocol provenance](docs/UPSTREAM_SOURCES.md#engine-protocol-compatibility-olc-72)
+records its exact source references and the license distinction. This is not an
+Apache-2.0 license grant for Engine.
+
 The lockfile contains development and build tools under their own licenses.
 They are used to generate and verify the project but are not presented here as
 production browser components. The scaffold generator is recorded separately

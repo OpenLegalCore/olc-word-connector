@@ -9,6 +9,8 @@ import type {
 import { ChatGatewayError, type ChatGatewayErrorCode } from "./ChatGatewayError";
 import { parseOpenAICompatibleCompletionStream } from "./openAICompatibleStream";
 import { serializePromptEnvelope } from "./promptEnvelope";
+import { adaptDocumentReview, documentReviewBody } from "./documentReview";
+import { DocumentReviewExplanationStream } from "./documentReviewStream";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 120_000;
 const DEFAULT_MAX_RESPONSE_BYTES = 1024 * 1024;
@@ -19,6 +21,7 @@ const RAW_USERINFO_AUTHORITY = /^[a-z][a-z0-9+.-]*:\/\/[^/?#]*@/i;
 const WILDCARD_HOSTS = new Set(["0.0.0.0", "[::]", "*"]);
 
 export interface OpenAICompatibleAdapterConfig {
+  readonly responseProfile?: "document-review";
   readonly baseUrl?: string;
   readonly modelId: string;
   readonly credential?: string;
@@ -171,6 +174,7 @@ function statusError(status: number): ChatGatewayError {
 
 export class OpenAICompatibleAdapter implements ChatGateway {
   private readonly baseUrl: string;
+  private readonly documentReview: boolean;
   private readonly modelId: string;
   private credential: string | undefined;
   private readonly requestCredentials: RequestCredentials;
@@ -185,6 +189,7 @@ export class OpenAICompatibleAdapter implements ChatGateway {
     config: OpenAICompatibleAdapterConfig,
     dependencies: OpenAICompatibleAdapterDependencies = {}
   ) {
+    this.documentReview = config.responseProfile === "document-review";
     const transport = config.transport ?? "direct";
     if (transport === "same-origin") {
       if (config.baseUrl !== undefined || config.credential !== undefined) {
@@ -243,18 +248,22 @@ export class OpenAICompatibleAdapter implements ChatGateway {
     observer?: CompletionObserver
   ): Promise<CompletionResult> {
     return this.withRequestBoundary(signal, async (requestSignal) => {
-      const body = JSON.stringify({
-        model: this.modelId,
-        stream: true,
-        stream_options: { include_usage: true },
-        response_language: request.uiLocale === "sl-SI" ? "sl" : "en",
-        messages: [
-          {
-            role: "user",
-            content: serializePromptEnvelope(request),
-          },
-        ],
-      });
+      const body = JSON.stringify(
+        this.documentReview
+          ? documentReviewBody(request, this.modelId)
+          : {
+              model: this.modelId,
+              stream: true,
+              stream_options: { include_usage: true },
+              response_language: request.uiLocale === "sl-SI" ? "sl" : "en",
+              messages: [
+                {
+                  role: "user",
+                  content: serializePromptEnvelope(request),
+                },
+              ],
+            }
+      );
       const response = await this.fetchImpl(`${this.baseUrl}/v1/chat/completions`, {
         method: "POST",
         headers: this.headers("text/event-stream", "application/json"),
@@ -276,14 +285,32 @@ export class OpenAICompatibleAdapter implements ChatGateway {
         this.cancelResponseBody(response);
         throw new ChatGatewayError("INVALID_RESPONSE");
       }
+      const explanationStream = this.documentReview
+        ? new DocumentReviewExplanationStream()
+        : undefined;
       const result = await parseOpenAICompatibleCompletionStream(
         reader,
         this.modelId,
         requestSignal,
-        observer,
+        explanationStream
+          ? {
+              onTextDelta: (fragment) => {
+                const delta = explanationStream.feed(fragment);
+                if (delta) observer?.onTextDelta?.(delta);
+              },
+            }
+          : observer,
         this.maxResponseChars,
         this.maxResponseBytes
       );
+      if (explanationStream) {
+        explanationStream.finish();
+        return {
+          ...adaptDocumentReview(result.text, request.uiLocale),
+          model: this.modelId,
+          usage: result.usage,
+        };
+      }
       return { text: result.text, model: this.modelId, usage: result.usage };
     });
   }

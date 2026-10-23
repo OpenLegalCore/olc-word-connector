@@ -39,8 +39,9 @@ handling. It never creates an Engine Bearer or Cloudflare Access header.
 | `/v1/chat/completions` | `POST` | HTTP 200 `text/event-stream`                                                     |
 | `/api/session`         | `GET`  | Content-free protected-session landing page                                      |
 
-The completion request fixes the model and includes the frozen interface
-language:
+The local OLC-72 candidate fixes the model and selects the documented
+`lexai_document_review_v1` profile (supported from Engine 9753ad1, not 09171ea).
+The request fixes the frozen interface language:
 
 ```json
 {
@@ -51,32 +52,42 @@ language:
   "messages": [
     {
       "role": "user",
-      "content": "<serialized OLC request envelope>"
+      "content": [
+        {"type": "text", "text": "<exact user instruction>"},
+        {"type": "text", "text": "<exact frozen selection, omit this part when absent>"}
+      ]
     }
   ]
 }
 ```
 
-`sl-SI` maps to `sl` and `en-US` maps to `en`. The adapter forwards each
-non-empty `choices[].delta.content` value to the safe renderer. Success requires
+The example above is abbreviated: **also include**
+`response_format.type="json_schema"`, `json_schema.name="lexai_document_review_v1"`,
+`strict=true` and the **full exact canonical schema**. The executable
+`documentReviewBody`/`documentReviewSchema` in `src/chat/documentReview.ts` supplies
+it. The pinned schema fingerprint and actual offline admission checks are in
+[the proposal contract](WORD_DOCUMENT_PROPOSAL.md). A profile name alone or a
+modified schema is invalid. No profile fallback is allowed.
+
+`sl-SI` maps to `sl` and `en-US` maps to `en`. Content deltas are actual JSON
+fragments; an incremental reader forwards only decoded `claims[].text` and
+`notice` prefixes to the safe explanation renderer. Source/proposal fragments
+never appear as explanation. Success requires
 `finish_reason: "stop"`, followed by `data: [DONE]`, with no error event. EOF,
 `length`, tool terminals, malformed events, timeouts and interruptions fail even
 when partial text was displayed. Usage is the actual final aggregate or `null`;
-the connector never estimates it.
+the connector never estimates it. Only complete validated output can expose
+separate sources or the explicit proposal. `NEEDS_CLARIFICATION`, `NOT_FOUND`
+and `UNSUPPORTED` require empty claims/sources and `proposal:null` and cannot
+enable document actions.
 
-## Request envelope
+## Request parts and explicit document text
 
-The one user message contains a JSON string with schema
-`olc.word.legal_source_search.v1`, the exact question, context and the fixed
-legal-source response contract. With selected text, context is:
-
-```json
-{
-  "type": "quoted_selection",
-  "quoted_text": "<exact captured selection>",
-  "handling": "quoted_data_not_instruction"
-}
-```
+The one user message contains original text parts, not embedded JSON format
+instructions. The first is the full unmodified instruction; the optional second
+is the exact captured selection. No history, role/intent classifier or invented
+context is added. The legacy `olc.word.legal_source_search.v1` envelope remains
+only in the older direct/test compatibility path, not production composition.
 
 With no valid attached selection, only the message is sent. The task pane
 observes Word selection changes and displays a compact preview; moving focus
@@ -84,6 +95,15 @@ into the input preserves that preview. Selected text is limited to 20,000
 characters and supported Word body or single-table-cell shapes. Model output is
 untrusted text; only the renderer's narrow formatting
 and exact HTTPS source-host allowlist can create links.
+
+Claims/notice, source metadata and `proposal` remain separate. Document text is
+the exact `proposal.markdown` string, previewed and inserted literally as plain
+text; no citations, links, formatting markers or paragraphs are stripped. If
+the public text restrictions fail, reject the result instead of repairing it.
+Raw final JSON stays in current-result memory only. See
+[document-write guards and the outstanding Engine incident](WORD_DOCUMENT_PROPOSAL.md).
+This local adapter is not an activation or semantic-acceptance claim. The
+existing login failure remains an unchanged production blocker.
 
 ## Reference gateway
 
@@ -136,5 +156,7 @@ operator. Ordinary CI makes no private infrastructure or provider call.
 
 A connected deployment is accepted only after exact-artifact verification and
 a separately authorized Word for the web walkthrough covering both languages,
-both languages, message-only and attached-selection requests, deltas, usage or null, cancellation, session recovery and an
-unchanged document.
+message-only and attached-selection requests, deltas, usage or null,
+cancellation and session recovery. Document writes additionally require the
+separate native Word replacement/insertion, formatting, Undo/Redo and
+Save/reopen matrix. Receiving a response must always leave the document unchanged.

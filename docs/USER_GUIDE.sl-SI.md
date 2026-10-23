@@ -7,12 +7,13 @@ OpenLegalCore Word Connector omogoča, da ob dokumentu zastavite vprašanje ali
 napišete navodilo. Samodejno preveri OLC Engine in morebitno izbrano Wordovo
 besedilo prikaže kot odstranljivo priponko. Preglejte odgovor in vire, kadar jih
 vsebuje. Prejem odgovora dokumenta ne spremeni. Trenutna osnovna Engine pot ne
-vrača ločenega predloga. Lokalni kandidat OLC-72 posebej prikaže izrecno podan
+vrača ločenega predloga. Lokalni kandidat OLC-72 uporablja dokumentirani
+Engine document-review profil in posebej prikaže izrecno podan
 predlog in šele po uspešnem odgovoru ponudi **Zamenjaj označeno besedilo** in
 **Vstavi na mesto kazalca**. Zapis se izvede samo ob vašem kliku. Zamenjava
 zahteva nespremenjen prvotni izbor; vstavljanje prazen kazalec. Posamezen
 rezultat omogoča en poskus; ob nepotrjenem zapisu pred novo zahtevo preverite
-dokument. [Engine povezava in preverjanje v pravem Wordu še čakata](WORD_DOCUMENT_PROPOSAL.md).
+dokument. [Aktivacija in preverjanje v pravem Wordu še čakata](WORD_DOCUMENT_PROPOSAL.md).
 
 > [!IMPORTANT]
 > Komponenta je namenjena podpori pri raziskovanju. Ni avtoritativen pravni vir
@@ -314,7 +315,7 @@ Trenutne meje:
 - Repozitorij ne vsebuje gostovane storitve, zaledja, pravne zbirke ali
   distribucije prek AppSource.
 - Kontekst celotnega dokumenta in več dokumentov ni vključen.
-- Živa Engine povezava ločenega predloga in preverjanje zapisa v pravem Wordu
+- Aktivacija ločenega predloga in preverjanje zapisa v pravem Wordu
   še čakata; redline in upravljanje sledenja spremembam nista vključena.
 - Širši viri EU, literatura in interni viri organizacij so v načrtu prihodnjega
   razvoja.

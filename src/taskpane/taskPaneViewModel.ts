@@ -70,6 +70,7 @@ export interface TaskPaneViewModel {
   choiceGroup?: TaskPaneChoiceGroup;
   attachment?: TaskPaneAttachment;
   legalAnswer?: string;
+  legalSources?: readonly import("../chat/ChatGateway").CompletionSource[];
   legalAnswerLive?: boolean;
   legalAnswerMeta?: string;
   proposal?: {

@@ -28,8 +28,8 @@ show a removable attachment. Moving focus into the input preserves that
 attachment. Send freezes the displayed selection and locale; without an
 attachment it sends only the message. The adapter returns serializable data;
 Office.js proxy objects never cross its boundary. The local OLC-72 candidate adds
-an optional document-writer capability for an explicit validated proposal;
-the current basic Engine adapter supplies none. Read
+an optional document-writer capability for an explicit validated proposal.
+The production adapter now uses the documented document-review profile. Read
 [the contract, one-shot write guards and pending native qualification](WORD_DOCUMENT_PROPOSAL.md).
 Cancel, timeout, validation failure, session expiry,
 backend failure and late events leave Word unchanged.
@@ -51,8 +51,10 @@ the controller while the operation remains active. A final result exists only
 after `finish_reason: "stop"`, then `[DONE]`, with no error. Usage is copied
 from the terminal aggregate or is `null`.
 
-The prompt envelope keeps the message and quoted selection in separate
-fields. The selected text is labelled quoted data, not instruction. Refine is a
+The document-review request keeps the exact message and frozen selection in
+separate user text parts and includes the canonical strict output schema. Only
+claims/notice stream as explanation; sources and the exact explicit proposal
+are exposed separately after complete validation. Refine is a
 new independent search; the connector stores no conversation history and never
 retries automatically.
 

@@ -94,6 +94,23 @@ Their required notices are reproduced in
 
 ## Verification summary
 
+### Engine protocol compatibility (OLC-72)
+
+The independently implemented Word client uses the documented
+`lexai_document_review_v1` API definition at private Engine source
+`9753ad104853ce0fc4e23db9c9165e3c2abd073d`, checked against
+`8eb44dd9bbbb4c81f272dcbd738d09e756f4fe22` and
+`aa52aa19d068d53c9e9d1ad58a2c04f94d4a901f`. The owning document is
+`docs/contracts/DOCUMENT-REVIEW-1.md`; the canonical schema is in
+`docs/examples/document-review/request-sl.json`. Its fingerprint and direct
+offline admission evidence are recorded in [the Word contract](WORD_DOCUMENT_PROPOSAL.md).
+
+The Engine `LICENSE` at those pins is proprietary, not Apache-2.0. No Engine
+implementation, Python reference adapter, recorded incident content or fixture
+was copied into Word. The TypeScript protocol definition/validator, incremental
+reader and synthetic fixtures are independently written Word code. Referencing
+that interface does not distribute Engine or grant a license to it.
+
 The recorded Git commits, tag targets, upstream license texts, source asset
 blob and committed raster-asset blobs were rechecked for this documentation
 review. The production package versions and license identifiers match the

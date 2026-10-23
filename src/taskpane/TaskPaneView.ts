@@ -434,10 +434,15 @@ export class TaskPaneView {
     main.append(introduction);
 
     if (model.legalAnswer !== undefined) {
-      const answer = createSafeLegalAnswer(document, model.legalAnswer, {
-        answerAriaLabel: messages.chrome.answerAriaLabel,
-        sourcesHeading: messages.chrome.sourcesHeading,
-      });
+      const answer = createSafeLegalAnswer(
+        document,
+        model.legalAnswer,
+        {
+          answerAriaLabel: messages.chrome.answerAriaLabel,
+          sourcesHeading: messages.chrome.sourcesHeading,
+        },
+        model.legalSources
+      );
       if (model.legalAnswerLive) {
         answer.setAttribute("aria-live", "polite");
         answer.setAttribute("aria-atomic", "false");

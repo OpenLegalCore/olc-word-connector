@@ -198,7 +198,9 @@ describe("production Engine-only task-pane runtime", () => {
     });
     const text = "Literal <img src=x onerror=alert(1)> [Z1]";
     s.olcEngine.result = {
-      text: ANSWER,
+      text: "Uporabi se pravilo [Z1].",
+      sources: [{ label: "Z1", title: "Ločen vir", locator: "fixture", url: "" }],
+      rawResponse: "RAW JSON MUST NOT RENDER",
       usage: null,
       proposal: { text, language: "sl", changeSummary: "Sintetični predlog" },
     };
@@ -209,6 +211,9 @@ describe("production Engine-only task-pane runtime", () => {
     expect(root().querySelector(".olc-proposal-text")?.textContent).toBe(text);
     expect(root().querySelector(".olc-proposal-text img")).toBeNull();
     expect(root().querySelector(".olc-legal-result")?.textContent).toContain("Uporabi se pravilo");
+    expect(root().querySelector(".olc-legal-sources")?.textContent).toContain("Ločen vir");
+    expect(root().querySelector(".olc-legal-answer")?.textContent).not.toContain("Ločen vir");
+    expect(root().textContent).not.toContain("RAW JSON MUST NOT RENDER");
     expect(replace).not.toHaveBeenCalled();
     expect(root().querySelector('[data-action-id="replace-proposal"]')?.textContent).toBe(
       "Zamenjaj označeno besedilo"

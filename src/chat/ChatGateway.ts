@@ -19,9 +19,19 @@ export interface CompletionUsage {
 
 export interface CompletionResult {
   readonly text: string;
+  readonly sources?: readonly CompletionSource[];
+  /** Exact response retained in memory for this result only; never logged/persisted. */
+  readonly rawResponse?: string;
   readonly proposal?: DocumentProposal | null;
   readonly model?: string;
   readonly usage?: CompletionUsage | null;
+}
+
+export interface CompletionSource {
+  readonly label: string;
+  readonly title: string;
+  readonly locator: string;
+  readonly url: string;
 }
 
 export interface CompletionObserver {
