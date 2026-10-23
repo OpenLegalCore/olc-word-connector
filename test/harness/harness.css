@@ -78,6 +78,26 @@ body.gallery-runtime {
   font-size: 18px;
 }
 
+#synthetic-document {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.runtime-preview > div:first-child > button {
+  margin: 4px 2px;
+  min-height: 36px;
+}
+
+.word-proposal-runtime {
+  width: min(100%, 400px);
+  height: 700px;
+}
+
+.word-proposal-runtime[hidden] {
+  display: none;
+}
+
 .runtime-preview > div:first-child > p:last-child {
   margin-top: 10px;
   color: #6b655f;

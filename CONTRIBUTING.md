@@ -29,7 +29,9 @@ or marks beyond the descriptive use addressed in
 ## Non-negotiable product boundaries
 
 - Send only the text explicitly selected by the user, never the whole document.
-- Do not change Word in the current beta search flow.
+- Receiving an answer must not change Word. The approved OLC-72 local proposal
+  candidate allows one explicit user-clicked write of a separately validated
+  proposal; see [proposal safety and pending qualification](docs/WORD_DOCUMENT_PROPOSAL.md).
 - Keep Word access, orchestration, provider HTTP, and view rendering in their
   existing layers.
 - Treat model output as untrusted text; never render it as model-provided HTML.

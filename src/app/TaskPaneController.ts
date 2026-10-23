@@ -2,7 +2,8 @@
 
 import type { ChatGateway, CompletionRequest } from "../chat/ChatGateway";
 import { ChatGatewayError } from "../chat/ChatGatewayError";
-import { type SelectionSnapshot, type WordAdapter } from "../office/WordAdapter";
+import { validateDocumentProposal } from "../chat/DocumentProposal";
+import { WordAdapterError, type SelectionSnapshot, type WordAdapter } from "../office/WordAdapter";
 import type { AppErrorCode } from "./errors";
 import {
   beginSearch,
@@ -29,6 +30,7 @@ export class TaskPaneController {
   private operationId = 0;
   private completionAbort?: AbortController;
   private activeSnapshot?: SelectionSnapshot;
+  private disposed = false;
 
   constructor(
     private readonly word: WordAdapter,
@@ -46,7 +48,7 @@ export class TaskPaneController {
   }
 
   async search(input: SearchInput): Promise<boolean> {
-    if (this.state.kind !== "ready") {
+    if (this.disposed || this.state.kind !== "ready") {
       return false;
     }
 
@@ -85,7 +87,11 @@ export class TaskPaneController {
         return false;
       }
 
-      if (snapshot) {
+      const proposal =
+        result.proposal != null
+          ? validateDocumentProposal(result.proposal, request.uiLocale)
+          : undefined;
+      if (snapshot && (!proposal || !this.word.documentWriter)) {
         if (this.activeSnapshot === snapshot) {
           this.activeSnapshot = undefined;
         }
@@ -94,7 +100,13 @@ export class TaskPaneController {
       if (this.operationId !== operationId || this.getInternalState().kind !== "searching") {
         return false;
       }
-      this.setState(completeSearch(request, result));
+      this.setState({
+        ...completeSearch(request, { ...result, proposal }),
+        documentChange:
+          proposal && this.word.documentWriter
+            ? { status: "ready", canReplace: snapshot !== undefined }
+            : undefined,
+      });
       return true;
     } catch (error) {
       if (this.operationId !== operationId) {
@@ -138,8 +150,69 @@ export class TaskPaneController {
     if (this.state.kind !== "result" && this.state.kind !== "error") {
       return false;
     }
+    if (this.state.kind === "result" && this.state.documentChange?.status === "applying") {
+      return false;
+    }
+    this.releaseActiveSnapshot();
     this.setState(returnToReady());
     return true;
+  }
+
+  /** A one-shot user gesture: neither result arrival nor retries call this method. */
+  async applyProposal(mode: "replace" | "insert"): Promise<boolean> {
+    const state = this.state;
+    const writer = this.word.documentWriter;
+    const proposal = state.kind === "result" ? state.result.proposal : undefined;
+    if (
+      this.disposed ||
+      state.kind !== "result" ||
+      !proposal ||
+      !writer ||
+      state.documentChange?.status !== "ready" ||
+      (mode === "replace" && (!state.documentChange.canReplace || !this.activeSnapshot))
+    ) {
+      return false;
+    }
+    const snapshot = this.activeSnapshot;
+    this.setState({ ...state, documentChange: { ...state.documentChange, status: "applying" } });
+    try {
+      if (mode === "replace" && snapshot) {
+        await writer.applyReplacement({ ...snapshot }, proposal.text);
+      } else {
+        await writer.insertAtCursor(proposal.text);
+      }
+      this.setState({ ...state, documentChange: { ...state.documentChange, status: "applied" } });
+      return true;
+    } catch (error) {
+      const code =
+        error instanceof WordAdapterError &&
+        (error.code === "SELECTION_CHANGED" || error.code === "CURSOR_REQUIRED")
+          ? error.code
+          : "WORD_WRITE_FAILED";
+      this.setState({
+        ...state,
+        documentChange: { ...state.documentChange, status: "failed", error: code },
+      });
+      return false;
+    } finally {
+      this.releaseActiveSnapshot();
+    }
+  }
+
+  dispose(): void {
+    this.disposed = true;
+    this.completionAbort?.abort();
+    this.operationId++;
+    this.listeners.clear();
+    if (this.state.kind !== "result" || this.state.documentChange?.status !== "applying") {
+      this.releaseActiveSnapshot();
+    }
+  }
+
+  private releaseActiveSnapshot(): void {
+    const snapshot = this.activeSnapshot;
+    this.activeSnapshot = undefined;
+    if (snapshot) void this.releaseSnapshot(snapshot);
   }
 
   private setState(state: AppState): void {

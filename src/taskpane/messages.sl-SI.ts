@@ -97,6 +97,20 @@ export const slSIMessages = {
     footerEyebrow: "MEJA DOSTOPA DO DOKUMENTA",
     footerMessage: "SAMO ANALIZA · DOKUMENT NI SPREMENJEN",
   },
+  proposal: {
+    heading: "Predlog besedila za dokument",
+    replaceSelection: "Zamenjaj označeno besedilo",
+    insertAtCursor: "Vstavi na mesto kazalca",
+    ready: "Preglejte natančen predlog. Word se spremeni samo ob vašem kliku.",
+    applying: "Vnašam predlog …",
+    applied: "Predlog je vnesen enkrat. Za pregled ali povrnitev uporabite Wordov Undo/Redo.",
+    selectionChanged:
+      "Prvotni izbor je spremenjen ali ni več označen. Nič ni zapisano. Začnite novo zahtevo.",
+    cursorRequired:
+      "Postavite kazalec brez označenega besedila. Nič ni zapisano. Začnite novo zahtevo.",
+    writeUnconfirmed:
+      "Zapisa ni bilo mogoče potrditi. Preverite Word in po potrebi uporabite Undo. Dejanja ne ponavljajte.",
+  },
   error: {
     statusLabel: "Zahteva se je varno ustavila",
     eyebrow: "OBNOVITEV",

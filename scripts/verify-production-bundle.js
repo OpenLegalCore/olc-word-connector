@@ -68,8 +68,8 @@ const forbiddenContent = [
       /(?:private-upstream\.example\.invalid|word-gateway-example|OWUI_API_KEY|OWUI_ORIGIN|CF_ACCESS_CLIENT_ID|CF_ACCESS_CLIENT_SECRET)/i,
   },
   {
-    label: "document mutation primitive",
-    pattern: /\b(?:applyReplacement|insertText)\b/,
+    label: "whole-document or HTML mutation",
+    pattern: /(?:\.body\.(?:insertText|clear|delete)|\b(?:insertHtml|insertOoxml)\s*\()/,
   },
   {
     label: "Cloudflare Access service-token browser header",
@@ -238,12 +238,11 @@ function inspectProductionEntrypoints() {
     }
   }
 
-  const productionWordAdapter = fs.readFileSync(
-    path.join(root, "src/office/OfficeWordAdapter.ts"),
-    "utf8"
-  );
-  if (/\b(?:applyReplacement|insertText)\b/.test(productionWordAdapter)) {
-    throw new Error("Production Word adapter contains a document mutation primitive");
+  for (const source of filesBelow(path.join(root, "src")).filter((file) => file.endsWith(".ts"))) {
+    if (source === path.join(root, "src/office/OfficeWordAdapter.ts")) continue;
+    if (/\.insert(?:Text|Html|Ooxml)\s*\(/.test(fs.readFileSync(source, "utf8"))) {
+      throw new Error("Word insertion outside the approved Office adapter");
+    }
   }
 }
 

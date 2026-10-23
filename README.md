@@ -89,8 +89,10 @@ See the [English user guide](docs/USER_GUIDE.md),
 - A valid Word selection appears automatically as a removable **Selected text**
   attachment. **Send** freezes the displayed attachment and interface language;
   the message and quoted selection remain separate fields.
-- The beta does not expose or perform document editing, replacement, redlining
-  or tracked changes.
+- The deployed basic answer flow does not edit Word. A local OLC-72 candidate
+  adds explicit proposal preview and guarded, user-clicked replacement/insertion;
+  [Engine integration and native Word qualification are pending](docs/WORD_DOCUMENT_PROPOSAL.md).
+  Redlining and tracked-change management are not included.
 - Cancellation, timeout, session expiry, backend failure and late responses
   leave the Word document unchanged.
 - OLC Engine is the only backend. Requests are never retried automatically.
@@ -186,7 +188,7 @@ npm run verify:bundle
 ```
 
 The included CI workflow validates manifests and audits production dependencies
-at high severity. `verify:bundle` rejects test, harness, fake, mutation,
+at high severity. `verify:bundle` rejects test, harness, fake, unsafe mutation,
 credential-storage, service-token, private-origin and source-map artifacts from
 the production bundle. Protected live tests are opt-in and are not part of
 ordinary CI.

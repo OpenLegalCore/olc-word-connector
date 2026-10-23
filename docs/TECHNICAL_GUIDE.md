@@ -27,8 +27,11 @@ The runtime observes and validates only the current explicit Word selection to
 show a removable attachment. Moving focus into the input preserves that
 attachment. Send freezes the displayed selection and locale; without an
 attachment it sends only the message. The adapter returns serializable data;
-Office.js proxy objects never cross its boundary. The production flow has no
-document mutation method. Cancel, timeout, validation failure, session expiry,
+Office.js proxy objects never cross its boundary. The local OLC-72 candidate adds
+an optional document-writer capability for an explicit validated proposal;
+the current basic Engine adapter supplies none. Read
+[the contract, one-shot write guards and pending native qualification](WORD_DOCUMENT_PROPOSAL.md).
+Cancel, timeout, validation failure, session expiry,
 backend failure and late events leave Word unchanged.
 
 ## Engine transport
@@ -84,8 +87,9 @@ The checked-in Worker is an inert example with only `/v1/models`,
 `ENGINE_ORIGIN`, `ENGINE_API_KEY`, `CF_ACCESS_CLIENT_ID` and
 `CF_ACCESS_CLIENT_SECRET`. All credentials remain server-side. The production
 bundle verifier rejects server bindings, Access headers, persistent browser
-storage, private-origin markers, test harnesses and document mutation
-primitives.
+storage, private-origin markers and test harnesses. Approved plain-text writes
+are confined to `OfficeWordAdapter`; HTML/OOXML and whole-body writes remain
+forbidden. No transport or rendering layer may write to Word.
 
 ## Builds and verification
 

@@ -272,7 +272,9 @@ confirms:
 - Session expired requires secure sign-in and an explicit connection check;
 - questions, selections, answers and credentials do not appear in unintended
   logs or browser storage; and
-- the Word document remains unchanged throughout the beta workflow.
+- receiving answers leaves Word unchanged. The separate local proposal candidate
+  requires [native write, formatting and Undo/Redo qualification](WORD_DOCUMENT_PROPOSAL.md)
+  before any live proposal capability can be accepted.
 
 Record the exact Word host, browser, manifest, build commit, gateway revision,
 backend version, model and policy configuration used for acceptance.

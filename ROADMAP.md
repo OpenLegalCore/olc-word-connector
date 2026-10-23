@@ -4,6 +4,11 @@ OpenLegalCore Word Connector begins with a deliberately narrow promise:
 verifiable Slovenian legal-source research beside a document, with explicit
 control over document context and no document mutation.
 
+The owner-approved OLC-72 local [explicit proposal candidate](docs/WORD_DOCUMENT_PROPOSAL.md)
+now prepares guarded replacement and cursor insertion. Its basic Engine path
+still returns no proposal, and native Word formatting and Undo/Redo evidence
+remain pending. This is not a released or deployed editing capability.
+
 This roadmap shows intended directions, not delivery dates or contractual
 commitments. A capability becomes supported only after it is implemented,
 documented and accepted with evidence. The current support boundary remains

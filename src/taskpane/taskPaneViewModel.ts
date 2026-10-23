@@ -72,6 +72,14 @@ export interface TaskPaneViewModel {
   legalAnswer?: string;
   legalAnswerLive?: boolean;
   legalAnswerMeta?: string;
+  proposal?: {
+    heading: string;
+    text: string;
+    summary: string;
+    feedback: string;
+    failed?: boolean;
+    actions: readonly TaskPaneAction[];
+  };
   notice?: TaskPaneNotice;
   actions?: readonly TaskPaneAction[];
   footer: TaskPaneFooter;

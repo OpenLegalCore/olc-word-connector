@@ -25,6 +25,11 @@ legal database, AppSource listing or access to private infrastructure.
 
 ## Product and implementation guides
 
+The local OLC-72 [explicit document proposal candidate](WORD_DOCUMENT_PROPOSAL.md)
+adds guarded user-clicked writes for synthetic review. Live Engine integration,
+native Word formatting and Undo/Redo remain unqualified; this does not change
+the historical release acceptance below.
+
 | Document                                                          | What it answers                                                                                                           |
 | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | [User guide](USER_GUIDE.md)                                       | How to use every workflow state, verify sources and protect document context                                              |

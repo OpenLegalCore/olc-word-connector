@@ -6,7 +6,13 @@
 OpenLegalCore Word Connector omogoča, da ob dokumentu zastavite vprašanje ali
 napišete navodilo. Samodejno preveri OLC Engine in morebitno izbrano Wordovo
 besedilo prikaže kot odstranljivo priponko. Preglejte odgovor in vire, kadar jih
-vsebuje. Beta različica Wordovega dokumenta ne spreminja.
+vsebuje. Prejem odgovora dokumenta ne spremeni. Trenutna osnovna Engine pot ne
+vrača ločenega predloga. Lokalni kandidat OLC-72 posebej prikaže izrecno podan
+predlog in šele po uspešnem odgovoru ponudi **Zamenjaj označeno besedilo** in
+**Vstavi na mesto kazalca**. Zapis se izvede samo ob vašem kliku. Zamenjava
+zahteva nespremenjen prvotni izbor; vstavljanje prazen kazalec. Posamezen
+rezultat omogoča en poskus; ob nepotrjenem zapisu pred novo zahtevo preverite
+dokument. [Engine povezava in preverjanje v pravem Wordu še čakata](WORD_DOCUMENT_PROPOSAL.md).
 
 > [!IMPORTANT]
 > Komponenta je namenjena podpori pri raziskovanju. Ni avtoritativen pravni vir
@@ -235,8 +241,9 @@ oddaja je nova neodvisna zahteva in uporabi takrat prikazano priponko izbora.
 Odpre prazen obrazec in počisti sporočilo. Morebitni trenutni veljavni Wordov
 izbor se prikaže ločeno kot odstranljiva priponka.
 
-Beta različica nima dejanj za uporabo ali ponovno ustvarjanje odgovora,
-prepisovanje, označevanje ali sledenje spremembam in urejanje dokumenta.
+Osnovna Engine pot nima dejanja za spreminjanje dokumenta. Lokalni kandidat
+izrecnega predloga dodaja samo zgoraj opisani varovani dejanji, ne ponovnega
+ustvarjanja odgovora, redline ali upravljanja sledenja spremembam.
 
 ## 9. Obnovite poteklo sejo
 
@@ -307,8 +314,8 @@ Trenutne meje:
 - Repozitorij ne vsebuje gostovane storitve, zaledja, pravne zbirke ali
   distribucije prek AppSource.
 - Kontekst celotnega dokumenta in več dokumentov ni vključen.
-- Spreminjanje dokumenta, priprava osnutkov, redline in sledenje spremembam niso
-  vključeni.
+- Živa Engine povezava ločenega predloga in preverjanje zapisa v pravem Wordu
+  še čakata; redline in upravljanje sledenja spremembam nista vključena.
 - Širši viri EU, literatura in interni viri organizacij so v načrtu prihodnjega
   razvoja.
 - Komponenta ne jamči pokritosti zaledja ali pravne pravilnosti.

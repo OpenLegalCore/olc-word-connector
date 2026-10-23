@@ -94,6 +94,20 @@ export const enUSMessages = {
     footerEyebrow: "DOCUMENT BOUNDARY",
     footerMessage: "ANALYSIS ONLY · WORD UNCHANGED",
   },
+  proposal: {
+    heading: "Proposed document text",
+    replaceSelection: "Replace selected text",
+    insertAtCursor: "Insert at cursor",
+    ready: "Review the exact proposal. Only your click can change Word.",
+    applying: "Applying the proposal…",
+    applied: "Applied once. Use Word Undo/Redo to review or revert this change.",
+    selectionChanged:
+      "The original selection changed or is no longer selected. Nothing was written. Start a new request.",
+    cursorRequired:
+      "Place the cursor without selecting text. Nothing was written. Start a new request.",
+    writeUnconfirmed:
+      "The write could not be confirmed. Inspect Word and use Undo if needed. Do not repeat this operation.",
+  },
   error: {
     statusLabel: "Request stopped safely",
     eyebrow: "RECOVERY",

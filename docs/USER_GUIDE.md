@@ -6,7 +6,13 @@
 OpenLegalCore Word Connector lets you ask a question or write an instruction
 beside your document. It checks OLC Engine automatically and shows any selected
 Word text as a removable attachment. Review the answer and any sources it
-contains. The beta does not change the Word document.
+contains. Receiving an answer does not change the Word document. The current
+basic Engine path has no document proposal. The local OLC-72 candidate previews
+an explicitly supplied proposal separately, then offers **Replace selected
+text** and **Insert at cursor** only after success and only on your click.
+Replacement requires the unchanged original selection; insertion requires an
+empty cursor. Each result permits one attempt; inspect Word before trying a new
+request after an unconfirmed write. See [proposal status and qualification](WORD_DOCUMENT_PROPOSAL.md).
 
 > [!IMPORTANT]
 > The connector supports research; it is not an authoritative legal source and
@@ -234,8 +240,9 @@ submission is a new independent request and uses the selection attachment then d
 Opens a clean form and clears the message. Any current valid Word selection is
 shown separately as a removable attachment.
 
-The beta has no Apply, rewrite, regenerate, redlining, tracked-changes or
-document-editing action.
+The basic Engine flow has no document-editing action. The local explicit
+proposal candidate adds only the two guarded actions described above; it does
+not add regeneration, redlining or tracked-change management.
 
 ## 9. Recover from an expired session
 
@@ -306,7 +313,8 @@ Current boundaries:
 - The repository does not include a hosted service, backend, legal database or
   AppSource distribution.
 - Whole-document and multi-document context are not included.
-- Document mutation, drafting, redlining and tracked changes are not included.
+- Live Engine proposal integration and native Word write qualification remain
+  pending; redlining and tracked-change management are not included.
 - Broader EU sources, literature and internal firm sources are roadmap items.
 - The connector does not guarantee backend coverage or legal correctness.
 

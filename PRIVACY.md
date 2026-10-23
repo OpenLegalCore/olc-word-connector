@@ -80,7 +80,13 @@ logging or immediate deletion throughout that wider system.
 
 ## Document and response safety
 
-The current beta search workflow does not mutate the Word document. Answers
+The current basic Engine answer flow does not mutate the Word document. The
+local OLC-72 proposal candidate retains a request-bound selected range and its
+OOXML only in memory to validate an explicitly requested replacement; it does
+not transmit the OOXML or capture the whole document. A separate proposal is
+written only on a user click after success. See
+[proposal safety and pending qualification](docs/WORD_DOCUMENT_PROPOSAL.md).
+Answers
 are rendered as untrusted text in the task pane. Cancellation, timeout,
 session expiry, validation failure, backend error and late responses leave the
 document unchanged.

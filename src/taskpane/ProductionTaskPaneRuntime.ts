@@ -236,6 +236,22 @@ function controllerModel(
     };
   }
   if (state.kind === "result") {
+    const documentChange = state.documentChange;
+    const applying = documentChange?.status === "applying";
+    const proposal = state.result.proposal;
+    const proposalCopy = messages.proposal;
+    const proposalFeedback =
+      documentChange?.status === "applied"
+        ? proposalCopy.applied
+        : applying
+          ? proposalCopy.applying
+          : documentChange?.error === "SELECTION_CHANGED"
+            ? proposalCopy.selectionChanged
+            : documentChange?.error === "CURSOR_REQUIRED"
+              ? proposalCopy.cursorRequired
+              : documentChange?.error === "WORD_WRITE_FAILED"
+                ? proposalCopy.writeUnconfirmed
+                : proposalCopy.ready;
     const usage = state.result.usage;
     const usageText =
       usage === null
@@ -258,6 +274,31 @@ function controllerModel(
       heading: messages.result.heading,
       legalAnswer: state.result.text,
       legalAnswerMeta: usageText,
+      proposal: proposal
+        ? {
+            heading: proposalCopy.heading,
+            text: proposal.text,
+            summary: proposal.changeSummary,
+            feedback: proposalFeedback,
+            failed: documentChange?.status === "failed",
+            actions: documentChange
+              ? [
+                  {
+                    id: "replace-proposal",
+                    label: proposalCopy.replaceSelection,
+                    variant: "primary",
+                    disabled: documentChange.status !== "ready" || !documentChange.canReplace,
+                  },
+                  {
+                    id: "insert-proposal",
+                    label: proposalCopy.insertAtCursor,
+                    variant: "secondary",
+                    disabled: documentChange.status !== "ready",
+                  },
+                ]
+              : [],
+          }
+        : undefined,
       notice:
         copyFeedback === "copied"
           ? {
@@ -277,18 +318,28 @@ function controllerModel(
       actions: [
         {
           id: "copy-answer",
+          disabled: applying,
           label:
             copyFeedback === "copied" ? messages.result.copiedAction : messages.result.copyAction,
           variant: "primary",
         },
         {
           id: "refine-question",
+          disabled: applying,
           label: messages.result.refineQuestion,
           variant: "secondary",
         },
-        { id: "new-search", label: messages.result.newSearch, variant: "quiet" },
+        {
+          id: "new-search",
+          label: messages.result.newSearch,
+          variant: "quiet",
+          disabled: applying,
+        },
       ],
-      footer: { eyebrow: messages.result.footerEyebrow, message: messages.result.footerMessage },
+      footer: {
+        eyebrow: messages.result.footerEyebrow,
+        message: proposal ? proposalFeedback : messages.result.footerMessage,
+      },
     };
   }
   if (state.error.code === "SESSION_EXPIRED") {
@@ -458,7 +509,7 @@ export class ProductionTaskPaneRuntime {
     }
     this.connectionId++;
     this.connectionAbort?.abort();
-    void this.controller?.cancel();
+    this.controller?.dispose();
     this.unsubscribe?.();
     this.gateways.olcEngine.disconnect();
     this.view.setActionHandler(undefined);
@@ -687,6 +738,7 @@ export class ProductionTaskPaneRuntime {
         return;
       }
       this.unsubscribe?.();
+      this.controller?.dispose();
       this.signInFeedback = "idle";
       this.controller = new TaskPaneController(this.word, this.gateway());
       this.unsubscribe = this.controller.subscribe((state) => this.renderControllerState(state));
@@ -859,6 +911,12 @@ export class ProductionTaskPaneRuntime {
   }
 
   private async handleAction(actionId: string): Promise<void> {
+    if (actionId === "replace-proposal" || actionId === "insert-proposal") {
+      await this.controller?.applyProposal(actionId === "replace-proposal" ? "replace" : "insert");
+      return;
+    }
+    const state = this.controller?.getState();
+    if (state?.kind === "result" && state.documentChange?.status === "applying") return;
     if (actionId === "retry-connection") {
       await this.connect("olc-engine");
       return;

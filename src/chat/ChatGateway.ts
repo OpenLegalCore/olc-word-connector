@@ -1,5 +1,7 @@
 /* global AbortSignal */
 
+import type { DocumentProposal } from "./DocumentProposal";
+
 export type LegalSourceContext =
   { readonly type: "none" } | { readonly type: "selected_text"; readonly quotedText: string };
 
@@ -17,6 +19,7 @@ export interface CompletionUsage {
 
 export interface CompletionResult {
   readonly text: string;
+  readonly proposal?: DocumentProposal | null;
   readonly model?: string;
   readonly usage?: CompletionUsage | null;
 }

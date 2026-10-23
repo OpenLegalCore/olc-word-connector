@@ -59,6 +59,14 @@ tokens belong only in the trusted gateway. The Engine Bearer is distinct from
 the Access service-token pair and must never enter the task-pane bundle,
 browser storage, manifest, URL or logs.
 
+The local OLC-72 document proposal candidate treats proposals as untrusted plain
+text, separate from the explanation. Only an explicit click after successful
+completion may invoke its one-shot writer. Replacement checks the retained
+original selection, text and OOXML; insertion requires an empty cursor. No HTML,
+OOXML or whole-body writes are allowed. Unconfirmed Word writes must never be
+retried automatically. Live Engine proposal integration and native Word
+qualification remain pending; see [the proposal contract](docs/WORD_DOCUMENT_PROPOSAL.md).
+
 A report may cross more than one boundary. Send connector findings here; also
 notify the responsible operator or upstream maintainer when their system is
 independently affected. This policy does not authorize testing of private or

@@ -188,6 +188,44 @@ afterEach(() => {
 });
 
 describe("production Engine-only task-pane runtime", () => {
+  it("previews an exact explicit proposal separately and applies it only through a localized click", async () => {
+    const s = setup({ locale: "sl-SI" });
+    activeRuntime = s.runtime;
+    const replace = vi.fn(async () => {});
+    const insert = vi.fn(async () => {});
+    Object.assign(s.word, {
+      documentWriter: { applyReplacement: replace, insertAtCursor: insert },
+    });
+    const text = "Literal <img src=x onerror=alert(1)> [Z1]";
+    s.olcEngine.result = {
+      text: ANSWER,
+      usage: null,
+      proposal: { text, language: "sl", changeSummary: "Sintetični predlog" },
+    };
+    await waitForReady();
+    setQuestion("Pripravi besedilo");
+    click("send");
+    await vi.waitFor(() => expect(viewState()).toBe("result"));
+    expect(root().querySelector(".olc-proposal-text")?.textContent).toBe(text);
+    expect(root().querySelector(".olc-proposal-text img")).toBeNull();
+    expect(root().querySelector(".olc-legal-result")?.textContent).toContain("Uporabi se pravilo");
+    expect(replace).not.toHaveBeenCalled();
+    expect(root().querySelector('[data-action-id="replace-proposal"]')?.textContent).toBe(
+      "Zamenjaj označeno besedilo"
+    );
+    expect(root().querySelector('[data-action-id="insert-proposal"]')?.textContent).toBe(
+      "Vstavi na mesto kazalca"
+    );
+    click("replace-proposal");
+    await vi.waitFor(() =>
+      expect(root().querySelector(".olc-proposal-feedback")?.textContent).toContain("vnesen enkrat")
+    );
+    expect(replace).toHaveBeenCalledWith(SNAPSHOT, text);
+    click("replace-proposal");
+    click("insert-proposal");
+    expect(replace).toHaveBeenCalledTimes(1);
+    expect(insert).not.toHaveBeenCalled();
+  });
   it("checks the connection automatically and opens the input without sending a message", async () => {
     const state = setup();
     activeRuntime = state.runtime;

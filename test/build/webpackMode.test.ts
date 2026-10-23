@@ -457,9 +457,9 @@ describe("isolated hosted outputs", () => {
     ["server origin", "private-upstream.example.invalid"],
     ["gateway module", "word-gateway-example"],
     ["server secret", "CF_ACCESS_CLIENT_SECRET"],
-    ["mutation method", "applyReplacement"],
-    ["Word mutation API", "insertText"],
-  ])("rejects a server-only or mutation %s from the Word bundle", (label, marker) => {
+    ["whole-document mutation", ".body.insertText("],
+    ["HTML mutation", "insertHtml("],
+  ])("rejects a server-only or unbounded mutation %s from the Word bundle", (label, marker) => {
     withProductionCopy(`bundle-boundary-${label.replace(/ /g, "-")}`, (outputPath) => {
       const script = filesBelow(outputPath).find((file) =>
         /taskpane\.[a-f0-9]{20}\.js$/.test(file)

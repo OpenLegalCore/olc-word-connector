@@ -13,6 +13,11 @@ export type ResultState = {
   readonly kind: "result";
   readonly request: CompletionRequest;
   readonly result: CompletionResult;
+  readonly documentChange?: {
+    readonly status: "ready" | "applying" | "applied" | "failed";
+    readonly canReplace: boolean;
+    readonly error?: "SELECTION_CHANGED" | "CURSOR_REQUIRED" | "WORD_WRITE_FAILED";
+  };
 };
 export type ErrorState = { readonly kind: "error"; readonly error: AppError };
 
@@ -45,6 +50,7 @@ export function copyCompletionResult(result: CompletionResult): CompletionResult
               totalTokens: result.usage.totalTokens,
             }
           : undefined,
+    proposal: result.proposal ? { ...result.proposal } : result.proposal,
   };
 }
 
@@ -57,6 +63,7 @@ export function copyAppState(state: AppState): AppState {
       kind: "result",
       request: copyCompletionRequest(state.request),
       result: copyCompletionResult(state.result),
+      documentChange: state.documentChange ? { ...state.documentChange } : undefined,
     };
   }
   if (state.kind === "error") {

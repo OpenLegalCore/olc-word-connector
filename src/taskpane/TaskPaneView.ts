@@ -448,6 +448,23 @@ export class TaskPaneView {
       }
     }
     const choices = createChoiceGroup(document, model);
+    if (model.proposal) {
+      const proposal = element(document, "section", "olc-document-proposal");
+      proposal.setAttribute("aria-labelledby", "olc-document-proposal-heading");
+      const title = element(document, "h2", "olc-proposal-heading", model.proposal.heading);
+      title.id = "olc-document-proposal-heading";
+      const text = element(document, "pre", "olc-proposal-text", model.proposal.text);
+      const feedback = element(document, "p", "olc-proposal-feedback", model.proposal.feedback);
+      feedback.setAttribute("role", model.proposal.failed ? "alert" : "status");
+      proposal.append(
+        title,
+        element(document, "p", "olc-proposal-summary", model.proposal.summary),
+        text,
+        feedback,
+        createActions(document, model.proposal.actions, messages.chrome.availableActions)
+      );
+      main.append(proposal);
+    }
     if (choices) {
       main.append(choices);
     }
