@@ -68,9 +68,9 @@ export function bindControllerHarness(
       (async () => {
         const selection = selectedContext.checked ? await options.prepareSearch?.() : undefined;
         return controller.search({
-        question: question.value,
-        selection,
-        uiLocale: "en-US",
+          question: question.value,
+          selection,
+          uiLocale: "en-US",
         });
       })()
     );

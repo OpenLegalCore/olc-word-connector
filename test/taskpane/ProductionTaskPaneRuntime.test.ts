@@ -113,10 +113,7 @@ function setQuestion(value: string): HTMLTextAreaElement {
   return input;
 }
 
-function pressEnter(
-  input: HTMLTextAreaElement,
-  options: KeyboardEventInit = {}
-): KeyboardEvent {
+function pressEnter(input: HTMLTextAreaElement, options: KeyboardEventInit = {}): KeyboardEvent {
   const event = new KeyboardEvent("keydown", {
     key: "Enter",
     bubbles: true,
@@ -231,9 +228,7 @@ describe("production Engine-only task-pane runtime", () => {
     activeRuntime = state.runtime;
     await waitForReady();
 
-    expect(root().querySelector("[role='alert']")?.textContent).toContain(
-      "Selection not attached"
-    );
+    expect(root().querySelector("[role='alert']")?.textContent).toContain("Selection not attached");
     expect(root().querySelector<HTMLButtonElement>('button[data-action-id="send"]')?.disabled).toBe(
       true
     );
@@ -339,9 +334,9 @@ describe("production Engine-only task-pane runtime", () => {
     click("send");
     await vi.waitFor(() => expect(viewState()).toBe("searching"));
     expect(root().textContent).toContain("Preparing response");
-    expect(root().querySelector<HTMLButtonElement>('button[data-action-id="cancel"]')?.textContent).toBe(
-      "Stop"
-    );
+    expect(
+      root().querySelector<HTMLButtonElement>('button[data-action-id="cancel"]')?.textContent
+    ).toBe("Stop");
 
     state.olcEngine.emitDelta("Delni odgovor");
     expect(root().textContent).toContain("Delni odgovor");
@@ -415,15 +410,15 @@ describe("production Engine-only task-pane runtime", () => {
     expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.placeholder).toBe(
       "Vprašajte ali napišite navodilo …"
     );
-    expect(root().querySelector<HTMLButtonElement>('button[data-action-id="send"]')?.textContent).toBe(
-      "Pošlji"
-    );
+    expect(
+      root().querySelector<HTMLButtonElement>('button[data-action-id="send"]')?.textContent
+    ).toBe("Pošlji");
 
     selectLocale("en-US");
     expect(root().querySelector("h1")?.textContent).toBe("Ask OpenLegalCore");
-    expect(root().querySelector<HTMLButtonElement>('button[data-action-id="send"]')?.textContent).toBe(
-      "Send"
-    );
+    expect(
+      root().querySelector<HTMLButtonElement>('button[data-action-id="send"]')?.textContent
+    ).toBe("Send");
   });
 
   it("copies only the answer as plain text", async () => {
@@ -456,7 +451,9 @@ describe("secure same-origin composition", () => {
   });
 
   it("opens sign-in without an opener", () => {
-    const clickLink = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    const clickLink = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
     const popup = {
       opener: window,
       document,

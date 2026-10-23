@@ -17,11 +17,7 @@ afterEach(() => {
 function installOfficeEvents(status: "succeeded" | "failed") {
   let selectionHandler: (() => void) | undefined;
   const addHandlerAsync = vi.fn(
-    (
-      _event: string,
-      handler: () => void,
-      callback: (result: { status: string }) => void
-    ) => {
+    (_event: string, handler: () => void, callback: (result: { status: string }) => void) => {
       selectionHandler = handler;
       callback({ status });
     }
