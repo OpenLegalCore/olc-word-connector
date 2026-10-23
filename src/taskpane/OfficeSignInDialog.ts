@@ -1,4 +1,4 @@
-/* global Office, URL, clearTimeout, crypto, setTimeout */
+/* global Office, URL, clearInterval, clearTimeout, crypto, setInterval, setTimeout */
 
 export type SignInOutcome = "completed" | "closed" | "failed";
 export interface SecureSignIn {
@@ -37,6 +37,11 @@ export class OfficeSignInDialog implements SecureSignIn {
     let origin: string;
     let nonce: string;
     try {
+      if (
+        !Office.context?.requirements?.isSetSupported("DialogApi", "1.2") ||
+        !Office.context.requirements.isSetSupported("DialogOrigin", "1.1")
+      )
+        return Promise.resolve("failed");
       origin = secureSignInOrigin(this.origin);
       nonce = this.makeNonce();
       if (!/^[a-f0-9]{32}$/.test(nonce)) throw new Error("Invalid nonce");
@@ -45,12 +50,14 @@ export class OfficeSignInDialog implements SecureSignIn {
     }
     return new Promise((resolve) => {
       let dialog: Office.Dialog | undefined;
+      let challengeTimer: ReturnType<typeof setInterval> | undefined;
       let finished = false;
       const timer = setTimeout(() => finish("failed"), 5 * 60_000);
       const finish = (outcome: SignInOutcome): void => {
         if (finished) return;
         finished = true;
         clearTimeout(timer);
+        clearInterval(challengeTimer);
         this.active = undefined;
         try {
           dialog?.close();
@@ -62,7 +69,7 @@ export class OfficeSignInDialog implements SecureSignIn {
       this.active = { finish };
       try {
         this.ui.displayDialogAsync(
-          `${origin}/signin.html#${nonce}`,
+          `${origin}/signin.html`,
           { height: 60, width: 45, displayInIframe: false, promptBeforeOpen: true },
           (result) => {
             if (result.status !== Office.AsyncResultStatus.Succeeded) {
@@ -79,11 +86,16 @@ export class OfficeSignInDialog implements SecureSignIn {
               return;
             }
             try {
+              if (typeof dialog.messageChild !== "function") {
+                finish("failed");
+                return;
+              }
               dialog.addEventHandler(Office.EventType.DialogMessageReceived, (event) => {
                 if (
                   finished ||
                   !("message" in event) ||
                   event.origin !== origin ||
+                  typeof event.message !== "string" ||
                   event.message.length > 256
                 )
                   return;
@@ -103,6 +115,21 @@ export class OfficeSignInDialog implements SecureSignIn {
               dialog.addEventHandler(Office.EventType.DialogEventReceived, (event) =>
                 finish("error" in event && event.error === 12006 ? "closed" : "failed")
               );
+              // Access may redirect before either side is ready. Retry only the
+              // native challenge, never login navigation, HTTP or a user request.
+              const challenge = (): void => {
+                if (finished) return;
+                try {
+                  dialog?.messageChild(
+                    JSON.stringify({ type: "olc-word-session-challenge", nonce }),
+                    { targetOrigin: origin }
+                  );
+                } catch {
+                  /* identity pages must not receive a cross-origin challenge */
+                }
+              };
+              challengeTimer = setInterval(challenge, 500);
+              challenge();
             } catch {
               finish("failed");
             }

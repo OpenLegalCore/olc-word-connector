@@ -1,6 +1,6 @@
 # OLC-72 Word Web access recovery — reviewed plan
 
-Status: LOCAL FOLLOW-UP IN REVIEW, based on `8d96dbf`, 2026-10-23. No live
+Status: IN REVIEW, callback review based on `8fdd6f3`, 2026-10-24. No live
 Access, cookie, Worker, tunnel or Engine configuration is changed. The owner-confirmed visual PASS is
 preserved. Word for Mac is backlog. Native Word document-write acceptance is
 still pending; synthetic tests are not a Word PASS.
@@ -27,6 +27,27 @@ cover it. The exact frontend app and effective policies remain a prerequisite
 for production acceptance. A separately requested equally filtered zone read
 can narrow the legacy-zone possibility without an account-wide list.
 
+### Follow-up on 24 October: connection failure and Worker protection
+
+The zone GET has **not run**. Even the read-only MCP spec lookup fails with
+`OAuth token refresh failed: Server returned error response: invalid_client:
+Client not found`. This is a broken MCP client registration/connection, not a
+zone API 403 or an empty zone result. Reauthenticate the same configured
+connection using the supported `codex mcp login cloudflare-api` command, without
+scope overrides, then perform only the approved zone request with the mandatory
+`domain=word-staging.openlegalcore.org`, `exact=false` filter. No token/keyring
+extraction, alternate transport, User-Agent change or unfiltered list is used.
+
+Cloudflare documents two distinct targeting models. A hostname/path application
+uses a domain; Worker-level Access instead targets a `worker` destination and
+covers that Worker's routes and domains. Account-wide protection can use
+`all_workers`. Preview-only targets are different again. Therefore an empty
+domain-filtered result cannot establish that a Worker is unprotected, nor does
+it identify its policy, session or cookie settings. The actual targeting model
+of this gateway remains **unverified** until the authorized control-plane read.
+See [Workers Access documentation](https://developers.cloudflare.com/workers/configuration/cloudflare-access/)
+and [the feature announcement](https://developers.cloudflare.com/changelog/post/2026-08-14-workers-access/).
+
 | Frontend fact | Current conclusion |
 | --- | --- |
 | `/api/*` and `/v1/*` Worker routes | Both retained routes target the gateway; this is routing, not Access-policy proof |
@@ -40,9 +61,9 @@ can narrow the legacy-zone possibility without an account-wide list.
 Production composition now uses `OfficeSignInDialog`, not `window.open`.
 Its same-origin public `signin.html` bootstrap opens as a top-level Office
 dialog (`displayInIframe=false`), then navigates to the existing `/api/session`
-landing. A random 128-bit correlation nonce travels only in the fragment,
-never a credential or document text. The repository Worker example's landing
-returns a fixed Office message with that nonce; its script has an exact CSP
+landing. A random 128-bit correlation nonce travels only through the Office
+parent/child messaging channel, never the URL, a credential or document text.
+The repository Worker example's landing replies to that challenge; its script has an exact CSP
 hash, no unsafe-inline, and retains `frame-ancestors 'none'`. The API/Engine
 protection and task-pane hosting CSP are not loosened.
 
@@ -51,6 +72,18 @@ accepted. Duplicate opens, close, failure, a five-minute deadline, disposal and
 late-created dialogs are bounded/cleaned up. The return message means only
 **landing reached**, not authenticated identity or usable pane cookies. It
 never submits a message or automatically checks the connection.
+
+The 8fdd6f3 review reproduced a lost callback in both parent-first and child-first
+readiness when the URL fragment is absent: both regressions fail on the old
+source. The parent now registers its listeners before challenging the child;
+an exact-origin challenge is repeated every 500 ms within the existing five-minute
+deadline, until the landing registers and acknowledges it. This retries only
+native messages, never navigation, HTTP, login or a completion. The child rejects
+wrong/missing origins, malformed shapes and nonces; it does not rely on fragment
+preservation. Close/disposal/deadline clears the challenge timer. Runtime checks
+require DialogApi 1.2 and DialogOrigin 1.1, with no popup/storage fallback.
+The fixed bootstrap ignores arbitrary query/fragment return inputs. This is
+synthetic protocol evidence, not a Word Web PASS.
 
 On startup and explicit **Check connection**, the actual pane separately GETs
 `/api/session` then `/v1/models`, with same-origin credentials, no-store and
@@ -99,13 +132,41 @@ landing flow. If only the frontend changes against the old landing, the dialog
 cannot signal nonce completion; it must not be called successful. No live
 deployment or settings change is performed here.
 
-Still NOT_RUN: actual Word Web Dialog Origin messaging and fragment preservation
-through Access; idle/expiry and denied-policy cases; Storage Access grant,
+Still NOT_RUN: actual Word Web parent/child messaging through Access and host API
+support; idle/expiry and denied-policy cases; Storage Access grant,
 denial and Word sandbox behavior; real cookie send/blocked reasons on both API
 prefixes; preservation of a real draft and selected-text attachment throughout.
 Use provider-free GET checks only. No synthetic result is a Word PASS.
 
-### Local qualification
+### Callback review qualification — 24 October
+
+The full local Contributing gates exit 0 on the reviewed source: **564 tests
+passed / 1 protected live skipped**, 33 passing files; audit 0 vulnerabilities,
+typecheck, lint, formatting, four manifest validations, five builds and production
+isolation. The CI formatting gate now includes the new bootstrap HTML and the
+shipped Worker JavaScript. Two lost-callback/readiness regressions first fail
+against 8fdd6f3, then pass against this matched frontend/Worker callback.
+No provider or identity request is needed for these protocol tests.
+
+The coordinated package must contain this head's Pages build and exact Worker
+source together, while preserving the retained production manifest and hosting
+CSP. Its primary rollback is last observed Pages
+`5e4e601b-364d-41d9-afe3-14819d09733b` / 390590d and Worker version
+`d6ef17bc-bd07-4cd9-a219-d36bfcda1738`. These pins require a fresh read before
+activation; the broken MCP connection prevents that attestation today. The
+package is prepared offline, not authorization to deploy or evidence of a new
+Worker version/deployment. The old JSON Worker is not a compatible rollback.
+
+Future activation is Worker-first, Pages-second; rollback is old Pages first,
+then old Worker. Inherit existing bindings only after checking the active and
+latest-uploaded versions match, and use the upload API's strict inheritance
+mode; its legacy script-version endpoint defaults to latest, not deployed.
+Never replace active secrets or assume a supplied version ID is accepted by
+that endpoint. See the [official version-upload semantics](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/versions/methods/create/).
+The packet records exact head/tree, final CI, checksums, both rollback pins,
+the required fresh preflight and the remaining Access/Word/Engine gates.
+
+### Historical local qualification — 8fdd6f3
 
 Node 24.21.0, base `8d96dbfd86909f65c6b072e428937dc1d885a11c`, same dedicated
 `codex/olc-72-word-native-sse` branch. The full local Contributing command set

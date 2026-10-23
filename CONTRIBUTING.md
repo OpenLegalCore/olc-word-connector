@@ -62,7 +62,7 @@ npm run typecheck
 npm run lint
 npx --no-install prettier --check \
   ".github/workflows/ci.yml" \
-  "src/**/*.ts" "src/**/*.css" "src/taskpane/taskpane.html" \
+  "src/**/*.ts" "src/**/*.css" "src/taskpane/*.html" "infrastructure/**/*.js" \
   "test/**/*.ts" "test/**/*.css" "test/harness/harness.html" \
   "scripts/**/*.js" "*.{js,json,mts}"
 npm run validate

@@ -93,16 +93,39 @@ describe("Word gateway example routing", () => {
     const page = await handleRequest(request("/api/session"), environment, fetch);
     const script = (await page.text()).match(/<script>([\s\S]+?)<\/script>/)![1];
     const messageParent = vi.fn();
-    for (const hash of ["", "#invalid", "#" + "ab".repeat(16)]) {
-      runInNewContext(script, {
-        location: { origin: publicOrigin, hash },
-        Office: {
-          onReady: async () => undefined,
-          context: { ui: { messageParent } },
+    let receive!: (event: unknown) => void;
+    runInNewContext(script, {
+      location: { origin: publicOrigin, hash: "" },
+      Office: {
+        onReady: async () => undefined,
+        EventType: { DialogParentMessageReceived: "parent" },
+        AsyncResultStatus: { Succeeded: "succeeded" },
+        context: {
+          ui: {
+            messageParent,
+            addHandlerAsync: (
+              _type: string,
+              handler: (event: unknown) => void,
+              done: (result: unknown) => void
+            ) => {
+              receive = handler;
+              done({ status: "succeeded" });
+            },
+          },
         },
-      });
-      await Promise.resolve();
-    }
+      },
+    });
+    await Promise.resolve();
+    const payload = JSON.stringify({ type: "olc-word-session-challenge", nonce: "ab".repeat(16) });
+    receive({ origin: "https://other.example.invalid", message: payload });
+    receive({ message: payload });
+    receive({ origin: publicOrigin, message: "null" });
+    receive({
+      origin: publicOrigin,
+      message: JSON.stringify({ type: "olc-word-session-challenge", nonce: "bad" }),
+    });
+    expect(messageParent).not.toHaveBeenCalled();
+    receive({ origin: publicOrigin, message: payload });
     expect(messageParent).toHaveBeenCalledTimes(1);
     expect(messageParent).toHaveBeenCalledWith(
       JSON.stringify({ type: "olc-word-session-landing", nonce: "ab".repeat(16) }),

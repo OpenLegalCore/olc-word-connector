@@ -4,9 +4,23 @@ const MAX_STREAM_RESPONSE_BYTES = 1024 * 1024;
 const GATEWAY_RESPONSE_MARKER = "1";
 const SESSION_PATH = "/api/session";
 const SESSION_CSP =
-  "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; script-src https://appsforoffice.microsoft.com 'sha256-R6h/OsApy/6RRqjK3PksSxHPKthLS/iu3I53MFc50os='";
-const SESSION_DIALOG_SCRIPT =
-  'if (/^#[a-f0-9]{32}$/.test(location.hash)) { Office.onReady().then(function () { Office.context.ui.messageParent(JSON.stringify({type:"olc-word-session-landing",nonce:location.hash.slice(1)}),{targetOrigin:location.origin}); }).catch(function () {}); }';
+  "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; script-src https://appsforoffice.microsoft.com 'sha256-Quee0r5GP78GT84bHJzQMBkpqicS2p2+ReDogy6hq0g='";
+const SESSION_DIALOG_SCRIPT = `(function () {
+  var ready = false;
+  function receive(event) {
+    if (!ready || event.origin !== location.origin || typeof event.message !== "string" || event.message.length > 256) return;
+    try {
+      var value = JSON.parse(event.message);
+      if (Object.keys(value).sort().join(",") !== "nonce,type" || value.type !== "olc-word-session-challenge" || typeof value.nonce !== "string" || !/^[a-f0-9]{32}$/.test(value.nonce)) return;
+      Office.context.ui.messageParent(JSON.stringify({type:"olc-word-session-landing",nonce:value.nonce}), {targetOrigin:location.origin});
+    } catch (_) {}
+  }
+  Office.onReady().then(function () {
+    Office.context.ui.addHandlerAsync(Office.EventType.DialogParentMessageReceived, receive, function (result) {
+      ready = result.status === Office.AsyncResultStatus.Succeeded;
+    });
+  }).catch(function () {});
+})();`;
 const SESSION_HTML = Object.freeze({
   "en-US":
     '<!doctype html><html lang="en-US"><head><meta charset="UTF-8">' +
