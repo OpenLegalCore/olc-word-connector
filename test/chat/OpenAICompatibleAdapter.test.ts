@@ -291,9 +291,9 @@ describe("OpenAICompatibleAdapter model preflight", () => {
     { status: 302 },
     { status: 0, type: "opaqueredirect" as const },
     { status: 401 },
-    { status: 403 },
+    { status: 403, contentType: "text/html" },
   ])(
-    "classifies same-origin Access HTML, opaque/manual redirect and denial as SESSION_EXPIRED %#",
+    "classifies same-origin Access HTML, opaque/manual redirect as unaccepted session %#",
     async (options) => {
       const transport = sequenceFetch(jsonResponse({ private: "not exposed" }, options));
       const gateway = new OpenAICompatibleAdapter(
@@ -302,6 +302,19 @@ describe("OpenAICompatibleAdapter model preflight", () => {
       );
 
       await expectCode(gateway.complete(request), "SESSION_EXPIRED");
+      expect(transport.calls).toHaveLength(1);
+    }
+  );
+
+  it.each(["application/json", "text/plain"])(
+    "keeps same-origin %s 403 distinct from session expiry",
+    async (contentType) => {
+      const transport = sequenceFetch(jsonResponse({}, { status: 403, contentType }));
+      const gateway = new OpenAICompatibleAdapter(
+        { transport: "same-origin", modelId },
+        { fetch: transport.fetch }
+      );
+      await expectCode(gateway.complete(request), "ACCESS_DENIED");
       expect(transport.calls).toHaveLength(1);
     }
   );

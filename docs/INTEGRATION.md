@@ -137,7 +137,10 @@ Linear, logs or command arguments.
 
 ## Session recovery and cancellation
 
-A redirect, HTML login response, `401` or `403` maps to `SESSION_EXPIRED`.
+A redirect, HTML login response or `401` maps to legacy `SESSION_EXPIRED`
+(**Access required**); this does not prove expiry. Non-HTML `403` is
+`ACCESS_DENIED`. See the [Word Web recovery plan](WORD_WEB_ACCESS_RECOVERY.md)
+for the required production identity/cookie qualification.
 The task pane opens the fixed `/api/session` path in a separate disowned window.
 Completing sign-in never resubmits the message; the user explicitly checks the
 connection and returns to the form before sending.

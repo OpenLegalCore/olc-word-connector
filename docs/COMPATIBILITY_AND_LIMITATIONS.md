@@ -40,6 +40,12 @@ Word for the web acceptance is evidence for the tested release candidate, not a
 blanket certification of every Microsoft 365 tenant, browser, identity policy
 or future Word version. Sideloading can be disabled by tenant policy.
 
+OLC-72 targets Word Web. Word for Mac is explicitly deferred to the
+[backlog](../ROADMAP.md#validation-priorities); no Mac acceptance is claimed.
+The document-profile successor still needs native Word Web replacement,
+insertion, formatting, Undo/Redo and Save/reopen evidence, separately from the
+earlier owner-confirmed answer/source/usage PASS.
+
 The [product gallery](SCREENSHOTS.md) demonstrates the bilingual workflow but
 does not replace runtime acceptance.
 
@@ -62,7 +68,7 @@ The accepted release-candidate walkthrough covered:
 - a clickable case-law source;
 - **Cancel** while a delayed request was active, followed by a wait beyond the
   controlled delay with no late answer;
-- **Session expired** → **Open secure sign-in** → explicit **Retry search**,
+- **Access required** → **Open secure sign-in** → explicit **Check connection**,
   without automatic resubmission; and
 - an unchanged synthetic Word document throughout.
 

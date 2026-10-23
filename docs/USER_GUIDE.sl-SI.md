@@ -246,10 +246,14 @@ Osnovna Engine pot nima dejanja za spreminjanje dokumenta. Lokalni kandidat
 izrecnega predloga dodaja samo zgoraj opisani varovani dejanji, ne ponovnega
 ustvarjanja odgovora, redline ali upravljanja sledenja spremembam.
 
-## 9. Obnovite poteklo sejo
+## 9. Obnovite zaščiteni dostop
 
-Če poteče zaščitena seja v brskalniku, komponenta prikaže **Seja je potekla**,
-namesto da bi preusmeritev ali prijavno stran prikazala kot pravni odgovor.
+Če zaščitena zahteva potrebuje prijavo, komponenta prikaže **Potreben je dostop**,
+namesto da bi preusmeritev ali prijavno stran prikazala kot odgovor. Potek seje
+je samo eden od možnih vzrokov; enako se lahko pokažejo blokirani piškotki ali
+prijavna preusmeritev. Zavrnjeni dostop z navadnim/JSON odzivom je prikazan ločeno.
+Če se težava ponavlja, uporabite [načrt diagnostike](WORD_WEB_ACCESS_RECOVERY.md),
+ne ponavljajte oddaje sporočila.
 
 1. Izberite **Odpri varno prijavo**.
 2. V novem zavihku brskalnika dokončajte prijavo upravljavca.

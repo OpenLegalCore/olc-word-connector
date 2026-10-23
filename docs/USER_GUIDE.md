@@ -245,10 +245,13 @@ The basic Engine flow has no document-editing action. The local explicit
 proposal candidate adds only the two guarded actions described above; it does
 not add regeneration, redlining or tracked-change management.
 
-## 9. Recover from an expired session
+## 9. Restore protected access
 
-If a protected browser session expires, the connector shows **Session
-expired** instead of rendering a redirect or login page as a legal answer.
+If a protected browser request needs sign-in, the connector shows **Access
+required** instead of rendering a redirect or login page as an answer. Expiry
+is one possible cause; blocked cookies or login redirects can look similar.
+A plain/JSON access denial is reported separately. If recovery repeats, use
+the [Word Web diagnosis](WORD_WEB_ACCESS_RECOVERY.md), rather than repeating Send.
 
 1. Select **Open secure sign-in**.
 2. Complete the operator's sign-in in the newly opened browser tab.

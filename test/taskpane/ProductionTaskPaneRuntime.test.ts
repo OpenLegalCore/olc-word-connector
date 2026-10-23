@@ -443,6 +443,32 @@ describe("production Engine-only task-pane runtime", () => {
     expect(state.olcEngine.requests).toHaveLength(0);
   });
 
+  it("retains a draft across repeated session recovery after an idle-time rejection, without resubmitting", async () => {
+    const state = setup({ locale: "sl-SI", openSignIn: () => true });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    setQuestion("Sintetični vnos ostane.\nDruga vrstica.");
+    click("remove-selection");
+    state.olcEngine.completionError = new ChatGatewayError("SESSION_EXPIRED");
+    click("send");
+    await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+    click("open-secure-sign-in");
+    state.olcEngine.connectionError = new ChatGatewayError("SESSION_EXPIRED");
+    click("retry-search");
+    await vi.waitFor(() => expect(state.olcEngine.connectionChecks).toBe(2));
+    await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+    click("open-secure-sign-in");
+    state.olcEngine.connectionError = undefined;
+    click("retry-search");
+    await waitForReady();
+    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+      "Sintetični vnos ostane.\nDruga vrstica."
+    );
+    expect(root().querySelector(".olc-selection-attachment")).toBeNull();
+    expect(state.olcEngine.requests).toHaveLength(1);
+    expect(state.word.applyCalls).toHaveLength(0);
+  });
+
   it("does not retry a failed completion automatically", async () => {
     const state = setup({
       selection: null,

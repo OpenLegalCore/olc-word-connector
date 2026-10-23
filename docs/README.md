@@ -25,6 +25,9 @@ legal database, AppSource listing or access to private infrastructure.
 
 ## Product and implementation guides
 
+OLC-72 review: [Word Web access recovery evidence and production plan](WORD_WEB_ACCESS_RECOVERY.md).
+Word for Mac remains backlog; native Word document-write acceptance is pending.
+
 The local OLC-72 [explicit document proposal candidate](WORD_DOCUMENT_PROPOSAL.md)
 adds the documented Engine profile and guarded user-clicked writes for synthetic review. Activation,
 native Word formatting and Undo/Redo remain unqualified; this does not change

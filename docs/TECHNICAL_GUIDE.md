@@ -72,9 +72,17 @@ The current task pane supports `en-US` and `sl-SI`. Locale is resolved from
 Office, then the browser, then English, and is not persisted. It controls
 connector UI and `response_language`; it does not rewrite the question.
 
-The browser sends only same-origin credentials. Redirects, HTML, `401` and `403`
-become `SESSION_EXPIRED`. Sign-in uses `/api/session` and never auto-resubmits a
-question.
+The browser sends only same-origin credentials. Redirects, HTML and `401`
+become the legacy `SESSION_EXPIRED` code, displayed as **Access required**;
+these signals do not prove session expiry. Non-HTML `403` is `ACCESS_DENIED`.
+Sign-in uses `/api/session` and never auto-resubmits a question. The existing
+tab flow needs production Word Web qualification; see the
+[access recovery evidence and plan](WORD_WEB_ACCESS_RECOVERY.md).
+
+Document-review JSON has the same bounded 1 MiB ceiling as the SSE wire, plus
+its field/count/UTF-8 limits. The old 50,000-character plain-answer default must
+not reject an otherwise valid structured response. An explicitly configured
+character limit still applies; the ordinary text transport retains its limit.
 
 The ready form has one localized “Ask OpenLegalCore” heading. Its input keeps
 an associated screen-reader label without a duplicate visible label. The logo,

@@ -124,11 +124,11 @@ export const slSIMessages = {
     footerMessage: "NESPREMENJENO",
   },
   session: {
-    statusLabel: "Seja je potekla",
+    statusLabel: "Potreben je dostop",
     eyebrow: "ZAŠČITENA SEJA",
-    heading: "Seja je potekla",
+    heading: "Potreben je dostop",
     description:
-      "Vaša zaščitena seja je potekla. Za nadaljevanje se znova prijavite. Dokument ni bil spremenjen.",
+      "Zaščiteni dostop ni bil sprejet. Prijavite se in preverite povezavo. Vaš vnos je ohranjen; dokument ni bil spremenjen.",
     signInOpenedTitle: "Varna prijava je odprta",
     signInOpenedMessage:
       "Dokončajte prijavo v novem zavihku, vrnite se v Word in preverite povezavo.",

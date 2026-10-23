@@ -121,11 +121,11 @@ export const enUSMessages = {
     footerMessage: "UNCHANGED",
   },
   session: {
-    statusLabel: "Session expired",
+    statusLabel: "Access required",
     eyebrow: "PROTECTED SESSION",
-    heading: "Session expired",
+    heading: "Access required",
     description:
-      "Your protected session has expired. Sign in again to continue. The document has not been changed.",
+      "Protected access was not accepted. Sign in and check the connection. Your message is retained; the document has not been changed.",
     signInOpenedTitle: "Secure sign-in opened",
     signInOpenedMessage:
       "Complete sign-in in the new tab, return to Word, then check the connection.",

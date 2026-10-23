@@ -44,7 +44,7 @@ document-editing system.
 | Direction                                | Current boundary                                                                                      |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Word for Windows                         | Not tested and not supported until a client-specific acceptance run passes                            |
-| Word for Mac                             | Not tested and not supported until a client-specific acceptance run passes                            |
+| Word for Mac                             | Backlog by owner decision (OLC-72, 2026-10-23); not tested, no current support claim. Word Web remains the active target |
 | Persistent interface-language preference | The current language choice is runtime-only; persistence needs an explicit privacy and storage design |
 
 These items do not block the source-only Word Web beta unless a later release

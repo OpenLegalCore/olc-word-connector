@@ -269,7 +269,7 @@ confirms:
   shown without estimation;
 - Copy answer, Edit message and New message work as documented;
 - Stop and timeout suppress late results;
-- Session expired requires secure sign-in and an explicit connection check;
+- Access required offers secure sign-in and an explicit connection check;
 - questions, selections, answers and credentials do not appear in unintended
   logs or browser storage; and
 - receiving answers leaves Word unchanged. The separate local proposal candidate
@@ -288,7 +288,7 @@ backend version, model and policy configuration used for acceptance.
 | Add-in command is missing     | The intended manifest is sideloaded and every manifest URL is reachable      |
 | Provider fails immediately    | The same origin exposes the exact route and configured model ID              |
 | Word Web lost the add-in      | The browser profile or cache changed; sideload the manifest again            |
-| Session expired repeats       | Complete sign-in in the opened tab, return to Word, then check the connection |
+| Access recovery repeats       | Follow the [Word Web cookie/policy diagnosis](WORD_WEB_ACCESS_RECOVERY.md); do not repeatedly submit |
 | Result lacks reliable sources | Stop relying on it and verify the authoritative source directly              |
 
 See [Troubleshooting](TROUBLESHOOTING.md) for controlled recovery paths.

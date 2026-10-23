@@ -36,6 +36,12 @@ without changing the document.
 
 ## At a glance
 
+The OLC-72 draft adds an [explicit document-review proposal with guarded
+user-clicked writes](docs/WORD_DOCUMENT_PROPOSAL.md). Its owner-accepted visual
+design is preserved; native Word Web write qualification and
+[production access recovery](docs/WORD_WEB_ACCESS_RECOVERY.md) remain open.
+Word for Mac is backlog. This candidate is not a released editing capability.
+
 |                         |                                                                         |
 | ----------------------- | ----------------------------------------------------------------------- |
 | **Word host**           | Word for the web is verified; Windows and Mac are not yet tested        |

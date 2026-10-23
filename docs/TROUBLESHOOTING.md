@@ -20,7 +20,7 @@ its security or document-safety boundaries.
 | Task pane opens but never reaches the message input   | Static hosting / JavaScript         | Task-pane URL, HTTPS trust, browser console without sensitive data   |
 | Connection check fails                                | Gateway / session / model discovery | Explicit provider, same-origin route, session and exact model ID     |
 | Search starts but fails                               | Completion route / backend contract | Status code, content type, provider availability and response limits |
-| **Session expired** appears                           | Browser-facing identity             | Complete secure sign-in, return to Word, select **Check connection** |
+| **Access required** appears                           | Browser-facing identity             | Complete secure sign-in, return to Word, select **Check connection** |
 | No useful source is returned                          | Backend corpus / retrieval          | Refine the question and verify backend coverage                      |
 | Source text is visible but not clickable              | Renderer URL policy                 | Exact HTTPS PISRS or sodnapraksa hostname                            |
 | **Selected text** is rejected                         | Word selection policy               | Non-empty supported selection within one body or table cell          |
@@ -89,10 +89,14 @@ Check, in order:
 
 Select **Try again** only after correcting the cause. The connector has no fallback backend and never retries automatically.
 
-## Session expired
+## Access required
 
-A same-origin redirect, HTML login response, `401` or `403` is treated as
-**Session expired**, not as a model answer.
+A same-origin redirect, HTML login response or `401` is treated as
+**Access required**, not as a model answer. The internal `SESSION_EXPIRED` code
+does not establish expiry: blocked cookies or a login challenge can produce the
+same symptom. A non-HTML `403` is **Access denied** and must not be diagnosed as
+session expiry. See [Word Web access recovery](WORD_WEB_ACCESS_RECOVERY.md) for
+the read-only evidence, missing browser evidence and production remediation plan.
 
 1. Select **Open secure sign-in**.
 2. Complete the operator-provided browser login.

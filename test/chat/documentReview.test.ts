@@ -180,6 +180,31 @@ describe("pinned Engine document-review protocol", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
+  it("accepts a valid document result beyond the legacy text cap while retaining explicit bounds", async () => {
+    const value = documentReviewFixture();
+    value.claims = Array.from({ length: 8 }, () => ({
+      text: "x".repeat(4096),
+      source_labels: ["Z1"],
+    }));
+    value.proposal!.markdown = "y".repeat(29000);
+    const wire = contentEvent(JSON.stringify(value)) + successTerminal;
+    expect(JSON.stringify(value).length).toBeGreaterThan(50000);
+    const gateway = createSameOriginProductionGateways({
+      fetch: async () => response(wire),
+    }).olcEngine;
+    expect((await gateway.complete(request)).proposal?.text).toBe(value.proposal!.markdown);
+    const bounded = new OpenAICompatibleAdapter(
+      {
+        transport: "same-origin",
+        modelId: "lexai-engine-local",
+        responseProfile: "document-review",
+        maxResponseChars: 50000,
+      },
+      { fetch: async () => response(wire) }
+    );
+    await expect(bounded.complete(request)).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+  });
+
   it("keeps absent usage null and does not convert an Access failure into a fallback request", async () => {
     const gateway = createSameOriginProductionGateways({
       fetch: async () =>
@@ -192,7 +217,7 @@ describe("pinned Engine document-review protocol", () => {
     const fetch = vi.fn(async () => new Response("", { status: 403 }));
     await expect(
       createSameOriginProductionGateways({ fetch }).olcEngine.complete(request)
-    ).rejects.toMatchObject({ code: "SESSION_EXPIRED" });
+    ).rejects.toMatchObject({ code: "ACCESS_DENIED" });
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 

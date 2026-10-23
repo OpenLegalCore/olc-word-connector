@@ -1,8 +1,10 @@
 # OLC-72 explicit document proposal candidate
 
-Status: IN REVIEW, local successor of `607752891de593f9350d9e103870fe8b640cd453`.
+Status: IN REVIEW, reviewed successor of `1d86fd7c21695730c64d8de91118c49e2a324eb6`.
 The owner confirmed that candidate's visual PASS; its CSS, assets and layout are
-unchanged. Not pushed/deployed and not native Word acceptance.
+unchanged. This review is authorized for push to draft PR #2, not deployment,
+merge or native Word acceptance. See [access recovery](WORD_WEB_ACCESS_RECOVERY.md)
+for the separate production-login blocker and reviewed implementation plan.
 
 ## Current contract and Engine incident handoff
 
@@ -74,8 +76,51 @@ its qualified evidence/contract changes (if any), distinguish it from the local
 aa52 candidate, and attest the exact release/imports actually behind the Word
 HTTPS origin before separately approved activation. Do not repeat the incident
 or treat the model ID as runtime proof. The existing login failure remains a
-separate production blocker and was not changed. No provider call or runtime
-activation is authorized by this local work.
+separate production blocker. Its proven client-side misclassification is fixed,
+but actual Word iframe expiry/cookie/policy evidence is still required. No
+provider call or runtime activation is authorized by this review.
+
+The latest retained Engine runtime proof independently read for this review
+records `8eb44dd9bbbb4c81f272dcbd738d09e756f4fe22`, deployment/postflight PASS,
+but `RELEASE_GATE=NOT_PASS` and `OWNER_ACCEPTANCE=PENDING`. It is historical
+runtime evidence, not a fresh attestation of the current Word HTTPS origin.
+The newer aa52aa1 source candidate is not an installed semantic correction.
+
+## Review corrections and release boundaries — 2026-10-23
+
+The review reproduced and corrected two defects: valid structured JSON above
+the legacy 50,000-character text limit was rejected, and all same-origin `403`
+responses were incorrectly reported as session expiry. Document-review now uses
+a bounded 1 MiB default plus its existing field/count limits; explicit lower
+limits still reject oversized results. Non-HTML `403` remains access denial;
+login challenges remain fail-closed and are described without asserting expiry.
+The new recovery regression proves draft and removed-selection preservation
+across failed/successful manual checks, without a second completion or Word write.
+
+The accepted CSS, form layout, assets, manifest and hosting CSP are unchanged.
+The current gateway already passes the bounded profile request/SSE without
+interpreting it; no Worker update is required for this frontend candidate.
+The prepared staging package must retain the current production manifest and
+CSP bytes, and use current Pages `5e4e601b-364d-41d9-afe3-14819d09733b` as its
+frontend rollback, with Worker `d6ef17bc-bd07-4cd9-a219-d36bfcda1738` unchanged.
+Packaging is preparation, not activation approval. The package handoff records
+the final immutable head, checksums, CI and read-only control-plane snapshot.
+
+Word Web is the active acceptance target; Word for Mac is explicitly backlog.
+Native replacement/insertion, formatting, Undo/Redo and Save/reopen are still
+NOT_RUN for this successor. Earlier answer/source/usage and visual acceptance
+remain historical evidence; they do not qualify these new write operations.
+
+Review qualification on Node 24.21.0: all 15 Contributing command gates exited
+0: full deterministic suite **536 passed / 1 protected live skipped**, typecheck,
+lint, exact CI formatting command, production audit **0 vulnerabilities**, four
+official manifest validations, five builds and production bundle verification.
+The three directly affected suites also passed (154 tests). No protected live
+test or provider request ran. The existing local dependency tree was reused;
+its earlier `npm ci --ignore-scripts` installation did not qualify dependency
+lifecycle scripts. Exact-head GitHub CI uses ordinary `npm ci` and is required
+in addition; the immutable final run ID and result belong in PR/Linear and the
+staging handoff, without a self-referential commit SHA in this document.
 
 The local provider-neutral result extension is `proposal: null | { text,
 language, changeSummary }`. It is a Word domain type, **not** an assertion that
@@ -155,7 +200,7 @@ text/history. Native Word formatting and Undo/Redo remain **NOT VERIFIED**.
 
 ## Previous local qualification record — candidate 6077528, 2026-10-23
 
-### Current successor qualification
+### Historical local qualification — 1d86fd7
 
 All current local gates exited 0: `npm test -- --run` (30 files / **532 tests**
 passed, one protected live test/file intentionally skipped), typecheck, lint,

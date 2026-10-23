@@ -216,7 +216,8 @@ export class OpenAICompatibleAdapter implements ChatGateway {
       config.maxResponseBytes ?? DEFAULT_MAX_RESPONSE_BYTES
     );
     this.maxResponseChars = requirePositiveInteger(
-      config.maxResponseChars ?? DEFAULT_MAX_RESPONSE_CHARS
+      config.maxResponseChars ??
+        (this.documentReview ? DEFAULT_MAX_RESPONSE_BYTES : DEFAULT_MAX_RESPONSE_CHARS)
     );
     this.fetchImpl = dependencies.fetch ?? defaultFetch;
   }
@@ -341,7 +342,6 @@ export class OpenAICompatibleAdapter implements ChatGateway {
         (response.status >= 300 && response.status < 400) ||
         response.redirected ||
         response.status === 401 ||
-        response.status === 403 ||
         responseType === "text/html")
     ) {
       this.cancelResponseBody(response);
