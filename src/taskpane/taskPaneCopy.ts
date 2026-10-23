@@ -77,7 +77,6 @@ export function createReadyViewModel(environment?: TaskPaneEnvironment): TaskPan
       detail: "DOCUMENT ACCESS AVAILABLE",
       tone: "success",
     },
-    eyebrow: "ASSISTANT",
     heading: "Ask OpenLegalCore",
     description: "Ask a question or give an instruction. This shell is not connected.",
     footer: readyFooter,

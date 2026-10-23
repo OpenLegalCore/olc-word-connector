@@ -48,6 +48,7 @@ body.taskpane-runtime {
   container-name: olc-pane;
   container-type: inline-size;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   width: 100%;
   height: 100%;
@@ -173,7 +174,6 @@ body.taskpane-runtime {
 .olc-product-title,
 .olc-workspace-title,
 .olc-workspace-copy,
-.olc-section-title,
 .olc-notice-title,
 .olc-notice-copy,
 .olc-action-region-message,
@@ -303,6 +303,8 @@ body.taskpane-runtime {
   font-weight: 750;
   letter-spacing: -0.025em;
   line-height: 1.08;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .olc-workspace-copy {
@@ -320,17 +322,6 @@ body.taskpane-runtime {
   border: 0;
   border-top: 1px solid var(--olc-oxblood);
   border-bottom: 1px solid var(--olc-rule);
-}
-
-.olc-section-heading {
-  display: grid;
-  gap: 2px;
-  margin-bottom: var(--olc-space-3);
-}
-
-.olc-section-title {
-  font-size: 15px;
-  font-weight: 750;
 }
 
 .olc-fields,
@@ -380,6 +371,7 @@ body.taskpane-runtime {
 
 .olc-selection-attachment {
   display: grid;
+  min-width: 0;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: var(--olc-space-2);
@@ -597,6 +589,30 @@ body.taskpane-runtime {
 }
 
 @container olc-pane (max-width: 319px) {
+  .olc-app-header {
+    gap: var(--olc-space-2);
+  }
+
+  .olc-brand {
+    flex: 1 1 0;
+    gap: 6px;
+  }
+
+  .olc-product-title {
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .olc-header-actions {
+    flex: 0 0 auto;
+    gap: var(--olc-space-1);
+  }
+
+  .olc-settings-trigger {
+    width: 36px;
+    height: 36px;
+  }
+
   .olc-action-region {
     display: grid;
   }

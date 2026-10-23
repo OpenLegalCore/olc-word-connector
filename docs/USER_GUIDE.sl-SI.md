@@ -3,10 +3,10 @@
 [English](USER_GUIDE.md) · [Galerija izdelka](SCREENSHOTS.md) ·
 [Namestitev](INSTALLATION.md) · [Odpravljanje težav](TROUBLESHOOTING.md)
 
-OpenLegalCore Word Connector v podokno Microsoft Worda prinaša osredotočen
-postopek iskanja po slovenskih pravnih virih. Povežete se z OLC Engine, odločite se,
-ali se sme uporabiti izbrano besedilo iz Worda, zastavite pravno vprašanje ter
-pregledate odgovor in vire. Beta različica Wordovega dokumenta ne spreminja.
+OpenLegalCore Word Connector omogoča, da ob dokumentu zastavite vprašanje ali
+napišete navodilo. Samodejno preveri OLC Engine in morebitno izbrano Wordovo
+besedilo prikaže kot odstranljivo priponko. Preglejte odgovor in vire, kadar jih
+vsebuje. Beta različica Wordovega dokumenta ne spreminja.
 
 > [!IMPORTANT]
 > Komponenta je namenjena podpori pri raziskovanju. Ni avtoritativen pravni vir
@@ -63,6 +63,10 @@ storitev. S klikom na predogled odprete sliko v polni velikosti.
 Komponenta ob odprtju podokna samodejno preveri fiksni model
 `lexai-engine-local` in nato prikaže vnos. Nadomestnega ponudnika ni, preverjanje
 ne pošlje sporočila in zahteva se nikoli ne ponovi samodejno.
+
+Pripravljeni obrazec ima enoten naslov **Vprašajte OpenLegalCore** in dostopno
+označen vnos brez podvojenih vidnih oznak. Logotip, priponka izbora in **Pošlji**
+ostanejo dostopni tudi v ozkem podoknu.
 
 Če preverjanje povezave ne uspe, upravljavca okolja prosite, naj preveri
 same-origin pot `/v1/models`, model in pravilo dostopa.
@@ -291,6 +295,10 @@ preklic z zadušitvijo poznega odgovora, obnovo seje z varno prijavo in izrecnim
 ponovnim poskusom ter nespremenjen dokument. Lastnik je na aktivnem kandidatu
 sprejel tudi Engine-only staging pot OLC-72 s prikazanim odgovorom, viri,
 porabo in nespremenjenim dokumentom.
+
+Lastnik je 23. oktobra 2026 sprejel končni poenostavljeni slovenski videz v
+dejanskem lokalnem runtime harnessu. To je vizualni sprejem, ne nov preizkus
+completion zahteve ali celoten sprejem poenostavljenega obrazca v Wordu za splet.
 
 Trenutne meje:
 

@@ -6,8 +6,6 @@ export const slSIMessages = {
     brandName: "OpenLegalCore za Word",
     brandImageAlt: "OpenLegalCore",
     availableActions: "Razpoložljiva dejanja",
-    requestInput: "VNOS ZAHTEVE",
-    questionSection: "Vprašanje",
     answerAriaLabel: "Odgovor",
     sourcesHeading: "Viri",
   },
@@ -54,7 +52,6 @@ export const slSIMessages = {
   ready: {
     connectedStatus: (provider: string): string => `${provider} je povezan`,
     statusDetail: "POVEZANO",
-    eyebrow: "POMOČNIK",
     heading: "Vprašajte OpenLegalCore",
     description: "Zastavite vprašanje ali napišite navodilo.",
     selectedText: "Izbrano besedilo",

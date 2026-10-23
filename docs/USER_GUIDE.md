@@ -3,10 +3,10 @@
 [Slovenščina](USER_GUIDE.sl-SI.md) · [Product gallery](SCREENSHOTS.md) ·
 [Installation](INSTALLATION.md) · [Troubleshooting](TROUBLESHOOTING.md)
 
-OpenLegalCore Word Connector brings a focused Slovenian legal-source search
-workflow into a Microsoft Word task pane. You connect to OLC Engine, decide
-whether any selected Word text may be used, ask a legal question, and review an
-answer with sources. The beta does not change the Word document.
+OpenLegalCore Word Connector lets you ask a question or write an instruction
+beside your document. It checks OLC Engine automatically and shows any selected
+Word text as a removable attachment. Review the answer and any sources it
+contains. The beta does not change the Word document.
 
 > [!IMPORTANT]
 > The connector supports research; it is not an authoritative legal source and
@@ -61,6 +61,10 @@ is included. Select a preview to open its full-size image.
 The connector checks the fixed `lexai-engine-local` model automatically when
 the task pane opens, then shows the message input. It has no fallback backend,
 does not send a message during this check and never retries automatically.
+
+The ready form uses one **Ask OpenLegalCore** heading and an accessible message
+input without repeated visible labels. The logo, selection attachment and
+**Send** remain available in a narrow pane.
 
 If the connection check fails, ask the deployment operator to verify the
 same-origin `/v1/models` route, model and access policy.
@@ -290,6 +294,10 @@ actions, cancellation with late-response suppression, session recovery through
 secure sign-in and explicit retry, and an unchanged document. The owner also
 accepted the Engine-only OLC-72 staging path with a rendered answer, sources,
 reported usage and an unchanged document on the active candidate.
+
+On 23 October 2026 the owner accepted the final simplified Slovenian appearance
+in the actual local runtime harness. This records visual acceptance, not a new
+completion test or the full simplified-form Word Web walkthrough.
 
 Current boundaries:
 

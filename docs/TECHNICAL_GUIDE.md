@@ -23,11 +23,13 @@ interface is not a promise of multiple runtime providers.
 
 ## Document boundary
 
-No-document mode never calls `captureSelection()`. Selected-text capture occurs
-only after an explicit Search or Retry action. The adapter returns serializable
-data; Office.js proxy objects never cross its boundary. The production flow has
-no document mutation method. Cancel, timeout, validation failure, session
-expiry, backend failure and late events leave Word unchanged.
+The runtime observes and validates only the current explicit Word selection to
+show a removable attachment. Moving focus into the input preserves that
+attachment. Send freezes the displayed selection and locale; without an
+attachment it sends only the message. The adapter returns serializable data;
+Office.js proxy objects never cross its boundary. The production flow has no
+document mutation method. Cancel, timeout, validation failure, session expiry,
+backend failure and late events leave Word unchanged.
 
 ## Engine transport
 
@@ -69,6 +71,12 @@ The browser sends only same-origin credentials. Redirects, HTML, `401` and `403`
 become `SESSION_EXPIRED`. Sign-in uses `/api/session` and never auto-resubmits a
 question.
 
+The ready form has one localized “Ask OpenLegalCore” heading. Its input keeps
+an associated screen-reader label without a duplicate visible label. The logo,
+selection attachment, removal control and Send action fit a 280 px pane. The
+browser harness uses its imported logo asset; deployable builds retain the
+versioned root-relative `/assets/office/1.0.0.2/openlegalcore-mark-80.png` path.
+
 ## Gateway and credential isolation
 
 The checked-in Worker is an inert example with only `/v1/models`,
@@ -92,6 +100,10 @@ suppression, safe rendering, production composition, gateway bounds, manifests
 and bundle isolation. Protected live tests are opt-in and are not ordinary CI.
 
 The accepted `v0.1.0-beta.1` record predates the Engine-only decision and covered
-the then-current two-provider release. That evidence remains historical; a new
-Engine-only Word for the web acceptance is required before this candidate can
-merge.
+the then-current two-provider release. The owner later confirmed the existing
+Engine-only Word Web path with an answer, sources and reported usage. On
+23 October 2026 the owner accepted the final simplified Slovenian form in the
+actual runtime harness, including the logo, heading, selection attachment and
+Send action. This local visual acceptance does not claim a new completion or
+the full simplified-form Word Web walkthrough; that broader acceptance remains
+a pre-merge gate.

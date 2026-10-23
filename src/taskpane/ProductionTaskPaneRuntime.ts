@@ -151,7 +151,7 @@ function readyModel(
       detail: messages.ready.statusDetail,
       tone: "success",
     },
-    eyebrow: messages.ready.eyebrow,
+    eyebrow: undefined,
     heading: messages.ready.heading,
     description: messages.ready.description,
     fields: [
@@ -162,6 +162,7 @@ function readyModel(
         kind: "textarea",
         readOnly: false,
         placeholder: messages.ready.questionPlaceholder,
+        visuallyHiddenLabel: true,
       },
     ],
     attachment:

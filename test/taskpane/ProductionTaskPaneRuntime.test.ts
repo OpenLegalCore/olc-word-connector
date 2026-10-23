@@ -202,6 +202,18 @@ describe("production Engine-only task-pane runtime", () => {
     expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.placeholder).toBe(
       LEGAL_QUESTION_PLACEHOLDER
     );
+    const input = root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")!;
+    const inputLabel = root().querySelector<HTMLLabelElement>(
+      'label[for="runtime-legal-question"]'
+    );
+    expect(inputLabel?.textContent).toBe("Message");
+    expect(inputLabel?.classList.contains("olc-sr-only")).toBe(true);
+    expect(Array.from(input.labels)).toContain(inputLabel);
+    expect(root().querySelectorAll(".olc-section-heading")).toHaveLength(0);
+    expect(root().querySelectorAll(".olc-fields .olc-field-label:not(.olc-sr-only)")).toHaveLength(
+      0
+    );
+    expect(root().textContent).not.toMatch(/ASSISTANT|REQUEST INPUT/);
     expect(root().querySelector(".olc-selection-attachment")?.textContent).toContain(
       "Selected text"
     );
@@ -407,6 +419,7 @@ describe("production Engine-only task-pane runtime", () => {
     activeRuntime = state.runtime;
     await waitForReady();
     expect(root().querySelector("h1")?.textContent).toBe("Vprašajte OpenLegalCore");
+    expect(root().textContent).not.toContain("POMOČNIK");
     expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.placeholder).toBe(
       "Vprašajte ali napišite navodilo …"
     );

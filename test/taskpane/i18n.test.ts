@@ -19,8 +19,8 @@ describe("task-pane i18n catalogs", () => {
     const englishKeys = messageKeyPaths(enUSMessages);
     const slovenianKeys = messageKeyPaths(slSIMessages);
 
-    expect(englishKeys).toHaveLength(108);
-    expect(slovenianKeys).toHaveLength(108);
+    expect(englishKeys).toHaveLength(105);
+    expect(slovenianKeys).toHaveLength(105);
     expect(slovenianKeys).toEqual(englishKeys);
     expect(messagesFor("sl-SI")).toBe(slSIMessages);
     expect(messagesFor("en-US")).toBe(enUSMessages);

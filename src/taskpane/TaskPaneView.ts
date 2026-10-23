@@ -69,20 +69,14 @@ function createActions(
   return group;
 }
 
-function createSectionHeading(
-  document: Document,
-  heading: string,
-  requestInputLabel: string
-): HTMLElement {
-  const header = element(document, "header", "olc-section-heading");
-  header.append(element(document, "p", "olc-metadata", requestInputLabel));
-  header.append(element(document, "h2", "olc-section-title", heading));
-  return header;
-}
-
 function createField(document: Document, field: TaskPaneFieldFixture): HTMLElement {
   const wrapper = element(document, "div", "olc-field");
-  const label = element(document, "label", "olc-field-label", field.label);
+  const label = element(
+    document,
+    "label",
+    field.visuallyHiddenLabel ? "olc-field-label olc-sr-only" : "olc-field-label",
+    field.label
+  );
   label.htmlFor = field.id;
   wrapper.append(label);
 
@@ -459,13 +453,6 @@ export class TaskPaneView {
     }
     if (model.fields?.length) {
       const fields = element(document, "section", "olc-section olc-fields");
-      fields.append(
-        createSectionHeading(
-          document,
-          messages.chrome.questionSection,
-          messages.chrome.requestInput
-        )
-      );
       for (const field of model.fields) {
         fields.append(createField(document, field));
       }

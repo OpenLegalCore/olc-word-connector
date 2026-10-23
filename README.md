@@ -162,6 +162,13 @@ It covered the then-current two-provider release paths, both document-context mo
 rendering, result actions, cancellation with late-response suppression, secure
 session recovery with an explicit retry, and an unchanged Word document.
 
+The owner subsequently confirmed the Engine-only Word Web path with an answer,
+sources and reported usage. On 23 October 2026 the owner accepted the simplified
+Slovenian form in the actual local runtime harness: working logo, one heading,
+automatic removable selection attachment and **Send**. That visual review did
+not repeat a completion request; the broader simplified-form Word Web
+walkthrough remains a separate pre-merge gate.
+
 Windows and Mac remain untested and carry no support claim. Detailed evidence,
 limitations and excluded capabilities are recorded in
 [Compatibility and limitations](docs/COMPATIBILITY_AND_LIMITATIONS.md).

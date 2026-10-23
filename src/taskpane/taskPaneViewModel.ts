@@ -24,6 +24,7 @@ export interface TaskPaneFieldFixture {
   kind?: "text" | "password" | "textarea";
   readOnly?: boolean;
   placeholder?: string;
+  visuallyHiddenLabel?: boolean;
 }
 
 export interface TaskPaneChoice {

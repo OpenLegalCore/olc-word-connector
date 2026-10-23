@@ -4,8 +4,6 @@ export const enUSMessages = {
     brandName: "OpenLegalCore",
     brandImageAlt: "OpenLegalCore",
     availableActions: "Available actions",
-    requestInput: "REQUEST INPUT",
-    questionSection: "Question",
     answerAriaLabel: "Answer",
     sourcesHeading: "Sources",
   },
@@ -51,7 +49,6 @@ export const enUSMessages = {
   ready: {
     connectedStatus: (provider: string): string => `${provider} connected`,
     statusDetail: "CONNECTED",
-    eyebrow: "ASSISTANT",
     heading: "Ask OpenLegalCore",
     description: "Ask a question or give an instruction.",
     selectedText: "Selected text",

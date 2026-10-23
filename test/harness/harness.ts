@@ -7,6 +7,7 @@ import type {
 } from "../../src/chat/ChatGateway";
 import { ProductionTaskPaneRuntime } from "../../src/taskpane/ProductionTaskPaneRuntime";
 import { TaskPaneView } from "../../src/taskpane/TaskPaneView";
+import canonicalMarkUrl from "../../assets/openlegalcore-mark-80.png";
 import { FakeChatGateway } from "../fakes/FakeChatGateway";
 import { FakeWordAdapter } from "../fakes/FakeWordAdapter";
 import { bindHarness } from "./bindHarness";
@@ -71,7 +72,7 @@ if (previewRoot) {
   const previewGateway = new PreviewGateway();
   const previewRuntime = new ProductionTaskPaneRuntime(
     previewRoot,
-    new TaskPaneView(previewRoot),
+    new TaskPaneView(previewRoot, canonicalMarkUrl),
     previewWord,
     { olcEngine: Object.assign(previewGateway, { disconnect: () => undefined }) },
     "STAGING",

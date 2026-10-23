@@ -43,6 +43,13 @@ or future Word version. Sideloading can be disabled by tenant policy.
 The [product gallery](SCREENSHOTS.md) demonstrates the bilingual workflow but
 does not replace runtime acceptance.
 
+For OLC-72, the owner separately confirmed an Engine-only Word Web request with
+an answer, sources, actual usage and an unchanged document. On 23 October 2026
+the owner accepted the final simplified Slovenian form in the actual local
+runtime harness at 280 px. This visual evidence covers the logo, single heading,
+automatic removable selection attachment and Send action. It does not replace
+the full simplified-form Word Web walkthrough or repeat the accepted request.
+
 ## Verified Word for the web workflow
 
 The accepted release-candidate walkthrough covered:
@@ -68,7 +75,7 @@ captures the then-current selection again.
 | Area                                    | Status              | Evidence and limitation                                                                                                                           |
 | --------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Historical Open WebUI adapter evidence  | `HISTORICAL`        | Preserved evidence for `v0.1.0-beta.1`; Open WebUI is not part of the current Word Connector runtime.                                             |
-| Direct OLC Engine adapter               | `VERSION-QUALIFIED` | Exact `lexai-engine-local` discovery and native SSE contract are implemented from Engine `09171ea`; real Word runtime acceptance remains separate |
+| Direct OLC Engine adapter               | `VERSION-QUALIFIED` | Native SSE fixtures are pinned to Engine `09171ea`; the owner-confirmed Engine-only Word Web answer/source/usage PASS is separate from simplified-form acceptance |
 | Shared `ChatGateway` behavior           | `VERIFIED`          | Deterministic parity covers normalized success, controlled failures, cancellation, late-result suppression and document safety                    |
 | Exact model discovery                   | `VERIFIED`          | Connection succeeds only when the configured model ID appears in the selected provider's model list                                               |
 | Automatic retry or fallback             | `NOT INCLUDED`      | OLC Engine is the only backend and a failure is never silently retried                                                                            |
