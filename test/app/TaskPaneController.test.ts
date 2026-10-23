@@ -8,7 +8,7 @@ import type {
   CompletionResult,
 } from "../../src/chat/ChatGateway";
 import { ChatGatewayError } from "../../src/chat/ChatGatewayError";
-import { WordAdapterError, type SelectionSnapshot } from "../../src/office/WordAdapter";
+import type { SelectionSnapshot } from "../../src/office/WordAdapter";
 import { FakeChatGateway } from "../fakes/FakeChatGateway";
 import { FakeWordAdapter } from "../fakes/FakeWordAdapter";
 
@@ -22,13 +22,12 @@ const snapshot: SelectionSnapshot = {
 
 const noContextInput: SearchInput = {
   question: "Kateri zakon velja za ta primer?",
-  contextMode: "none",
   uiLocale: "sl-SI",
 };
 
 const selectedTextInput: SearchInput = {
   ...noContextInput,
-  contextMode: "selected-text",
+  selection: snapshot,
 };
 
 function setup(result: CompletionResult = { text: "Odgovor [Z1]\n\n## Sources\n- [Z1] Vir" }) {
@@ -60,13 +59,13 @@ describe("TaskPaneController legal-source contract", () => {
     expect(controller.getState()).toMatchObject({ kind: "result" });
   });
 
-  it("captures only after an explicit selected-text search and sends quoted context", async () => {
+  it("sends the exact already displayed selection as quoted context", async () => {
     const { word, chat, controller } = setup();
     expect(word.captureCalls).toBe(0);
 
     expect(await controller.search(selectedTextInput)).toBe(true);
 
-    expect(word.captureCalls).toBe(1);
+    expect(word.captureCalls).toBe(0);
     expect(word.releaseCalls).toEqual([snapshot]);
     expect(chat.requests).toEqual([
       {
@@ -138,15 +137,7 @@ describe("TaskPaneController legal-source contract", () => {
     });
   });
 
-  it("contains capture and completion failures without mutating Word", async () => {
-    const capture = setup();
-    capture.word.captureError = new WordAdapterError("NO_SELECTION");
-    expect(await capture.controller.search(selectedTextInput)).toBe(false);
-    expect(capture.controller.getState()).toEqual({
-      kind: "error",
-      error: { code: "NO_SELECTION" },
-    });
-
+  it("contains completion failures without mutating Word", async () => {
     for (const code of ["SESSION_EXPIRED", "TIMEOUT", "SERVICE_UNAVAILABLE"] as const) {
       const completion = setup();
       completion.chat.error = new ChatGatewayError(code);

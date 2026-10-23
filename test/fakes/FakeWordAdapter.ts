@@ -12,6 +12,7 @@ export class FakeWordAdapter implements WordAdapter {
   captureError?: Error;
   applyError?: Error;
   releaseError?: Error;
+  private readonly selectionListeners = new Set<() => void>();
 
   constructor(public snapshot: SelectionSnapshot) {}
 
@@ -34,6 +35,18 @@ export class FakeWordAdapter implements WordAdapter {
     this.releaseCalls.push({ ...snapshot });
     if (this.releaseError) {
       throw this.releaseError;
+    }
+  }
+
+  async subscribeToSelectionChanges(listener: () => void): Promise<() => void> {
+    this.selectionListeners.add(listener);
+    return () => this.selectionListeners.delete(listener);
+  }
+
+  emitSelectionChange(snapshot: SelectionSnapshot = this.snapshot): void {
+    this.snapshot = snapshot;
+    for (const listener of this.selectionListeners) {
+      listener();
     }
   }
 }

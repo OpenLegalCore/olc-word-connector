@@ -152,6 +152,29 @@ function createNotice(document: Document, model: TaskPaneViewModel): HTMLElement
   return notice;
 }
 
+function createAttachment(document: Document, model: TaskPaneViewModel): HTMLElement | undefined {
+  if (!model.attachment) {
+    return undefined;
+  }
+  const attachment = element(document, "section", "olc-selection-attachment");
+  attachment.setAttribute("aria-label", model.attachment.label);
+  const copy = element(document, "div", "olc-selection-copy");
+  copy.append(
+    element(document, "strong", "olc-selection-label", model.attachment.label),
+    element(document, "p", "olc-selection-preview", model.attachment.preview)
+  );
+  const remove = element(
+    document,
+    "button",
+    "olc-selection-remove",
+    model.attachment.removeLabel
+  ) as HTMLButtonElement;
+  remove.type = "button";
+  remove.dataset.actionId = "remove-selection";
+  attachment.append(copy, remove);
+  return attachment;
+}
+
 export class TaskPaneView {
   private actionHandler?: (actionId: string) => void;
   private locale: UiLocale = "en-US";
@@ -445,6 +468,10 @@ export class TaskPaneView {
       );
       for (const field of model.fields) {
         fields.append(createField(document, field));
+      }
+      const attachment = createAttachment(document, model);
+      if (attachment) {
+        fields.append(attachment);
       }
       main.append(fields);
     }

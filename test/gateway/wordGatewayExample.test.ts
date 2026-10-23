@@ -34,14 +34,14 @@ const sessionCopy = {
     '<html lang="en-US">',
     "<title>Sign-in complete</title>",
     "<h1>Sign-in complete</h1>",
-    "Return to Word and select “Retry search”.",
+    "Return to Word, check the connection, review the form, then select “Send”.",
     "You can close this tab.",
   ],
   "sl-SI": [
     '<html lang="sl-SI">',
     "<title>Prijava je končana</title>",
     "<h1>Prijava je končana</h1>",
-    "Vrnite se v Word in izberite »Ponovi iskanje«.",
+    "Vrnite se v Word, preverite povezavo in obrazec ter nato izberite »Pošlji«.",
     "Ta zavihek lahko zaprete.",
   ],
 } as const;

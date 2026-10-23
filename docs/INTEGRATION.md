@@ -17,8 +17,8 @@ corpus, hosting, identity, DNS or credentials.
    `/v1/chat/completions` and `/api/session` paths.
 5. Unexpected hosts, paths, methods, content types, redirects and oversized
    bodies fail closed.
-6. A request contains no Word text or only the exact selection captured after
-   an explicit Search action.
+6. A request contains no Word text or only the exact selection shown in the
+   removable task-pane attachment and frozen by an explicit Send action.
 
 ```mermaid
 flowchart LR
@@ -78,9 +78,11 @@ legal-source response contract. With selected text, context is:
 }
 ```
 
-No-document mode does not call the Word selection API. Selected-text mode is
-limited to 20,000 characters and supported Word body or single-table-cell
-shapes. Model output is untrusted text; only the renderer's narrow formatting
+With no valid attached selection, only the message is sent. The task pane
+observes Word selection changes and displays a compact preview; moving focus
+into the input preserves that preview. Selected text is limited to 20,000
+characters and supported Word body or single-table-cell shapes. Model output is
+untrusted text; only the renderer's narrow formatting
 and exact HTTPS source-host allowlist can create links.
 
 ## Reference gateway
@@ -117,12 +119,12 @@ Linear, logs or command arguments.
 
 A redirect, HTML login response, `401` or `403` maps to `SESSION_EXPIRED`.
 The task pane opens the fixed `/api/session` path in a separate disowned window.
-Completing sign-in never resubmits the question; the user explicitly chooses
-**Retry search**. Retry captures selected text again.
+Completing sign-in never resubmits the message; the user explicitly checks the
+connection and returns to the form before sending.
 
 Cancel, timeout and supersession abort the active fetch and invalidate its
 operation identity. Late deltas, resolution and rejection cannot become a
-result. **Refine question** starts a new independent search; no conversation
+result. **Edit message** starts a new independent request; no conversation
 history is persisted.
 
 ## Verification
@@ -134,5 +136,5 @@ operator. Ordinary CI makes no private infrastructure or provider call.
 
 A connected deployment is accepted only after exact-artifact verification and
 a separately authorized Word for the web walkthrough covering both languages,
-both context modes, deltas, usage or null, cancellation, session recovery and an
+both languages, message-only and attached-selection requests, deltas, usage or null, cancellation, session recovery and an
 unchanged document.

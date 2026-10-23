@@ -54,6 +54,46 @@ body.gallery-runtime {
   padding: 20px clamp(12px, 3vw, 32px) 40px;
 }
 
+.runtime-preview {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.runtime-preview > div:first-child {
+  padding: 16px;
+  background: #f9f6ef;
+  border-top: 2px solid #6b313a;
+  border-bottom: 1px solid #cfc5b8;
+}
+
+.runtime-preview h2,
+.runtime-preview p {
+  margin: 0;
+}
+
+.runtime-preview h2 {
+  margin-top: 3px;
+  font-size: 18px;
+}
+
+.runtime-preview > div:first-child > p:last-child {
+  margin-top: 10px;
+  color: #6b655f;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.runtime-preview-stage {
+  min-height: 650px;
+}
+
+.runtime-preview-stage .gallery-pane {
+  width: 400px;
+  height: 602px;
+}
+
 .gallery-controls {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) minmax(150px, 220px) minmax(110px, 160px) auto;

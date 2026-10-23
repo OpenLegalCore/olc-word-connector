@@ -1,9 +1,10 @@
 import { TaskPaneController } from "../../src/app/TaskPaneController";
 import type { AppState } from "../../src/app/state";
+import type { SelectionSnapshot } from "../../src/office/WordAdapter";
 import { FakeChatGateway } from "../fakes/FakeChatGateway";
 
 export interface ControllerHarnessOptions {
-  readonly prepareSearch?: () => void;
+  readonly prepareSearch?: () => SelectionSnapshot | Promise<SelectionSnapshot>;
   readonly describeCalls?: () => readonly string[];
 }
 
@@ -60,16 +61,18 @@ export function bindControllerHarness(
   const unsubscribe = controller.subscribe(render);
 
   search.addEventListener("click", () => {
-    options.prepareSearch?.();
     chat.result = { text: fakeResponse.value };
     chat.delayMs = Number(delay.value) || 0;
     chat.error = gatewayError.checked ? new Error("Controlled harness failure") : undefined;
     finish(
-      controller.search({
+      (async () => {
+        const selection = selectedContext.checked ? await options.prepareSearch?.() : undefined;
+        return controller.search({
         question: question.value,
-        contextMode: selectedContext.checked ? "selected-text" : "none",
+        selection,
         uiLocale: "en-US",
-      })
+        });
+      })()
     );
   });
   cancel.addEventListener("click", () => finish(controller.cancel()));

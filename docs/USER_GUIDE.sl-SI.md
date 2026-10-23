@@ -30,11 +30,11 @@ dokumentom [Installation and deployment](INSTALLATION.md).
 ## Postopek na kratko
 
 1. Na Wordovem traku **Osnovno** odprite **Open OpenLegalCore**.
-2. Izberite **Uporabi OLC Engine**.
-3. Izberite **Brez konteksta dokumenta** ali **Izbrano besedilo**.
-4. Vnesite pravno vprašanje in izberite **Išči pravne vire**.
+2. Počakajte, da podokno samodejno preveri OLC Engine.
+3. Če je besedilo v Wordu izbrano, preglejte ali odstranite priponko **Izbrano besedilo**.
+4. Vnesite vprašanje ali navodilo in izberite **Pošlji** oziroma pritisnite Enter.
 5. Odgovor preverite v navedenih virih.
-6. Odgovor kopirajte, vprašanje dopolnite ali začnite novo iskanje.
+6. Odgovor kopirajte, sporočilo uredite ali začnite novo sporočilo.
 
 Komponenta podpira angleščino (`en-US`) in slovenščino (`sl-SI`). Ob svežem
 zagonu najprej uporabi podprt prikazni jezik Officea, nato jezik brskalnika in
@@ -58,23 +58,19 @@ Posnetki v tem priročniku so bili narejeni v zasebnem staging okolju. Vidna
 oznaka `STAGING` je namerna in ne pomeni, da repozitorij vključuje javno
 storitev. S klikom na predogled odprete sliko v polni velikosti.
 
-## 2. Povežite se z OLC Engine
+## 2. Samodejna povezava z OLC Engine
 
-Izberite **Uporabi OLC Engine**. Komponenta pred prikazom iskalnega obrazca
-preveri fiksni model `lexai-engine-local`. Nadomestnega ponudnika ni in iskanje
-se nikoli ne ponovi samodejno.
+Komponenta ob odprtju podokna samodejno preveri fiksni model
+`lexai-engine-local` in nato prikaže vnos. Nadomestnega ponudnika ni, preverjanje
+ne pošlje sporočila in zahteva se nikoli ne ponovi samodejno.
 
 Če preverjanje povezave ne uspe, upravljavca okolja prosite, naj preveri
 same-origin pot `/v1/models`, model in pravilo dostopa.
 
-## 3. Izberite kontekst dokumenta
+## 3. Preglejte zaznani izbor
 
-Izbira konteksta določa, ali komponenta prebere katero koli besedilo iz Worda.
-
-### Brez konteksta dokumenta
-
-To je privzeta možnost. Komponenta ne pokliče Wordovega vmesnika za izbor in ne
-pošlje nobene vsebine dokumenta. Pošlje samo pravno vprašanje.
+Če v Wordu ni veljavnega izbora, komponenta ne pošlje nobene vsebine dokumenta.
+Pošlje samo sporočilo.
 
 <p align="center">
   <a href="assets/screenshots/v0.1/sl-SI/01-no-document-context.png">
@@ -88,17 +84,19 @@ To možnost uporabite vedno, ko je vprašanje samostojno, na primer:
 > Kolikšen je bil odpovedni rok in kakšen rok je moralo sodišče določiti za
 > izselitev? Navedi uporabljeno zgodovinsko različico in citiraj vir.
 
-### Izbrano besedilo
+### Priponka Izbrano besedilo
 
-To možnost uporabite, ko se vprašanje nanaša na natančno določen odlomek:
+Ko se sporočilo nanaša na natančno določen odlomek:
 
 1. V Wordu označite samo relevantno besedilo.
-2. Izberite **Izbrano besedilo**.
-3. Vnesite pravno vprašanje.
-4. Izberite **Išči pravne vire**.
+2. Preverite, da kompaktna priponka **Izbrano besedilo** kaže pravi odlomek.
+3. Če odlomka ne želite poslati, priponko odstranite.
+4. Vnesite sporočilo in izberite **Pošlji**.
 
-Komponenta zajame natančen trenutni izbor šele ob začetku iskanja. Besedilo
-pošlje kot citirane podatke v polju, ki je ločeno od vprašanja. Ne doda
+Komponenta opazuje spremembe izbora, dokler je podokno odprto. Prehod fokusa v
+vnos ohrani prikazano priponko. Pošlji za zahtevo zamrzne prikazani izbor in
+jezik vmesnika. Besedilo pošlje kot citirane podatke v polju, ki je ločeno od
+sporočila. Ne doda
 preostanka dokumenta, okoliških odstavkov, imena dokumenta, poti do datoteke ali
 metapodatkov dokumenta.
 
@@ -115,11 +113,15 @@ Iskanje se ustavi še pred klicem ponudnika, če je izbor:
 - razporejen čez nepodprte vdelane strukture; ali
 - izbor tabele, ki ni navadno besedilo znotraj ene celice.
 
-Če se izbor v Wordu po začetku iskanja spremeni, aktivna zahteva še vedno
-uporablja posnetek, zajet ob začetku. Poznejši izrecni ponovni poskus znova
-zajame takratni izbor.
+Neveljaven izbor prikaže opozorilo in onemogoči **Pošlji**, dokler ga ne
+počistite ali nadomestite s podprtim besedilom. Komponenta ga nikoli tiho ne
+obravnava kot prazen izbor.
 
-## 4. Zastavite natančno pravno vprašanje
+Če se izbor v Wordu po pošiljanju spremeni, aktivna zahteva še vedno uporablja
+zamrznjeni posnetek. Poznejša neodvisna zahteva uporabi priponko, prikazano za
+novo zahtevo.
+
+## 4. Zastavite vprašanje ali napišite navodilo
 
 Kadar je pomembno, navedite jurisdikcijo, pravno vprašanje, pravno relevanten
 datum in želeno vrsto vira. Zahtevajte navedbo virov in naj zaledje jasno pove,
@@ -150,10 +152,11 @@ znakov.
 Zgodovinsko iskanje je odvisno od različic, ki jih je indeksiralo izbrano
 zaledje. Komponenta ne more jamčiti popolne časovne pokritosti.
 
-## 5. Začnite ali prekličite iskanje
+## 5. Pošljite ali ustavite zahtevo
 
-Enkrat izberite **Išči pravne vire**. Med aktivno zahtevo podokno prikazuje
-**Iskanje po zakonodaji in sodni praksi …** in ponudi **Prekliči**.
+Enkrat izberite **Pošlji** ali pritisnite Enter. Shift+Enter vstavi novo vrstico,
+sestavljanje znakov z IME pa ne pošlje zahteve. Med aktivno zahtevo podokno
+prikazuje **Pripravljam odgovor …** in ponudi **Ustavi**.
 
 <p align="center">
   <a href="assets/screenshots/v0.1/sl-SI/03-search-in-progress.png">
@@ -161,14 +164,14 @@ Enkrat izberite **Išči pravne vire**. Med aktivno zahtevo podokno prikazuje
   </a>
 </p>
 
-Z izbiro **Prekliči** prekinete aktivno zahtevo in podokno vrnete v varno
+Z izbiro **Ustavi** prekinete aktivno zahtevo in podokno vrnete v varno
 stanje. Odgovor, ki bi prispel pozneje, tega stanja ne more nadomestiti in se ne
 more prikazati kot rezultat. Preklic, časovna omejitev in pozen odgovor pustijo
 dokument nespremenjen.
 
 Med veljavnim pretočnim odzivom OLC Engine se prejeto besedilo odgovora
 sproti prikazuje z istim varnim prikazovalnikom kot dokončani odgovori. Dejanja za kopiranje,
-dopolnitev vprašanja in novo iskanje ostanejo nedostopna, dokler se odziv ne
+urejanje sporočila in novo sporočilo ostanejo nedostopna, dokler se odziv ne
 konča z veljavnim uspešnim zaključkom. Preklican, prekinjen ali neveljaven delni
 odziv nikoli ne postane rezultat.
 
@@ -218,16 +221,15 @@ odgovora sta odvisni od zaledja, modela in indeksiranih podatkov.
 Odgovor kopira v sistemsko odložišče, kadar okolje to dovoljuje. Vsebine ne
 vstavi v Word in dokumenta ne spremeni.
 
-### Dopolni vprašanje
+### Uredi sporočilo
 
-Vrne se na iskalni obrazec, kjer sta trenutno vprašanje in način konteksta na
-voljo za spremembo. Uredite vprašanje, preverite kontekst in začnite novo
-izrecno iskanje.
+Vrne se na obrazec, kjer je trenutno sporočilo na voljo za spremembo. Naslednja
+oddaja je nova neodvisna zahteva in uporabi takrat prikazano priponko izbora.
 
-### Novo iskanje
+### Novo sporočilo
 
-Odpre prazen iskalni obrazec, počisti vprašanje in način konteksta vrne na
-**Brez konteksta dokumenta**.
+Odpre prazen obrazec in počisti sporočilo. Morebitni trenutni veljavni Wordov
+izbor se prikaže ločeno kot odstranljiva priponka.
 
 Beta različica nima dejanj za uporabo ali ponovno ustvarjanje odgovora,
 prepisovanje, označevanje ali sledenje spremembam in urejanje dokumenta.
@@ -241,12 +243,11 @@ namesto da bi preusmeritev ali prijavno stran prikazala kot pravni odgovor.
 2. V novem zavihku brskalnika dokončajte prijavo upravljavca.
 3. Počakajte na potrdilo, da je prijava končana, nato zavihek zaprite.
 4. Vrnite se v Word.
-5. Izrecno izberite **Ponovi iskanje**.
+5. Izrecno izberite **Preveri povezavo**, preglejte obrazec in nato **Pošlji**.
 
-Komponenta za obnovo ohrani vprašanje, izbranega ponudnika in način konteksta.
-Nikoli ne poskusi samodejno in ne preklopi na drugega ponudnika. V načinu
-**Izbrano besedilo** možnost Ponovi iskanje pred novo zahtevo zajame takratni
-izbor.
+Komponenta zahteve nikoli ne ponovi samodejno in nima nadomestnega ponudnika.
+Obnova prijave ne pošlje prejšnjega sporočila. Pred izrecno izbiro **Pošlji**
+preglejte trenutno sporočilo in priponko izbora.
 
 Repozitorij nadzoruje samo potrditveno stran po prijavi. Zunanja stran
 ponudnika identitete ali dostopa pripada upravljavcu okolja.
@@ -270,9 +271,9 @@ nadzorov brskalnika ali tihim preklopom ponudnika. Glejte
 
 ## Zasebnost in zaupnost
 
-Vedno, ko besedilo dokumenta ni potrebno, uporabite **Brez konteksta
-dokumenta**. Pri možnosti **Izbrano besedilo** pošljite najmanjši relevantni
-odlomek in preverite, ali ga smete poslati v izbrano okolje.
+Ko besedilo dokumenta ni potrebno, odstranite priponko **Izbrano besedilo** ali
+pošljite sporočilo brez izbora. Ko je potrebno, pošljite najmanjši relevantni
+odlomek in preverite, ali ga smete poslati v okolje.
 
 Vmesnik poverilnic ponudnika, vprašanj, izborov ali odgovorov ne zapisuje
 trajno. Hramba v zaledju, beleženje, obdelava z modelom in lokacija podatkov so
@@ -284,10 +285,12 @@ besedila, pravnih odgovorov, poverilnic, piškotkov ali zasebnih naslovov.
 
 ## Preverjeni obseg in omejitve
 
-Sprejeti preizkus v Wordu za splet 5. septembra 2026 je zajel obe poti
+Zgodovinski preizkus v Wordu za splet 5. septembra 2026 je zajel obe poti
 ponudnikov, oba načina konteksta, prikaz odgovora in virov, dejanja z rezultatom,
 preklic z zadušitvijo poznega odgovora, obnovo seje z varno prijavo in izrecnim
-ponovnim poskusom ter nespremenjen dokument.
+ponovnim poskusom ter nespremenjen dokument. Lastnik je na aktivnem kandidatu
+sprejel tudi Engine-only staging pot OLC-72 s prikazanim odgovorom, viri,
+porabo in nespremenjenim dokumentom.
 
 Trenutne meje:
 

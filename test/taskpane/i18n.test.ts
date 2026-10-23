@@ -19,17 +19,17 @@ describe("task-pane i18n catalogs", () => {
     const englishKeys = messageKeyPaths(enUSMessages);
     const slovenianKeys = messageKeyPaths(slSIMessages);
 
-    expect(englishKeys).toHaveLength(115);
-    expect(slovenianKeys).toHaveLength(115);
+    expect(englishKeys).toHaveLength(108);
+    expect(slovenianKeys).toHaveLength(108);
     expect(slovenianKeys).toEqual(englishKeys);
     expect(messagesFor("sl-SI")).toBe(slSIMessages);
     expect(messagesFor("en-US")).toBe(enUSMessages);
     expect(englishKeys).toContain("ready.heading");
-    expect(enUSMessages.ready.heading).toBe("Search legal sources");
-    expect(englishKeys).toContain("ready.searchAction");
-    expect(enUSMessages.ready.searchAction).toBe("Search legal sources");
-    expect(slSIMessages.ready.heading).toBe("Iskanje pravnih virov");
-    expect(slSIMessages.ready.searchAction).toBe("Išči pravne vire");
+    expect(enUSMessages.ready.heading).toBe("Ask OpenLegalCore");
+    expect(englishKeys).toContain("ready.sendAction");
+    expect(enUSMessages.ready.sendAction).toBe("Send");
+    expect(slSIMessages.ready.heading).toBe("Vprašajte OpenLegalCore");
+    expect(slSIMessages.ready.sendAction).toBe("Pošlji");
     expect(slSIMessages.chrome.brandName).toBe("OpenLegalCore za Word");
   });
 

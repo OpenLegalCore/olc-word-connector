@@ -1,10 +1,6 @@
-/* global AbortController, Event, HTMLButtonElement, HTMLElement, HTMLInputElement, HTMLTextAreaElement, Navigator, RequestInit, Response, URL, Window, clearTimeout, navigator, setTimeout, window */
+/* global AbortController, Event, HTMLButtonElement, HTMLElement, HTMLInputElement, HTMLTextAreaElement, KeyboardEvent, Navigator, RequestInit, Response, URL, Window, clearTimeout, navigator, setTimeout, window */
 
-import {
-  TaskPaneController,
-  type DocumentContextMode,
-  type SearchInput,
-} from "../app/TaskPaneController";
+import { TaskPaneController, type SearchInput } from "../app/TaskPaneController";
 import type { AppState } from "../app/state";
 import type { ChatGateway } from "../chat/ChatGateway";
 import { ChatGatewayError } from "../chat/ChatGatewayError";
@@ -12,7 +8,12 @@ import {
   OpenAICompatibleAdapter,
   type OpenAICompatibleFetch,
 } from "../chat/OpenAICompatibleAdapter";
-import type { WordAdapter } from "../office/WordAdapter";
+import {
+  WordAdapterError,
+  type SelectionSnapshot,
+  type WordAdapter,
+  type WordAdapterErrorCode,
+} from "../office/WordAdapter";
 import { applyDocumentLocale, messagesFor, type MessageCatalog, type UiLocale } from "./i18n";
 import { TaskPaneView } from "./TaskPaneView";
 import type { TaskPaneEnvironment, TaskPaneViewModel } from "./taskPaneViewModel";
@@ -105,35 +106,6 @@ export function createSameOriginProductionGateways(
   };
 }
 
-function backendSelectionModel(
-  messages: MessageCatalog,
-  environment?: TaskPaneEnvironment
-): TaskPaneViewModel {
-  return {
-    id: "backend-selection",
-    environment,
-    status: {
-      label: messages.providerSelection.statusLabel,
-      detail: messages.providerSelection.statusDetail,
-      tone: "success",
-    },
-    eyebrow: messages.providerSelection.eyebrow,
-    heading: messages.providerSelection.heading,
-    description: messages.providerSelection.description,
-    actions: [
-      {
-        id: "select-olc-engine",
-        label: messages.providerSelection.useOlcEngine,
-        variant: "primary",
-      },
-    ],
-    footer: {
-      eyebrow: messages.providerSelection.footerEyebrow,
-      message: messages.providerSelection.footerMessage,
-    },
-  };
-}
-
 function connectingModel(
   messages: MessageCatalog,
   backend: RuntimeBackend,
@@ -165,11 +137,12 @@ function readyModel(
   messages: MessageCatalog,
   backend: RuntimeBackend,
   question: string,
-  contextMode: DocumentContextMode,
+  selection: SelectionSnapshot | undefined,
+  selectionError: WordAdapterErrorCode | undefined,
   environment?: TaskPaneEnvironment,
   notice?: TaskPaneViewModel["notice"]
 ): TaskPaneViewModel {
-  const usesSelection = contextMode === "selected-text";
+  const preview = selection?.text.replace(/\s+/g, " ").trim();
   return {
     id: "ready",
     environment,
@@ -181,14 +154,6 @@ function readyModel(
     eyebrow: messages.ready.eyebrow,
     heading: messages.ready.heading,
     description: messages.ready.description,
-    choiceGroup: {
-      name: "runtime-context",
-      label: messages.ready.contextLegend,
-      choices: [
-        { value: "none", label: messages.ready.noDocumentContext, checked: !usesSelection },
-        { value: "selected-text", label: messages.ready.selectedText, checked: usesSelection },
-      ],
-    },
     fields: [
       {
         id: "runtime-legal-question",
@@ -199,13 +164,35 @@ function readyModel(
         placeholder: messages.ready.questionPlaceholder,
       },
     ],
-    notice,
-    actions: [{ id: "search", label: messages.ready.searchAction, variant: "primary" }],
+    attachment:
+      selection && preview
+        ? {
+            label: messages.ready.selectedText,
+            preview: preview.length > 180 ? `${preview.slice(0, 177)}…` : preview,
+            removeLabel: messages.ready.removeSelectedText,
+          }
+        : undefined,
+    notice:
+      notice ??
+      (selectionError
+        ? {
+            title: messages.ready.selectionUnavailableTitle,
+            message: messages.ready.selectionUnavailableMessage,
+            tone: "warning",
+            role: "alert",
+          }
+        : undefined),
+    actions: [
+      {
+        id: "send",
+        label: messages.ready.sendAction,
+        variant: "primary",
+        disabled: selectionError !== undefined,
+      },
+    ],
     footer: {
       eyebrow: messages.ready.footerEyebrow,
-      message: usesSelection
-        ? messages.ready.selectedTextBoundary
-        : messages.ready.noDocumentBoundary,
+      message: selection ? messages.ready.selectedTextBoundary : messages.ready.noDocumentBoundary,
     },
   };
 }
@@ -215,12 +202,13 @@ function controllerModel(
   state: AppState,
   backend: RuntimeBackend,
   question: string,
-  contextMode: DocumentContextMode,
+  selection: SelectionSnapshot | undefined,
+  selectionError: WordAdapterErrorCode | undefined,
   environment?: TaskPaneEnvironment,
   copyFeedback?: CopyFeedback
 ): TaskPaneViewModel {
   if (state.kind === "ready") {
-    return readyModel(messages, backend, question, contextMode, environment);
+    return readyModel(messages, backend, question, selection, selectionError, environment);
   }
   if (state.kind === "capturing" || state.kind === "searching") {
     const partialText = state.kind === "searching" ? state.partialText : "";
@@ -381,14 +369,18 @@ function sessionExpiredModel(
 }
 
 export class ProductionTaskPaneRuntime {
-  private selectedBackend?: RuntimeBackend;
+  private readonly selectedBackend: RuntimeBackend = "olc-engine";
   private controller?: TaskPaneController;
   private unsubscribe?: () => void;
+  private unsubscribeSelectionChanges?: () => void;
   private connectionAbort?: AbortController;
   private connectionId = 0;
+  private selectionReadId = 0;
   private lastInput?: SearchInput;
   private question = "";
-  private contextMode: DocumentContextMode = "none";
+  private displayedSelection?: SelectionSnapshot;
+  private selectionError?: WordAdapterErrorCode;
+  private selectionRemoved = false;
   private signInFeedback: SignInFeedback = "idle";
   private copyFeedback?: CopyFeedback;
   private copyFeedbackTimeout?: ReturnType<typeof setTimeout>;
@@ -396,18 +388,29 @@ export class ProductionTaskPaneRuntime {
   private disposed = false;
   private locale: UiLocale;
   private currentRender?: () => void;
-  private readonly contextModeChangeHandler = (event: Event): void => {
+  private readonly formInputHandler = (event: Event): void => {
+    const target = event.target;
+    if (target instanceof HTMLTextAreaElement && target.id === "runtime-legal-question") {
+      this.question = target.value;
+    }
+  };
+  private readonly keydownHandler = (event: Event): void => {
+    if (!(event instanceof KeyboardEvent)) {
+      return;
+    }
     const target = event.target;
     if (
-      !(target instanceof HTMLInputElement) ||
-      target.name !== "runtime-context" ||
-      !target.checked ||
-      this.controller?.getState().kind !== "ready"
+      !(target instanceof HTMLTextAreaElement) ||
+      target.id !== "runtime-legal-question" ||
+      event.key !== "Enter" ||
+      event.shiftKey ||
+      event.isComposing ||
+      event.keyCode === 229
     ) {
       return;
     }
-    this.captureFormState();
-    this.renderControllerState();
+    event.preventDefault();
+    void this.search().catch(() => undefined);
   };
 
   constructor(
@@ -427,21 +430,31 @@ export class ProductionTaskPaneRuntime {
   start(): void {
     this.disposed = false;
     this.resetCopyFeedback();
-    this.root.removeEventListener("change", this.contextModeChangeHandler);
-    this.root.addEventListener("change", this.contextModeChangeHandler);
+    this.root.removeEventListener("input", this.formInputHandler);
+    this.root.addEventListener("input", this.formInputHandler);
+    this.root.removeEventListener("keydown", this.keydownHandler);
+    this.root.addEventListener("keydown", this.keydownHandler);
     this.view.setActionHandler((actionId) => {
       void this.handleAction(actionId).catch(() => undefined);
     });
     this.view.configureLocale(this.locale, (locale) => this.changeLocale(locale));
     applyDocumentLocale(this.root.ownerDocument, this.locale);
-    this.renderView((messages) => backendSelectionModel(messages, this.environment));
+    void this.connect(this.selectedBackend);
   }
 
   dispose(): void {
     this.disposed = true;
     this.signInFeedback = "idle";
     this.resetCopyFeedback();
-    this.root.removeEventListener("change", this.contextModeChangeHandler);
+    this.root.removeEventListener("input", this.formInputHandler);
+    this.root.removeEventListener("keydown", this.keydownHandler);
+    this.unsubscribeSelectionChanges?.();
+    this.unsubscribeSelectionChanges = undefined;
+    const selection = this.displayedSelection;
+    this.displayedSelection = undefined;
+    if (selection) {
+      void this.word.releaseSelection(selection).catch(() => undefined);
+    }
     this.connectionId++;
     this.connectionAbort?.abort();
     void this.controller?.cancel();
@@ -484,13 +497,13 @@ export class ProductionTaskPaneRuntime {
   }
 
   private renderControllerState(state = this.controller?.getState()): void {
-    if (!state || !this.selectedBackend) {
+    if (!state) {
       return;
     }
     if (state.kind === "error" && state.error.code === "SESSION_EXPIRED") {
       this.resetCopyFeedback();
       this.renderView((messages) =>
-        sessionExpiredModel(messages, this.selectedBackend!, this.environment, this.signInFeedback)
+        sessionExpiredModel(messages, this.selectedBackend, this.environment, this.signInFeedback)
       );
       return;
     }
@@ -501,9 +514,10 @@ export class ProductionTaskPaneRuntime {
       controllerModel(
         messages,
         state,
-        this.selectedBackend!,
+        this.selectedBackend,
         this.question,
-        this.contextMode,
+        this.displayedSelection,
+        this.selectionError,
         this.environment,
         this.copyFeedback
       )
@@ -672,17 +686,16 @@ export class ProductionTaskPaneRuntime {
         return;
       }
       this.unsubscribe?.();
-      this.selectedBackend = backend;
       this.signInFeedback = "idle";
       this.controller = new TaskPaneController(this.word, this.gateway());
       this.unsubscribe = this.controller.subscribe((state) => this.renderControllerState(state));
+      await this.startSelectionMonitoring();
     } catch (error) {
       if (connectionId !== this.connectionId) {
         return;
       }
       const code = error instanceof ChatGatewayError ? error.code : "CONNECTION_FAILED";
       if (code === "SESSION_EXPIRED") {
-        this.selectedBackend = backend;
         this.signInFeedback = "idle";
         this.renderView((messages) =>
           sessionExpiredModel(messages, backend, this.environment, "idle")
@@ -701,7 +714,7 @@ export class ProductionTaskPaneRuntime {
           description: messages.connectionError.description,
           actions: [
             {
-              id: `select-${backend}`,
+              id: "retry-connection",
               label: messages.connectionError.tryAgain,
               variant: "primary",
             },
@@ -719,31 +732,102 @@ export class ProductionTaskPaneRuntime {
     }
   }
 
+  private taskPaneInputHasFocus(): boolean {
+    const active = this.root.ownerDocument.activeElement;
+    return (
+      active instanceof HTMLTextAreaElement ||
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLButtonElement
+    );
+  }
+
+  private async startSelectionMonitoring(): Promise<void> {
+    if (!this.unsubscribeSelectionChanges) {
+      try {
+        this.unsubscribeSelectionChanges = await this.word.subscribeToSelectionChanges(() => {
+          if (!this.taskPaneInputHasFocus()) {
+            void this.refreshDisplayedSelection(true);
+          }
+        });
+      } catch {
+        // The message-only flow remains available if Word cannot register document events.
+      }
+    }
+    await this.refreshDisplayedSelection(false);
+  }
+
+  private async releaseDisplayedSelection(): Promise<void> {
+    const selection = this.displayedSelection;
+    this.displayedSelection = undefined;
+    if (selection) {
+      try {
+        await this.word.releaseSelection(selection);
+      } catch {
+        // Selection cleanup never changes the form or document.
+      }
+    }
+  }
+
+  private async refreshDisplayedSelection(fromWordEvent: boolean): Promise<void> {
+    if (this.disposed || this.controller?.getState().kind !== "ready") {
+      return;
+    }
+    if (fromWordEvent) {
+      this.selectionRemoved = false;
+    } else if (this.selectionRemoved) {
+      return;
+    }
+    const readId = ++this.selectionReadId;
+    let nextSelection: SelectionSnapshot | undefined;
+    let nextSelectionError: WordAdapterErrorCode | undefined;
+    try {
+      nextSelection = await this.word.captureSelection();
+    } catch (error) {
+      if (error instanceof WordAdapterError && error.code !== "NO_SELECTION") {
+        nextSelectionError = error.code;
+      } else if (!(error instanceof WordAdapterError)) {
+        nextSelectionError = "WORD_READ_FAILED";
+      }
+    }
+    if (this.disposed || readId !== this.selectionReadId) {
+      if (nextSelection) {
+        await this.word.releaseSelection(nextSelection).catch(() => undefined);
+      }
+      return;
+    }
+    const previous = this.displayedSelection;
+    this.displayedSelection = nextSelection;
+    this.selectionError = nextSelectionError;
+    if (previous && previous.snapshotId !== nextSelection?.snapshotId) {
+      await this.word.releaseSelection(previous).catch(() => undefined);
+    }
+    this.renderControllerState();
+  }
+
   private captureFormState(): void {
     this.question =
       this.root.querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value ??
       this.question;
-    const context = this.root.querySelector<HTMLInputElement>(
-      'input[name="runtime-context"]:checked'
-    )?.value;
-    if (context === "selected-text" || context === "none") {
-      this.contextMode = context;
-    }
   }
 
   private async search(input?: SearchInput): Promise<void> {
-    if (!this.controller || !this.selectedBackend) {
+    if (!this.controller) {
       return;
     }
     if (!input) {
       this.captureFormState();
+      if (this.selectionError) {
+        this.renderControllerState();
+        return;
+      }
       if (this.question.trim().length === 0 || this.question.length > 4_000) {
         this.renderView((messages) =>
           readyModel(
             messages,
-            this.selectedBackend!,
+            this.selectedBackend,
             this.question,
-            this.contextMode,
+            this.displayedSelection,
+            this.selectionError,
             this.environment,
             {
               title: messages.ready.validationTitle,
@@ -755,16 +839,26 @@ export class ProductionTaskPaneRuntime {
         );
         return;
       }
-      input = { question: this.question, contextMode: this.contextMode, uiLocale: this.locale };
+      input = {
+        question: this.question,
+        selection: this.displayedSelection ? { ...this.displayedSelection } : undefined,
+        uiLocale: this.locale,
+      };
     }
     this.resetCopyFeedback();
-    this.lastInput = { ...input };
+    this.lastInput = {
+      ...input,
+      selection: input.selection ? { ...input.selection } : undefined,
+    };
+    if (input.selection?.snapshotId === this.displayedSelection?.snapshotId) {
+      this.displayedSelection = undefined;
+    }
     this.signInFeedback = "idle";
     await this.controller.search(input);
   }
 
   private async handleAction(actionId: string): Promise<void> {
-    if (actionId === "select-olc-engine") {
+    if (actionId === "retry-connection") {
       await this.connect("olc-engine");
       return;
     }
@@ -772,11 +866,19 @@ export class ProductionTaskPaneRuntime {
       this.connectionId++;
       this.connectionAbort?.abort();
       this.connectionAbort = undefined;
-      this.renderView((messages) => backendSelectionModel(messages, this.environment));
+      await this.connect("olc-engine");
       return;
     }
-    if (actionId === "search") {
+    if (actionId === "send") {
       await this.search();
+      return;
+    }
+    if (actionId === "remove-selection") {
+      this.captureFormState();
+      this.selectionRemoved = true;
+      this.selectionReadId++;
+      await this.releaseDisplayedSelection();
+      this.renderControllerState();
       return;
     }
     if (actionId === "open-secure-sign-in") {
@@ -791,27 +893,33 @@ export class ProductionTaskPaneRuntime {
       }
       this.signInFeedback = opened ? "opened" : "failed";
       this.renderControllerState();
-      if (!this.controller && this.selectedBackend) {
+      if (!this.controller) {
         this.renderView((messages) =>
-          sessionExpiredModel(
-            messages,
-            this.selectedBackend!,
-            this.environment,
-            this.signInFeedback
-          )
+          sessionExpiredModel(messages, this.selectedBackend, this.environment, this.signInFeedback)
         );
       }
       return;
     }
-    if (actionId === "retry-search" && !this.controller && this.selectedBackend) {
+    if (actionId === "retry-search" && !this.controller) {
       await this.connect(this.selectedBackend);
       return;
     }
     if (!this.controller) {
       return;
     }
-    if (actionId === "cancel") {
+    const controllerState = this.controller.getState();
+    if (
+      actionId === "retry-search" &&
+      controllerState.kind === "error" &&
+      controllerState.error.code === "SESSION_EXPIRED"
+    ) {
+      this.unsubscribe?.();
+      this.unsubscribe = undefined;
+      this.controller = undefined;
+      await this.connect(this.selectedBackend);
+    } else if (actionId === "cancel") {
       await this.controller.cancel();
+      await this.refreshDisplayedSelection(false);
     } else if (actionId === "copy-answer") {
       const state = this.controller.getState();
       if (state.kind === "result") {
@@ -820,15 +928,15 @@ export class ProductionTaskPaneRuntime {
     } else if (actionId === "refine-question") {
       this.resetCopyFeedback();
       this.controller.reset();
+      await this.refreshDisplayedSelection(false);
     } else if (actionId === "new-search") {
       this.resetCopyFeedback();
       this.question = "";
-      this.contextMode = "none";
       this.lastInput = undefined;
       this.controller.reset();
+      await this.refreshDisplayedSelection(false);
     } else if (actionId === "retry-search" && this.lastInput) {
       this.question = this.lastInput.question;
-      this.contextMode = this.lastInput.contextMode;
       this.controller.reset();
       await this.search(this.lastInput);
     }

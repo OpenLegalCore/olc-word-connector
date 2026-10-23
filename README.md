@@ -13,9 +13,9 @@ reviewing in Microsoft Word.**
 
 OpenLegalCore Word Connector is an Apache-2.0 task-pane add-in for researching
 Slovenian legislation and case law from Microsoft Word. The user asks a legal
-question, chooses whether to include no document content or only the current
-selection, and receives an answer with source references without changing the
-document.
+question or instruction. The task pane automatically attaches only the current
+Word selection when one exists, and receives an answer with source references
+without changing the document.
 
 > [!IMPORTANT]
 > `v0.1.0-beta.1` is a source-only beta, not a hosted legal-research service.
@@ -67,16 +67,16 @@ answer quality depend on the configured backend and its data.
 
 ## How the workflow works
 
-1. Connect to **OLC Engine**.
-2. Choose **No document context** or **Selected text**.
-3. Enter a legal question and select **Search legal sources**.
-4. Review the safely rendered answer and its `Z*` legislation or `S*` case-law
+1. Open the task pane; it checks the protected OLC Engine connection automatically.
+2. Optionally select text in Word and review or remove the compact **Selected text** attachment.
+3. Enter a question or instruction and select **Send** (or press Enter).
+4. Review the safely rendered answer and any `Z*` legislation or `S*` case-law
    references.
-5. Use **Copy answer**, **Refine question** or **New search**.
+5. Use **Copy answer**, **Edit message** or **New message**.
 
 OLC Engine SSE answers are rendered incrementally as untrusted text. Result
-actions become available only after a valid completion terminal. **Refine question** preserves
-the form for a new independent search; it does not continue a stored
+actions become available only after a valid completion terminal. **Edit message** preserves
+the form for a new independent request; it does not continue a stored
 conversation.
 
 See the [English user guide](docs/USER_GUIDE.md),
@@ -85,15 +85,15 @@ See the [English user guide](docs/USER_GUIDE.md),
 
 ## Document and trust boundary
 
-- **No document context** never calls the Word selection API and sends no
-  document content.
-- **Selected text** captures only the exact current selection when the user
-  starts the search. The question and quoted selection remain separate fields.
+- With no selection, the connector sends only the message.
+- A valid Word selection appears automatically as a removable **Selected text**
+  attachment. **Send** freezes the displayed attachment and interface language;
+  the message and quoted selection remain separate fields.
 - The beta does not expose or perform document editing, replacement, redlining
   or tracked changes.
 - Cancellation, timeout, session expiry, backend failure and late responses
   leave the Word document unchanged.
-- OLC Engine is the only backend. Searches are never retried automatically.
+- OLC Engine is the only backend. Requests are never retried automatically.
 - Model output is untrusted text. Only credential-free HTTPS links on the exact
   approved PISRS and Slovenian case-law hosts can become clickable.
 

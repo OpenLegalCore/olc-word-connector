@@ -32,6 +32,7 @@ export interface WordHarnessComposition {
 }
 
 interface WordHarnessBindingComposition {
+  readonly word: WordAdapter;
   readonly chat: FakeChatGateway;
   readonly controller: TaskPaneController;
   readonly probeRetainedRange: () => Promise<RetainedRangeProbeResult>;
@@ -62,6 +63,7 @@ export function createWordHarnessComposition(
     captureSelection: () => word.captureSelection(),
     releaseSelection: (snapshot) =>
       runtime.withRetainedOperation("cleanup", () => word.releaseSelection(snapshot)),
+    subscribeToSelectionChanges: (listener) => word.subscribeToSelectionChanges(listener),
   };
   const chat = new FakeChatGateway({ text: "Synthetic legal-source answer." });
   return {
@@ -130,6 +132,7 @@ export function bootstrapWordHarness(
       describeCalls: () => [`complete: ${composition.chat.requests.length}`],
       prepareSearch: () => {
         officeDiagnostic.textContent = "";
+        return composition.word.captureSelection();
       },
     });
     probeRetainedRange.addEventListener("click", () => {

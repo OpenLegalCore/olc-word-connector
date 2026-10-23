@@ -45,6 +45,12 @@ export interface TaskPaneNotice {
   role?: "alert" | "status";
 }
 
+export interface TaskPaneAttachment {
+  label: string;
+  preview: string;
+  removeLabel: string;
+}
+
 export interface TaskPaneFooter {
   eyebrow: string;
   message: string;
@@ -61,6 +67,7 @@ export interface TaskPaneViewModel {
   description?: string;
   fields?: readonly TaskPaneFieldFixture[];
   choiceGroup?: TaskPaneChoiceGroup;
+  attachment?: TaskPaneAttachment;
   legalAnswer?: string;
   legalAnswerLive?: boolean;
   legalAnswerMeta?: string;

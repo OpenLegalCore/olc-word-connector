@@ -1,4 +1,4 @@
-/* global DOMParser, OfficeExtension, Word */
+/* global DOMParser, Office, OfficeExtension, Word */
 
 import { WordAdapterError, type SelectionSnapshot, type WordAdapter } from "./WordAdapter";
 import { validateSelection, type SelectionFacts } from "./selectionPolicy";
@@ -167,6 +167,34 @@ export class OfficeWordAdapter implements WordAdapter {
     } catch (error) {
       throw controlledReadError(error);
     }
+  }
+
+  async subscribeToSelectionChanges(listener: () => void): Promise<() => void> {
+    const document = Office.context.document;
+    const handler = (): void => listener();
+
+    await new Promise<void>((resolve, reject) => {
+      document.addHandlerAsync(Office.EventType.DocumentSelectionChanged, handler, (result) => {
+        if (result.status === Office.AsyncResultStatus.Succeeded) {
+          resolve();
+        } else {
+          reject(new WordAdapterError("WORD_READ_FAILED"));
+        }
+      });
+    });
+
+    let active = true;
+    return () => {
+      if (!active) {
+        return;
+      }
+      active = false;
+      try {
+        document.removeHandlerAsync(Office.EventType.DocumentSelectionChanged, { handler });
+      } catch {
+        // Event cleanup is best-effort during task-pane disposal.
+      }
+    };
   }
 
   private releaseTrackedSelection(snapshotId: string, tracked: TrackedSelection): Promise<void> {

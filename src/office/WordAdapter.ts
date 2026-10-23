@@ -24,4 +24,5 @@ export class WordAdapterError extends Error {
 export interface WordAdapter {
   captureSelection(): Promise<SelectionSnapshot>;
   releaseSelection(snapshot: SelectionSnapshot): Promise<void>;
+  subscribeToSelectionChanges(listener: () => void): Promise<() => void>;
 }

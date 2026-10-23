@@ -27,6 +27,7 @@ export function bindHarness(
         context: "body",
         capturedAt: new Date(0).toISOString(),
       };
+      return word.snapshot;
     },
     describeCalls: () => [
       `captureSelection: ${word.captureCalls}`,

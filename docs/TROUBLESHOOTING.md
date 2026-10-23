@@ -17,10 +17,10 @@ its security or document-safety boundaries.
 | Symptom                                               | Most likely layer                   | First check                                                          |
 | ----------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------- |
 | Add-in or ribbon command is missing                   | Word registration / manifest        | Correct XML manifest and permitted sideload method                   |
-| Task pane opens but never reaches the service chooser | Static hosting / JavaScript         | Task-pane URL, HTTPS trust, browser console without sensitive data   |
+| Task pane opens but never reaches the message input   | Static hosting / JavaScript         | Task-pane URL, HTTPS trust, browser console without sensitive data   |
 | Connection check fails                                | Gateway / session / model discovery | Explicit provider, same-origin route, session and exact model ID     |
 | Search starts but fails                               | Completion route / backend contract | Status code, content type, provider availability and response limits |
-| **Session expired** appears                           | Browser-facing identity             | Complete secure sign-in, return to Word, select **Retry search**     |
+| **Session expired** appears                           | Browser-facing identity             | Complete secure sign-in, return to Word, select **Check connection** |
 | No useful source is returned                          | Backend corpus / retrieval          | Refine the question and verify backend coverage                      |
 | Source text is visible but not clickable              | Renderer URL policy                 | Exact HTTPS PISRS or sodnapraksa hostname                            |
 | **Selected text** is rejected                         | Word selection policy               | Non-empty supported selection within one body or table cell          |
@@ -98,11 +98,10 @@ A same-origin redirect, HTML login response, `401` or `403` is treated as
 2. Complete the operator-provided browser login.
 3. Confirm that the sign-in landing reports completion.
 4. Return to Word.
-5. Select **Retry search** explicitly.
+5. Select **Check connection** explicitly, review the form, then select **Send**.
 
-Sign-in completion does not automatically send the question again. The
-connector preserves the selected provider, exact question and context mode. If
-**Selected text** is active, Retry captures the then-current selection again.
+Sign-in completion does not automatically send the message again. Review the
+current message and displayed **Selected text** attachment before Send.
 
 If the identity page reports an invalid redirect URL, the operator must correct
 the identity application's allowed redirect/return configuration for the exact
@@ -146,7 +145,7 @@ determine what can be retrieved.
 
 ## The answer has no reliable sources
 
-Do not rely on unsupported output. Use **Refine question** to request exact
+Do not rely on unsupported output. Use **Edit message** to request exact
 source identities and links. Verify the act, provision, court, file number,
 date, validity period and relevant reasoning directly in the authoritative
 source.
@@ -179,30 +178,31 @@ For **Selected text**:
    table; and
 4. inside a table, select text within one cell only.
 
-Selection is captured only when Search or an explicit Retry starts. A rejected
-selection causes no provider completion and no document mutation.
+Selection changes update the compact attachment while focus is in Word. Moving
+focus into the input preserves the displayed attachment; **Send** freezes it.
+Remove the attachment to send only the message. A rejected selection causes no
+provider completion and no document mutation.
 
-If the selection changed while the sign-in tab was open, review it before
-Retry. The retry intentionally captures the current selection rather than
-reusing hidden document text.
+If the selection changed while the sign-in tab was open, review the displayed
+attachment before Send. Hidden document text is never reused.
 
-## The question is rejected
+## The message is rejected
 
-The legal question must contain 1–4,000 characters. Remove accidental blank
-input or reduce an oversized question without moving confidential material to
+The message must contain 1–4,000 characters. Remove accidental blank
+input or reduce an oversized message without moving confidential material to
 another field.
 
-Question validation happens before selection capture or a provider request.
+Message validation happens before a provider request.
 
-## Cancel or timeout
+## Stop or timeout
 
-**Cancel** aborts the active request and returns the task pane to its ready
+**Stop** aborts the active request and returns the task pane to its ready
 state. The adapter timeout is 120 seconds. Both leave the document unchanged.
 
-Use one explicit Search or Retry action after resolving the cause. The
+Use one explicit Send action after resolving the cause. The
 connector does not issue automatic retries.
 
-## A late result appears after Cancel
+## A late result appears after Stop
 
 The controller invalidates cancelled, timed-out and superseded operations. A
 late resolve or reject must not become the visible result. This behavior passed

@@ -2,10 +2,9 @@
 
 import type { ChatGateway, CompletionRequest } from "../chat/ChatGateway";
 import { ChatGatewayError } from "../chat/ChatGatewayError";
-import { WordAdapterError, type SelectionSnapshot, type WordAdapter } from "../office/WordAdapter";
+import { type SelectionSnapshot, type WordAdapter } from "../office/WordAdapter";
 import type { AppErrorCode } from "./errors";
 import {
-  beginCapture,
   beginSearch,
   appendSearchDelta,
   completeSearch,
@@ -16,11 +15,9 @@ import {
   type AppState,
 } from "./state";
 
-export type DocumentContextMode = "none" | "selected-text";
-
 export interface SearchInput {
   readonly question: string;
-  readonly contextMode: DocumentContextMode;
+  readonly selection?: SelectionSnapshot;
   readonly uiLocale: "sl-SI" | "en-US";
 }
 
@@ -56,21 +53,12 @@ export class TaskPaneController {
     const operationId = ++this.operationId;
     const abortController = new AbortController();
     this.completionAbort = abortController;
-    let errorCode: AppErrorCode = "COMPLETION_FAILED";
-    let snapshot: SelectionSnapshot | undefined;
+    const snapshot = input.selection ? { ...input.selection } : undefined;
+    if (snapshot) {
+      this.activeSnapshot = snapshot;
+    }
 
     try {
-      if (input.contextMode === "selected-text") {
-        errorCode = "CAPTURE_FAILED";
-        this.setState(beginCapture(operationId));
-        snapshot = await this.word.captureSelection();
-        if (this.operationId !== operationId) {
-          await this.releaseSnapshot(snapshot);
-          return false;
-        }
-        this.activeSnapshot = snapshot;
-      }
-
       const request: CompletionRequest = {
         question: input.question,
         context:
@@ -79,7 +67,6 @@ export class TaskPaneController {
             : { type: "selected_text", quotedText: snapshot.text },
         uiLocale: input.uiLocale,
       };
-      errorCode = "COMPLETION_FAILED";
       this.setState(beginSearch(operationId, request));
       const result = await this.chat.complete(request, abortController.signal, {
         onTextDelta: (delta) => {
@@ -122,7 +109,7 @@ export class TaskPaneController {
       if (this.operationId !== operationId) {
         return false;
       }
-      this.setState(fail({ code: this.appErrorCode(error, errorCode) }));
+      this.setState(fail({ code: this.appErrorCode(error) }));
       return false;
     } finally {
       if (this.operationId === operationId) {
@@ -164,10 +151,8 @@ export class TaskPaneController {
     return this.state;
   }
 
-  private appErrorCode(error: unknown, fallback: AppErrorCode): AppErrorCode {
-    return error instanceof WordAdapterError || error instanceof ChatGatewayError
-      ? error.code
-      : fallback;
+  private appErrorCode(error: unknown): AppErrorCode {
+    return error instanceof ChatGatewayError ? error.code : "COMPLETION_FAILED";
   }
 
   private async releaseSnapshot(snapshot: SelectionSnapshot): Promise<void> {

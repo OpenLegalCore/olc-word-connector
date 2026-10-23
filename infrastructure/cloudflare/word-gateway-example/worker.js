@@ -10,13 +10,13 @@ const SESSION_HTML = Object.freeze({
     '<!doctype html><html lang="en-US"><head><meta charset="UTF-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
     "<title>Sign-in complete</title></head><body><main><h1>Sign-in complete</h1>" +
-    "<p>Return to Word and select “Retry search”.</p>" +
+    "<p>Return to Word, check the connection, review the form, then select “Send”.</p>" +
     "<p>You can close this tab.</p></main></body></html>",
   "sl-SI":
     '<!doctype html><html lang="sl-SI"><head><meta charset="UTF-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
     "<title>Prijava je končana</title></head><body><main><h1>Prijava je končana</h1>" +
-    "<p>Vrnite se v Word in izberite »Ponovi iskanje«.</p>" +
+    "<p>Vrnite se v Word, preverite povezavo in obrazec ter nato izberite »Pošlji«.</p>" +
     "<p>Ta zavihek lahko zaprete.</p></main></body></html>",
 });
 

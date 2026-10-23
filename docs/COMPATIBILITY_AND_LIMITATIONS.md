@@ -97,9 +97,9 @@ The current connector supports only the documented direct OLC Engine transport. 
 
 | Area                                               | Status         | Evidence and limitation                                                                                                     |
 | -------------------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| No document context                                | `VERIFIED`     | The controller does not call the Word selection API and sends only the legal question                                       |
-| Exact selected text                                | `VERIFIED`     | Captured only on explicit Search; sent as quoted data separate from the question                                            |
-| Empty, oversized or structural selection rejection | `VERIFIED`     | Fails before a provider completion; accepted selection is limited to 20,000 characters and supported body/table-cell shapes |
+| Message without document context                   | `VERIFIED`     | With no displayed selection attachment, the controller sends only the message                                                |
+| Exact selected text                                | `VERIFIED`     | Observed from Word, shown as a removable compact attachment and frozen on Send as quoted data separate from the message      |
+| Empty, oversized or structural selection rejection | `VERIFIED`     | Empty selection means message-only; oversized, unreadable or unsupported selection visibly blocks Send before completion; accepted selection is limited to 20,000 characters and supported body/table-cell shapes |
 | Whole-document context                             | `NOT INCLUDED` | The connector never automatically reads or sends the whole document                                                         |
 | Multi-document workflow                            | `NOT INCLUDED` | No document set, workspace or background indexing exists                                                                    |
 | Safe answer and source rendering                   | `VERIFIED`     | Model HTML is not executed; only a narrow formatting subset and exact approved HTTPS source hosts are activated             |
@@ -111,7 +111,7 @@ The current connector supports only the documented direct OLC Engine transport. 
 
 | Boundary                        | Current rule                                                                 |
 | ------------------------------- | ---------------------------------------------------------------------------- |
-| Legal question                  | 1–4,000 characters                                                           |
+| Message                         | 1–4,000 characters                                                           |
 | Selected text                   | At most 20,000 characters                                                    |
 | Adapter request timeout         | 120 seconds                                                                  |
 | Reference gateway request JSON  | At most 64 KiB                                                               |
@@ -131,9 +131,9 @@ a limit is suitable for a particular backend.
 | Adapter timeout              | Request terminates at the bounded timeout; document remains unchanged                                       |
 | Operation is superseded      | Previous operation identity is invalidated; stale result is ignored                                         |
 | Protected session expires    | Task pane shows a controlled state and offers secure sign-in                                                |
-| Sign-in completes            | No legal question is automatically resubmitted                                                              |
-| User selects Retry search    | Stored provider, question and context mode are reused; Selected text is captured again                      |
-| User selects Refine question | The form is preserved, but the next submission is a new independent search without prior conversation turns |
+| Sign-in completes            | No message is automatically resubmitted                                                                     |
+| User checks the connection   | The form returns without sending; the user must explicitly select Send                                      |
+| User selects Edit message    | The form is preserved, but the next submission is a new independent request without prior conversation turns |
 | OLC Engine fails             | No automatic retry or fallback occurs                                                                       |
 | Copy fails                   | Visible answer remains available; Word is unchanged                                                         |
 
@@ -164,10 +164,11 @@ backend, legal database, identity policy, DNS, certificate, gateway, hosting,
 logging, retention or incident-response process. Operators own those
 boundaries.
 
-### Privacy depends on the selected mode and deployment
+### Privacy depends on the displayed attachment and deployment
 
-**No document context** prevents document-text capture by the connector.
-**Selected text** sends the exact current selection to the configured backend.
+With no selection attachment, the connector sends no document text. A displayed
+**Selected text** attachment sends only that exact frozen selection to the
+configured backend; it can be removed before Send.
 The operator's infrastructure can still process the question, selected text,
 answer and ordinary request metadata according to its own policies. See
 [Privacy](../PRIVACY.md).

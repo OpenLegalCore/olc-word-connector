@@ -22,8 +22,8 @@ describe("production-real task-pane foundation", () => {
     const rendered = render(createReadyViewModel());
 
     expect(rendered.querySelector(".olc-product-title")?.textContent).toBe("OpenLegalCore");
-    expect(rendered.querySelector("h1")?.textContent).toBe("Search legal sources");
-    expect(rendered.textContent).toContain("Slovenian legislation and case law");
+    expect(rendered.querySelector("h1")?.textContent).toBe("Ask OpenLegalCore");
+    expect(rendered.textContent).toContain("Ask a question or give an instruction");
     expect(rendered.textContent).not.toMatch(/Apply to document|Proposed|Regenerate|Discard/);
     expect(rendered.querySelectorAll("button")).toHaveLength(0);
   });

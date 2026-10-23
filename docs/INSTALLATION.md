@@ -259,16 +259,17 @@ environment. A connected deployment is not accepted until a real walkthrough
 confirms:
 
 - the OLC Engine connection reaches the intended backend;
-- **No document context** sends no Word text;
-- **Selected text** sends only the selection captured when Search begins;
+- with no selection, **Send** transmits no Word text;
+- a valid Word selection appears as a removable attachment and **Send** freezes
+  exactly that displayed selection;
 - empty, oversized and unsupported selections fail before completion;
 - answers render as text and only approved source links become clickable;
 - Engine answers appear incrementally but become successful only after the
   validated `stop` and `[DONE]` terminal; actual usage or unavailable usage is
   shown without estimation;
-- Copy answer, Refine question and New search work as documented;
-- Cancel and timeout suppress late results;
-- Session expired requires secure sign-in and an explicit Retry search;
+- Copy answer, Edit message and New message work as documented;
+- Stop and timeout suppress late results;
+- Session expired requires secure sign-in and an explicit connection check;
 - questions, selections, answers and credentials do not appear in unintended
   logs or browser storage; and
 - the Word document remains unchanged throughout the beta workflow.
@@ -285,7 +286,7 @@ backend version, model and policy configuration used for acceptance.
 | Add-in command is missing     | The intended manifest is sideloaded and every manifest URL is reachable      |
 | Provider fails immediately    | The same origin exposes the exact route and configured model ID              |
 | Word Web lost the add-in      | The browser profile or cache changed; sideload the manifest again            |
-| Session expired repeats       | Complete sign-in in the opened tab, return to Word, then select Retry search |
+| Session expired repeats       | Complete sign-in in the opened tab, return to Word, then check the connection |
 | Result lacks reliable sources | Stop relying on it and verify the authoritative source directly              |
 
 See [Troubleshooting](TROUBLESHOOTING.md) for controlled recovery paths.

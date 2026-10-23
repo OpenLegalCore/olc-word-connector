@@ -28,23 +28,11 @@ function base(
   return { id, environment, ...overrides };
 }
 
-function contextChoice(usesSelection: boolean): NonNullable<TaskPaneViewModel["choiceGroup"]> {
-  return {
-    name: "gallery-context",
-    label: "Context",
-    choices: [
-      { value: "none", label: "No document context", checked: !usesSelection },
-      { value: "selected-text", label: "Selected text", checked: usesSelection },
-    ],
-  };
-}
-
 const questionField = {
   id: "gallery-question",
-  label: "Legal question",
-  value: "Which legislation and Slovenian case law apply?",
-  placeholder:
-    "Ask about current or historical legislation, Slovenian case law, or their combined application.",
+  label: "Message",
+  value: "Explain how this rule applies.",
+  placeholder: "Ask a question or write an instruction…",
   kind: "textarea",
   readOnly: false,
 } as const;
@@ -61,16 +49,22 @@ function connectedFixture(
         detail: "CONNECTED",
         tone: "success",
       },
-      eyebrow: "LEGAL SOURCE SEARCH",
-      heading: "Search legal sources",
-      description: "Ask a question based on Slovenian legislation and case law.",
-      choiceGroup: contextChoice(usesSelection),
+      eyebrow: "ASSISTANT",
+      heading: "Ask OpenLegalCore",
+      description: "Ask a question or give an instruction.",
       fields: [questionField],
-      actions: [{ id: "search", label: "Search legal sources", variant: "primary" }],
+      attachment: usesSelection
+        ? {
+            label: "Selected text",
+            preview: "The exact selected passage appears here as quoted context.",
+            removeLabel: "Remove",
+          }
+        : undefined,
+      actions: [{ id: "send", label: "Send", variant: "primary" }],
       footer: {
         eyebrow: "DOCUMENT BOUNDARY",
         message: usesSelection
-          ? "Only the exact selection will be read and sent when you start the search."
+          ? "Only the attached selection will be sent with your message."
           : "No document content will be read or sent.",
       },
     },
@@ -85,12 +79,12 @@ export const galleryFixtures: Readonly<Record<GalleryFixtureId, TaskPaneViewMode
   "backend-selection": base(
     "backend-selection",
     {
-      status: { label: "Word connection ready", detail: "ENGINE READY", tone: "success" },
-      eyebrow: "LEGAL SOURCE SEARCH",
-      heading: "Connect to OLC Engine",
-      description: "Connect to protected OLC Engine without reading document content.",
-      actions: [{ id: "select-olc-engine", label: "Use OLC Engine", variant: "primary" }],
-      footer: { eyebrow: "DOCUMENT BOUNDARY", message: "NO DOCUMENT CONTENT READ" },
+      busy: true,
+      status: { label: "Checking OLC Engine", detail: "CONNECTING", tone: "info" },
+      eyebrow: "SERVICE CONNECTION",
+      heading: "Verifying the selected service…",
+      description: "This automatic check sends no document text or message.",
+      footer: { eyebrow: "SERVICE BOUNDARY", message: "CHECK IN PROGRESS" },
     },
     "STAGING"
   ),
@@ -100,14 +94,14 @@ export const galleryFixtures: Readonly<Record<GalleryFixtureId, TaskPaneViewMode
     "searching",
     {
       busy: true,
-      status: { label: "Searching", detail: "OLC ENGINE", tone: "info" },
-      eyebrow: "LEGAL SOURCE SEARCH",
-      heading: "Searching legislation and case law…",
+      status: { label: "Preparing response", detail: "OLC ENGINE", tone: "info" },
+      eyebrow: "ASSISTANT",
+      heading: "Preparing response…",
       description: "The document has not been changed.",
       footer: {
         eyebrow: "DOCUMENT BOUNDARY",
         message: "ANALYSIS ONLY",
-        actions: [{ id: "cancel", label: "Cancel", variant: "secondary" }],
+        actions: [{ id: "cancel", label: "Stop", variant: "secondary" }],
       },
     },
     "STAGING"
@@ -116,14 +110,14 @@ export const galleryFixtures: Readonly<Record<GalleryFixtureId, TaskPaneViewMode
     "result",
     {
       status: { label: "Answer ready", detail: "OLC ENGINE", tone: "success" },
-      eyebrow: "LEGAL SOURCE SEARCH",
+      eyebrow: "ASSISTANT",
       heading: "Answer",
       legalAnswer:
         "## Applicable rule\nThe answer follows **Article 1** [Z1] and judgment [S1].\n\n## Sources\n- [Z1] [Act](https://pisrs.si/pregledPredpisa?id=ZAKO2008)\n- [S1] [Judgment](https://www.sodnapraksa.si/?q=id:example)",
       actions: [
         { id: "copy", label: "Copy answer", variant: "primary" },
-        { id: "refine", label: "Refine question", variant: "secondary" },
-        { id: "new", label: "New search", variant: "quiet" },
+        { id: "refine", label: "Edit message", variant: "secondary" },
+        { id: "new", label: "New message", variant: "quiet" },
       ],
       footer: { eyebrow: "DOCUMENT BOUNDARY", message: "ANALYSIS ONLY · WORD UNCHANGED" },
     },
@@ -143,16 +137,16 @@ export const galleryFixtures: Readonly<Record<GalleryFixtureId, TaskPaneViewMode
     "STAGING"
   ),
   error: base("error", {
-    status: { label: "Search failed safely", detail: "SERVICE UNAVAILABLE", tone: "danger" },
+    status: { label: "Request stopped safely", detail: "SERVICE UNAVAILABLE", tone: "danger" },
     eyebrow: "RECOVERY",
     heading: "The document is unchanged",
     notice: {
       title: "No document change",
-      message: "Retry remains explicit and there is no automatic retry.",
+      message: "Retry remains explicit and there is no automatic resend.",
       tone: "danger",
       role: "alert",
     },
-    actions: [{ id: "retry", label: "Retry search", variant: "primary" }],
+    actions: [{ id: "retry", label: "Retry", variant: "primary" }],
     footer: { eyebrow: "DOCUMENT BOUNDARY", message: "UNCHANGED" },
   }),
 };

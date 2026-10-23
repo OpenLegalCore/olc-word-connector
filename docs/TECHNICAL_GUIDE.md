@@ -11,7 +11,7 @@ corpus, identity tenant or hosted service.
 
 | Component                 | Owns                                                            | Must not own                                  |
 | ------------------------- | --------------------------------------------------------------- | --------------------------------------------- |
-| `OfficeWordAdapter`       | Exact selection capture and validation                          | HTTP, provider data or DOM rendering          |
+| `OfficeWordAdapter`       | Selection-change observation, exact capture and validation      | HTTP, provider data or DOM rendering          |
 | `TaskPaneController`      | One active operation, cancellation and stale-result suppression | Office.js, routes or provider parsing         |
 | `OpenAICompatibleAdapter` | Engine model discovery, request construction and SSE validation | Office.js, task-pane DOM or document mutation |
 | `TaskPaneView` / runtime  | Localization, connection flow, form state and safe rendering    | Provider credentials or Word proxy objects    |
@@ -46,7 +46,7 @@ the controller while the operation remains active. A final result exists only
 after `finish_reason: "stop"`, then `[DONE]`, with no error. Usage is copied
 from the terminal aggregate or is `null`.
 
-The prompt envelope keeps the legal question and quoted selection in separate
+The prompt envelope keeps the message and quoted selection in separate
 fields. The selected text is labelled quoted data, not instruction. Refine is a
 new independent search; the connector stores no conversation history and never
 retries automatically.
@@ -87,7 +87,7 @@ outputs omit source maps and include the selected manifest and Cloudflare static
 headers.
 
 Run the complete command set in [Contributing](../CONTRIBUTING.md). Deterministic
-tests cover controller state, selection policy, Engine SSE, late-event
+tests cover controller state, selection observation and focus preservation, Engine SSE, late-event
 suppression, safe rendering, production composition, gateway bounds, manifests
 and bundle isolation. Protected live tests are opt-in and are not ordinary CI.
 

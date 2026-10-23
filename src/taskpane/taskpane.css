@@ -378,6 +378,54 @@ body.taskpane-runtime {
   line-height: 1.4;
 }
 
+.olc-selection-attachment {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--olc-space-2);
+  padding: var(--olc-space-2);
+  background: var(--olc-subtle);
+  border: 1px solid var(--olc-rule);
+  border-left: 3px solid var(--olc-oxblood);
+  border-radius: 2px;
+}
+
+.olc-selection-copy {
+  min-width: 0;
+}
+
+.olc-selection-label {
+  display: block;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.olc-selection-preview {
+  display: -webkit-box;
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--olc-muted);
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.olc-selection-remove {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 3px 6px;
+  color: var(--olc-oxblood);
+  background: transparent;
+  border: 0;
+  border-radius: 2px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .olc-legal-result {
   display: grid;
   gap: var(--olc-space-5);
@@ -528,6 +576,7 @@ body.taskpane-runtime {
 
 .olc-action:focus-visible,
 .olc-input:focus-visible,
+.olc-selection-remove:focus-visible,
 .olc-choice input:focus-visible,
 .olc-settings-trigger:focus-visible,
 .olc-legal-result a:focus-visible {
