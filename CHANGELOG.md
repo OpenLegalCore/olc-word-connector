@@ -5,7 +5,18 @@ file. The project follows [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
-No changes have been accepted beyond the first beta release candidate.
+### Changed
+
+- OLC Engine completions use the fixed `lexai-engine-local` model, an explicit
+  Slovenian or English response language and native SSE with streamed usage.
+- OLC Engine text deltas are shown incrementally through the safe answer
+  renderer, while a result is accepted only after `finish_reason: "stop"` and
+  `[DONE]`.
+- Cancellation and stale-operation checks suppress late stream events, and an
+  interrupted or invalid partial response is never exposed as a completed
+  result.
+- The gateway example forwards completion streams and supplies a dedicated
+  server-side Engine bearer credential.
 
 ## 0.1.0-beta.1
 

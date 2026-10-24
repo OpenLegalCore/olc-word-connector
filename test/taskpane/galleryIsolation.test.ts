@@ -8,7 +8,6 @@ const galleryOnlyMarkers = [
   galleryMarker,
   "bindTaskPaneStateGallery",
   "galleryFixtures",
-  "gallery-context",
   "gallery-question",
 ] as const;
 

@@ -1,55 +1,37 @@
-/* global AbortSignal, Element, Event, HTMLAnchorElement, HTMLButtonElement, HTMLElement, HTMLInputElement, HTMLTextAreaElement, Navigator, RequestInit, Response, Window, document, setTimeout, window */
-
-import { readFileSync } from "node:fs";
+/* global AbortSignal, Event, HTMLButtonElement, HTMLElement, HTMLInputElement, HTMLTextAreaElement, KeyboardEvent, Navigator, RequestInit, Response, Window, document, window */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { AppState } from "../../src/app/state";
-import type { ChatGateway, CompletionRequest, CompletionResult } from "../../src/chat/ChatGateway";
+import type {
+  ChatGateway,
+  CompletionObserver,
+  CompletionRequest,
+  CompletionResult,
+} from "../../src/chat/ChatGateway";
 import { ChatGatewayError } from "../../src/chat/ChatGatewayError";
-import type { SelectionSnapshot } from "../../src/office/WordAdapter";
+import { WordAdapterError, type SelectionSnapshot } from "../../src/office/WordAdapter";
 import {
-  LEGAL_QUESTION_PLACEHOLDER,
-  openSecureSignInWindow,
-  ProductionTaskPaneRuntime,
-  SECURE_SIGN_IN_PATH,
-  secureSignInUrlForOrigin,
-  DEFAULT_WORD_MODEL_ID,
   createSameOriginProductionGateways,
+  createProductionTaskPaneRuntime,
+  LEGAL_QUESTION_PLACEHOLDER,
+  OLC_ENGINE_MODEL_ID,
+  ProductionTaskPaneRuntime,
   type ProductionGateways,
 } from "../../src/taskpane/ProductionTaskPaneRuntime";
 import type { UiLocale } from "../../src/taskpane/i18n";
 import { TaskPaneView } from "../../src/taskpane/TaskPaneView";
 import { FakeWordAdapter } from "../fakes/FakeWordAdapter";
 
-const snapshot: SelectionSnapshot = {
-  snapshotId: "runtime-snapshot",
-  text: "Exact selected legal context.",
-  characterCount: 29,
+const SNAPSHOT: SelectionSnapshot = {
+  snapshotId: "selection-1",
+  text: "Natančno izbrano besedilo iz Worda.",
+  characterCount: 35,
   context: "body",
-  capturedAt: "2026-08-31T00:00:00.000Z",
+  capturedAt: "2026-10-23T00:00:00.000Z",
 };
 
 const ANSWER =
-  "## Applicable rule\nThe answer follows **Article 1** [Z1] and judgment [S1].\n\n## Sources\n- [Z1] [Act](https://pisrs.si/pregledPredpisa?id=ZAKO2008)\n- [S1] [Judgment](https://www.sodnapraksa.si/?q=id:example)";
-const REFERENCE_ANSWER =
-  "## Odgovor\nGlej sodbo [S1].\n\n## Viri\n" +
-  "- [VSL sodba III Cp 975/2016][S1]\n" +
-  "[S1]: <https://www.sodnapraksa.si/?q=id:example>";
-
-function deferred<T>(): {
-  readonly promise: Promise<T>;
-  readonly resolve: (value: T) => void;
-  readonly reject: (reason?: unknown) => void;
-} {
-  let resolve!: (value: T) => void;
-  let reject!: (reason?: unknown) => void;
-  const promise = new Promise<T>((promiseResolve, promiseReject) => {
-    resolve = promiseResolve;
-    reject = promiseReject;
-  });
-  return { promise, resolve, reject };
-}
+  "## Odgovor\nUporabi se pravilo [Z1].\n\n## Viri\n- [Z1] [Zakon](https://pisrs.si/pregledPredpisa?id=ZAKO2008)";
 
 class ControlledGateway implements ChatGateway {
   readonly requests: CompletionRequest[] = [];
@@ -58,39 +40,48 @@ class ControlledGateway implements ChatGateway {
   disconnects = 0;
   connectionError?: Error;
   completionError?: Error;
-  result: CompletionResult = { text: ANSWER };
+  result: CompletionResult = {
+    text: ANSWER,
+    model: OLC_ENGINE_MODEL_ID,
+    usage: { inputTokens: 12, outputTokens: 34, totalTokens: 46 },
+  };
   pending = false;
   private lateResolve?: (result: CompletionResult) => void;
-  private lateReject?: (reason?: unknown) => void;
+  private observer?: CompletionObserver;
 
-  async checkConnection(): Promise<void> {
+  async checkConnection(signal?: AbortSignal): Promise<void> {
     this.connectionChecks++;
+    if (signal?.aborted) throw new ChatGatewayError("CANCELLED");
     if (this.connectionError) {
       throw this.connectionError;
     }
   }
 
-  complete(request: CompletionRequest, signal?: AbortSignal): Promise<CompletionResult> {
-    this.requests.push(request);
+  complete(
+    request: CompletionRequest,
+    signal?: AbortSignal,
+    observer?: CompletionObserver
+  ): Promise<CompletionResult> {
+    this.requests.push(structuredClone(request));
     this.signals.push(signal);
+    this.observer = observer;
     if (this.completionError) {
       return Promise.reject(this.completionError);
     }
     if (this.pending) {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         this.lateResolve = resolve;
-        this.lateReject = reject;
       });
     }
     return Promise.resolve(this.result);
   }
 
-  resolveLate(): void {
-    this.lateResolve?.({ text: "Late answer" });
+  emitDelta(delta: string): void {
+    this.observer?.onTextDelta?.(delta);
   }
 
-  rejectLate(reason: unknown): void {
-    this.lateReject?.(reason);
+  resolveLate(result: CompletionResult = this.result): void {
+    this.lateResolve?.(result);
   }
 
   disconnect(): void {
@@ -102,6 +93,10 @@ function root(): HTMLElement {
   return document.getElementById("taskpane-root")!;
 }
 
+function viewState(): string | undefined {
+  return root().querySelector<HTMLElement>(".olc-app")?.dataset.viewState;
+}
+
 function click(actionId: string): void {
   const button = root().querySelector<HTMLButtonElement>(`button[data-action-id="${actionId}"]`);
   if (!button) {
@@ -110,17 +105,28 @@ function click(actionId: string): void {
   button.click();
 }
 
-function viewState(): string | undefined {
-  return root().querySelector<HTMLElement>(".olc-app")?.dataset.viewState;
+function setQuestion(value: string): HTMLTextAreaElement {
+  const input = root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")!;
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  return input;
 }
 
-function setQuestion(value: string): void {
-  root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")!.value = value;
+function pressEnter(input: HTMLTextAreaElement, options: KeyboardEventInit = {}): KeyboardEvent {
+  const event = new KeyboardEvent("keydown", {
+    key: "Enter",
+    bubbles: true,
+    cancelable: true,
+    ...options,
+  });
+  input.dispatchEvent(event);
+  return event;
 }
 
-function selectContext(value: "none" | "selected-text"): void {
+function selectLocale(locale: UiLocale): void {
+  click("toggle-settings");
   const input = root().querySelector<HTMLInputElement>(
-    `input[name="runtime-context"][value="${value}"]`
+    `input[name="olc-ui-language"][value="${locale}"]`
   )!;
   input.checked = true;
   input.dispatchEvent(new Event("change", { bubbles: true }));
@@ -128,18 +134,29 @@ function selectContext(value: "none" | "selected-text"): void {
 
 function setup(
   options: {
-    readonly clipboard?: Pick<Navigator["clipboard"], "writeText">;
-    readonly openSignIn?: () => boolean;
-    readonly locale?: UiLocale;
+    selection?: SelectionSnapshot | null;
+    selectionError?: WordAdapterError;
+    locale?: UiLocale;
+    connectionError?: Error;
+    completionError?: Error;
+    pending?: boolean;
+    clipboard?: Pick<Navigator["clipboard"], "writeText">;
+    openSignIn?: () =>
+      boolean | Promise<import("../../src/taskpane/OfficeSignInDialog").SignInOutcome>;
   } = {}
 ) {
-  const word = new FakeWordAdapter({
-    ...snapshot,
-    officeProxy: { forbidden: true },
-  } as SelectionSnapshot);
-  const openWebUI = new ControlledGateway();
+  const word = new FakeWordAdapter(options.selection ?? SNAPSHOT);
+  if (options.selection === null) {
+    word.captureError = new WordAdapterError("NO_SELECTION");
+  }
+  if (options.selectionError) {
+    word.captureError = options.selectionError;
+  }
   const olcEngine = new ControlledGateway();
-  const gateways: ProductionGateways = { openWebUI, olcEngine };
+  olcEngine.connectionError = options.connectionError;
+  olcEngine.completionError = options.completionError;
+  olcEngine.pending = options.pending ?? false;
+  const gateways: ProductionGateways = { olcEngine };
   const runtime = new ProductionTaskPaneRuntime(
     root(),
     new TaskPaneView(root()),
@@ -151,1441 +168,783 @@ function setup(
     options.locale
   );
   runtime.start();
-  return { word, openWebUI, olcEngine, runtime };
+  return { word, olcEngine, runtime };
 }
 
-function selectLocale(locale: UiLocale): void {
-  root().querySelector<HTMLButtonElement>('button[data-action-id="toggle-settings"]')!.click();
-  const input = root().querySelector<HTMLInputElement>(
-    `input[name="olc-ui-language"][value="${locale}"]`
-  )!;
-  input.checked = true;
-  input.dispatchEvent(new Event("change", { bubbles: true }));
-}
-
-function focusSettingsControl(selector: string): HTMLElement {
-  root().querySelector<HTMLButtonElement>('button[data-action-id="toggle-settings"]')!.click();
-  const control = root().querySelector<HTMLElement>(selector)!;
-  control.focus();
-  expect(document.activeElement).toBe(control);
-  return control;
-}
-
-function emitControllerState(runtime: ProductionTaskPaneRuntime, state: AppState): void {
-  const controller = (
-    runtime as unknown as {
-      readonly controller?: { setState(nextState: AppState): void };
-    }
-  ).controller;
-  if (!controller) {
-    throw new Error("Production runtime controller is not connected");
-  }
-  controller.setState(state);
+async function waitForReady(): Promise<void> {
+  await vi.waitFor(() => expect(viewState()).toBe("ready"));
 }
 
 let activeRuntime: ProductionTaskPaneRuntime | undefined;
-let originalExecCommand: PropertyDescriptor | undefined;
-
-function installExecCommand(implementation: (commandId: string) => boolean) {
-  const execCommand = vi.fn(implementation);
-  Object.defineProperty(document, "execCommand", {
-    configurable: true,
-    value: execCommand,
-  });
-  return execCommand;
-}
-
-function installResultWorkspaceGeometry(): void {
-  vi.spyOn(Element.prototype, "clientHeight", "get").mockImplementation(function (this: Element) {
-    return this.classList.contains("olc-workspace") ? 300 : 0;
-  });
-  vi.spyOn(Element.prototype, "scrollHeight", "get").mockImplementation(function (this: Element) {
-    if (!this.classList.contains("olc-workspace")) {
-      return 0;
-    }
-    return this.querySelector(".olc-notice") ? 980 : 900;
-  });
-}
-
-function focusCopyActionAtWorkspaceBottom(): {
-  readonly button: HTMLButtonElement;
-  readonly workspace: HTMLElement;
-} {
-  const workspace = root().querySelector<HTMLElement>(".olc-workspace")!;
-  const button = root().querySelector<HTMLButtonElement>('button[data-action-id="copy-answer"]')!;
-  workspace.scrollTop = workspace.scrollHeight - workspace.clientHeight;
-  button.focus();
-  return { button, workspace };
-}
-
-function expectPreservedCopyFeedbackPosition(
-  previous: { readonly button: HTMLButtonElement; readonly workspace: HTMLElement },
-  label: "Copied" | "Copy answer"
-): void {
-  const currentWorkspace = root().querySelector<HTMLElement>(".olc-workspace")!;
-  const currentButton = root().querySelector<HTMLButtonElement>(
-    'button[data-action-id="copy-answer"]'
-  )!;
-  expect(currentWorkspace).not.toBe(previous.workspace);
-  expect(currentWorkspace.scrollTop).toBe(
-    currentWorkspace.scrollHeight - currentWorkspace.clientHeight
-  );
-  expect(currentButton.textContent).toBe(label);
-  expect(document.activeElement).toBe(currentButton);
-  expect(previous.button.isConnected).toBe(false);
-  expect(document.activeElement).not.toBe(previous.button);
-}
+const originalRequestStorageAccess = Object.getOwnPropertyDescriptor(
+  document,
+  "requestStorageAccess"
+);
+const originalHasStorageAccess = Object.getOwnPropertyDescriptor(document, "hasStorageAccess");
 
 beforeEach(() => {
   document.body.innerHTML = '<div id="taskpane-root"></div>';
-  originalExecCommand = Object.getOwnPropertyDescriptor(document, "execCommand");
 });
 
 afterEach(() => {
   activeRuntime?.dispose();
   activeRuntime = undefined;
-  vi.useRealTimers();
   vi.restoreAllMocks();
-  if (originalExecCommand) {
-    Object.defineProperty(document, "execCommand", originalExecCommand);
-  } else {
-    Reflect.deleteProperty(document, "execCommand");
+  for (const [name, descriptor] of [
+    ["requestStorageAccess", originalRequestStorageAccess],
+    ["hasStorageAccess", originalHasStorageAccess],
+  ] as const) {
+    if (descriptor) Object.defineProperty(document, name, descriptor);
+    else Reflect.deleteProperty(document, name);
   }
 });
 
-describe("production legal-source runtime", () => {
-  it("switches a ready view to sl-SI without changing provider, input, context, Word, or gateway", async () => {
-    const { word, openWebUI, olcEngine, runtime } = setup();
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Nespremenjeno vprašanje");
-    selectContext("selected-text");
-    const connectionChecks = openWebUI.connectionChecks;
-
-    selectLocale("sl-SI");
-
-    expect(document.documentElement.lang).toBe("sl-SI");
-    expect(document.title).toBe("Dodatek OpenLegalCore za Microsoft Word");
-    expect(root().querySelector(".olc-product-title")?.textContent).toBe("OpenLegalCore za Word");
-    expect(root().querySelector("h1")?.textContent).toBe("Iskanje pravnih virov");
-    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
-      "Nespremenjeno vprašanje"
-    );
-    expect(root().querySelector<HTMLInputElement>('input[value="selected-text"]')?.checked).toBe(
-      true
-    );
-    expect(root().textContent).toContain("Open WebUI je povezan");
-    expect(openWebUI.connectionChecks).toBe(connectionChecks);
-    expect(openWebUI.requests).toHaveLength(0);
-    expect(olcEngine.connectionChecks).toBe(0);
-    expect(word.captureCalls).toBe(0);
-    expect(word.applyCalls).toHaveLength(0);
-  });
-
-  it("does not carry a manual locale into a new runtime instance", () => {
-    const first = setup({ locale: "en-US" });
-    activeRuntime = first.runtime;
-
-    selectLocale("sl-SI");
-    expect(document.documentElement.lang).toBe("sl-SI");
-
-    first.runtime.dispose();
-    activeRuntime = undefined;
-    document.body.innerHTML = '<div id="taskpane-root"></div>';
-    const second = setup({ locale: "en-US" });
-    activeRuntime = second.runtime;
-
-    expect(document.documentElement.lang).toBe("en-US");
-    expect(document.title).toBe("OpenLegalCore for Word");
-    expect(root().querySelector("h1")?.textContent).toBe("Choose a legal source service");
-    expect(first.word.captureCalls).toBe(0);
-    expect(second.word.captureCalls).toBe(0);
-    expect(first.openWebUI.requests).toHaveLength(0);
-    expect(second.openWebUI.requests).toHaveLength(0);
-  });
-
-  it("renders Slovenian provider selection, connection failure, and validation states", async () => {
-    const first = setup({ locale: "sl-SI" });
-    activeRuntime = first.runtime;
-    expect(viewState()).toBe("backend-selection");
-    expect(root().querySelector("h1")?.textContent).toBe(
-      "Izberite storitev za iskanje pravnih virov"
-    );
-    first.openWebUI.connectionError = new ChatGatewayError("NETWORK_ERROR");
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("connection-error"));
-    expect(root().textContent).toContain("Preverjanje povezave ni uspelo");
-    expect(first.word.captureCalls).toBe(0);
-    first.runtime.dispose();
-    activeRuntime = undefined;
-
-    document.body.innerHTML = '<div id="taskpane-root"></div>';
-    const second = setup({ locale: "sl-SI" });
-    activeRuntime = second.runtime;
-    click("select-olc-engine");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    click("search");
-    expect(root().querySelector("[role='alert']")?.textContent).toContain(
-      "Vnesite pravno vprašanje"
-    );
-    expect(second.olcEngine.requests).toHaveLength(0);
-    expect(second.word.captureCalls).toBe(0);
-  });
-
-  it("preserves searching state and request contract while changing locale", async () => {
-    const { word, openWebUI, olcEngine, runtime } = setup();
-    activeRuntime = runtime;
-    openWebUI.pending = true;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Exact question");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("searching"));
-    const request = structuredClone(openWebUI.requests[0]);
-
-    selectLocale("sl-SI");
-
-    expect(viewState()).toBe("searching");
-    expect(root().querySelector("h1")?.textContent).toBe("Iskanje po zakonodaji in sodni praksi …");
-    expect(openWebUI.requests).toEqual([request]);
-    expect(olcEngine.requests).toHaveLength(0);
-    expect(word.captureCalls).toBe(0);
-    expect(word.applyCalls).toHaveLength(0);
-  });
-
-  it("preserves selected-text through a searching locale render and Refine", async () => {
-    const { word, openWebUI, olcEngine, runtime } = setup();
-    activeRuntime = runtime;
-    openWebUI.pending = true;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Exact selected-context question");
-    selectContext("selected-text");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("searching"));
-    const wordCallsBeforeLocale = word.captureCalls;
-    const requestsBeforeLocale = openWebUI.requests.length;
-
-    selectLocale("sl-SI");
-
-    expect(word.captureCalls).toBe(wordCallsBeforeLocale);
-    expect(openWebUI.requests).toHaveLength(requestsBeforeLocale);
-    expect(olcEngine.requests).toHaveLength(0);
-    openWebUI.resolveLate();
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    click("refine-question");
-    expect(root().querySelector<HTMLInputElement>('input[value="selected-text"]')?.checked).toBe(
-      true
-    );
-  });
-
-  it("preserves selected-text through result and error locale renders before Refine", async () => {
-    const first = setup();
-    activeRuntime = first.runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Result context");
-    selectContext("selected-text");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    const firstWordCalls = first.word.captureCalls;
-    const firstRequests = first.openWebUI.requests.length;
-    selectLocale("sl-SI");
-    expect(first.word.captureCalls).toBe(firstWordCalls);
-    expect(first.openWebUI.requests).toHaveLength(firstRequests);
-    click("refine-question");
-    expect(root().querySelector<HTMLInputElement>('input[value="selected-text"]')?.checked).toBe(
-      true
-    );
-    first.runtime.dispose();
-    activeRuntime = undefined;
-
-    document.body.innerHTML = '<div id="taskpane-root"></div>';
-    const second = setup();
-    activeRuntime = second.runtime;
-    second.openWebUI.completionError = new ChatGatewayError("NETWORK_ERROR");
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Error context");
-    selectContext("selected-text");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("error"));
-    const secondWordCalls = second.word.captureCalls;
-    const secondRequests = second.openWebUI.requests.length;
-    selectLocale("sl-SI");
-    expect(second.word.captureCalls).toBe(secondWordCalls);
-    expect(second.openWebUI.requests).toHaveLength(secondRequests);
-    click("refine-question");
-    expect(root().querySelector<HTMLInputElement>('input[value="selected-text"]')?.checked).toBe(
-      true
-    );
-    expect(second.olcEngine.requests).toHaveLength(0);
-  });
-
-  it("preserves selected-text through an expired-session locale render and explicit Retry", async () => {
-    const openSignIn = vi.fn(() => true);
-    const { word, openWebUI, olcEngine, runtime } = setup({ openSignIn });
-    activeRuntime = runtime;
-    openWebUI.completionError = new ChatGatewayError("SESSION_EXPIRED");
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Expired selected context");
-    selectContext("selected-text");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
-    const wordCallsBeforeLocale = word.captureCalls;
-    const requestsBeforeLocale = openWebUI.requests.length;
-
-    selectLocale("sl-SI");
-
-    expect(word.captureCalls).toBe(wordCallsBeforeLocale);
-    expect(openWebUI.requests).toHaveLength(requestsBeforeLocale);
-    click("open-secure-sign-in");
-    openWebUI.completionError = undefined;
-    click("retry-search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    expect(openWebUI.requests[1]).toEqual(openWebUI.requests[0]);
-    expect(openWebUI.requests[1].context.type).toBe("selected_text");
-    expect(word.captureCalls).toBe(wordCallsBeforeLocale + 1);
-    expect(olcEngine.requests).toHaveLength(0);
-  });
-
-  it("keeps settings focus through deferred search completion and session expiry", async () => {
-    const { openWebUI, runtime } = setup();
-    activeRuntime = runtime;
-    openWebUI.pending = true;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Deferred answer");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("searching"));
-    const searchingRadio = focusSettingsControl('input[value="en-US"]');
-
-    openWebUI.resolveLate();
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    const resultRadio = root().querySelector<HTMLInputElement>('input[value="en-US"]')!;
-    expect(searchingRadio.isConnected).toBe(false);
-    expect(document.activeElement).toBe(resultRadio);
-    expect(document.activeElement).not.toBe(document.body);
-
-    emitControllerState(runtime, {
-      kind: "error",
-      error: { code: "SESSION_EXPIRED" },
+describe("production Engine-only task-pane runtime", () => {
+  it("does not overlap either connection-check control with a pending sign-in dialog", async () => {
+    let finish!: (value: "completed") => void;
+    const state = setup({
+      openSignIn: () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
     });
-    const sessionRadio = root().querySelector<HTMLInputElement>('input[value="en-US"]')!;
-    expect(resultRadio.isConnected).toBe(false);
-    expect(viewState()).toBe("session-expired");
-    expect(document.activeElement).toBe(sessionRadio);
-    expect(document.activeElement).not.toBe(document.body);
-  });
-
-  it("keeps settings focus and search state through a deferred ordinary failure", async () => {
-    const { word, openWebUI, olcEngine, runtime } = setup();
-    activeRuntime = runtime;
-    openWebUI.pending = true;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Deferred ordinary failure");
-    selectContext("none");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("searching"));
-    const searchingRadio = focusSettingsControl('input[value="en-US"]');
-
-    openWebUI.rejectLate(new ChatGatewayError("SERVICE_UNAVAILABLE"));
-
-    await vi.waitFor(() => expect(viewState()).toBe("error"));
-    const errorRadio = root().querySelector<HTMLInputElement>('input[value="en-US"]')!;
-    expect(searchingRadio.isConnected).toBe(false);
-    expect(document.activeElement).toBe(errorRadio);
-    expect(document.activeElement).not.toBe(document.body);
-    expect(root().textContent).toContain("SERVICE_UNAVAILABLE");
-    expect(openWebUI.requests).toHaveLength(1);
-    expect(openWebUI.requests[0].context).toEqual({ type: "none" });
-    expect(olcEngine.requests).toHaveLength(0);
-    expect(word.captureCalls).toBe(0);
-    expect(word.applyCalls).toHaveLength(0);
-
-    click("refine-question");
-    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
-      "Deferred ordinary failure"
-    );
-    expect(root().querySelector<HTMLInputElement>('input[value="none"]')?.checked).toBe(true);
-    expect(openWebUI.requests).toHaveLength(1);
-    expect(olcEngine.requests).toHaveLength(0);
-    expect(word.captureCalls).toBe(0);
-    expect(word.applyCalls).toHaveLength(0);
-  });
-
-  it.each([
-    ["clipboard success", false],
-    ["clipboard failure", true],
-  ] as const)("keeps settings focus through %s feedback", async (_label, rejectClipboard) => {
-    const operation = deferred<void>();
-    const writeText = vi.fn(() => operation.promise);
-    const execCommand = installExecCommand(() => false);
-    const { openWebUI, olcEngine, runtime } = setup({ clipboard: { writeText } });
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Copy focus");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    click("copy-answer");
-    await vi.waitFor(() => expect(writeText).toHaveBeenCalledOnce());
-    const oldClose = focusSettingsControl('button[data-action-id="close-settings"]');
-
-    if (rejectClipboard) {
-      operation.reject(new Error("clipboard blocked"));
-    } else {
-      operation.resolve();
-    }
-    await vi.waitFor(() =>
-      expect(root().querySelector(".olc-notice")?.textContent).toContain(
-        rejectClipboard ? "Copy failed" : "Copied"
-      )
-    );
-
-    const currentClose = root().querySelector<HTMLButtonElement>(
-      'button[data-action-id="close-settings"]'
-    )!;
-    expect(oldClose.isConnected).toBe(false);
-    expect(document.activeElement).toBe(currentClose);
-    expect(document.activeElement).not.toBe(
-      root().querySelector<HTMLButtonElement>('button[data-action-id="copy-answer"]')
-    );
-    expect(document.activeElement).not.toBe(document.body);
-    expect(execCommand).toHaveBeenCalledTimes(rejectClipboard ? 1 : 0);
-    expect(openWebUI.requests).toHaveLength(1);
-    expect(olcEngine.requests).toHaveLength(0);
-  });
-
-  it("preserves exact provider result, citations, URLs, copy feedback, timer, focus, and scroll", async () => {
-    vi.useFakeTimers();
-    installResultWorkspaceGeometry();
-    const writeText = vi.fn(async () => undefined);
-    const { word, openWebUI, runtime } = setup({ clipboard: { writeText } });
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await Promise.resolve();
-    setQuestion("Question");
-    click("search");
-    await Promise.resolve();
-    await Promise.resolve();
-    const originalRequest = structuredClone(openWebUI.requests[0]);
-    const answerText = root().querySelector(".olc-legal-answer")?.textContent;
-    const sourceItems = Array.from(
-      root().querySelectorAll<HTMLElement>(".olc-legal-sources li"),
-      (item) => item.textContent
-    );
-    const sourceUrls = Array.from(
-      root().querySelectorAll<HTMLAnchorElement>(".olc-legal-sources a"),
-      (link) => link.href
-    );
-    const previous = focusCopyActionAtWorkspaceBottom();
-
-    click("copy-answer");
-    await Promise.resolve();
-    await Promise.resolve();
-    await vi.advanceTimersByTimeAsync(1_000);
-    selectLocale("sl-SI");
-
-    expect(viewState()).toBe("result");
-    expect(root().querySelector(".olc-legal-answer")?.textContent).toBe(answerText);
-    expect(
-      Array.from(
-        root().querySelectorAll<HTMLElement>(".olc-legal-sources li"),
-        (item) => item.textContent
-      )
-    ).toEqual(sourceItems);
-    expect(
-      Array.from(
-        root().querySelectorAll<HTMLAnchorElement>(".olc-legal-sources a"),
-        (link) => link.href
-      )
-    ).toEqual(sourceUrls);
-    expect(root().querySelector(".olc-legal-sources h2")?.textContent).toBe("Viri");
-    expect(root().textContent).toContain("Kopirano");
-    const localizedWorkspace = root().querySelector<HTMLElement>(".olc-workspace")!;
-    expect(localizedWorkspace.scrollTop).toBe(
-      localizedWorkspace.scrollHeight - localizedWorkspace.clientHeight
-    );
-    expect(openWebUI.requests).toEqual([originalRequest]);
-    expect(writeText).toHaveBeenCalledWith(ANSWER);
-    expect(word.captureCalls).toBe(0);
-    expect(word.applyCalls).toHaveLength(0);
-
-    await vi.advanceTimersByTimeAsync(999);
-    expect(root().textContent).toContain("Kopirano");
-    await vi.advanceTimersByTimeAsync(1);
-    expect(
-      root().querySelector<HTMLButtonElement>('button[data-action-id="copy-answer"]')?.textContent
-    ).toBe("Kopiraj odgovor");
-  });
-
-  it("localizes error and session-expired states without retry or provider fallback", async () => {
-    const openSignIn = vi.fn(() => true);
-    const state = setup({ openSignIn });
     activeRuntime = state.runtime;
-    state.openWebUI.completionError = new ChatGatewayError("NETWORK_ERROR");
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Question");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("error"));
-
-    selectLocale("sl-SI");
-    expect(viewState()).toBe("error");
-    expect(root().textContent).toContain(
-      "Ponovni poskus se izvede samo na vašo zahtevo. Samodejnega preklopa na drugo storitev ni."
-    );
-    expect(state.openWebUI.requests).toHaveLength(1);
-    expect(state.olcEngine.requests).toHaveLength(0);
-
-    state.openWebUI.completionError = new ChatGatewayError("SESSION_EXPIRED");
-    click("retry-search");
+    await waitForReady();
+    setQuestion("Retained\nDraft");
+    state.olcEngine.connectionError = new ChatGatewayError("SESSION_EXPIRED");
+    click("toggle-settings");
+    click("check-connection");
     await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
-    expect(root().textContent).toContain("Seja je potekla");
-    expect(openSignIn).not.toHaveBeenCalled();
+    click("open-secure-sign-in");
+    for (const id of ["check-connection", "retry-search"]) {
+      expect(root().querySelector<HTMLButtonElement>(`[data-action-id="${id}"]`)?.disabled).toBe(
+        true
+      );
+      click(id);
+    }
+    expect(state.olcEngine.connectionChecks).toBe(2);
+    finish("completed");
+    await vi.waitFor(() =>
+      expect(
+        root().querySelector<HTMLButtonElement>('[data-action-id="retry-search"]')?.disabled
+      ).toBe(false)
+    );
+    expect(state.olcEngine.connectionChecks).toBe(3);
+    state.olcEngine.connectionError = undefined;
+    click("retry-search");
+    await waitForReady();
+    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+      "Retained\nDraft"
+    );
+    expect(state.olcEngine.requests).toHaveLength(0);
+  });
+  it.each([
+    ["sl-SI", false],
+    ["sl-SI", true],
+    ["en-US", false],
+    ["en-US", true],
+  ] as const)(
+    "checks access from settings in %s, removed attachment %s, without replacing the form",
+    async (locale, removed) => {
+      const now = vi.spyOn(Date, "now").mockReturnValue(1_800_000_000_000);
+      const requests: Array<{ url: string; init?: RequestInit }> = [];
+      const word = new FakeWordAdapter(SNAPSHOT);
+      activeRuntime = createProductionTaskPaneRuntime(
+        root(),
+        word,
+        "STAGING",
+        new TaskPaneView(root()),
+        {
+          initialLocale: locale,
+          signIn: {
+            open: async (exchange) => {
+              await exchange!(
+                "c".repeat(43),
+                "v".repeat(43),
+                "s".repeat(43),
+                new AbortController().signal
+              );
+              return "completed";
+            },
+            close: () => {},
+          },
+          fetch: async (url, init) => {
+            requests.push({ url, init });
+            return url === "/word-api/session/exchange"
+              ? new Response(
+                  JSON.stringify({
+                    token: "t".repeat(43),
+                    scope: "word:models word:complete",
+                    expiresAt: Date.now() + 899_000,
+                  }),
+                  { headers: { "Content-Type": "application/json", "X-OLC-Word-Gateway": "1" } }
+                )
+              : url === "/word-api/session"
+                ? new Response(null, {
+                    headers: { "Content-Type": "application/json", "X-OLC-Word-Gateway": "1" },
+                  })
+                : new Response(
+                    JSON.stringify({ object: "list", data: [{ id: OLC_ENGINE_MODEL_ID }] }),
+                    { headers: { "Content-Type": "application/json" } }
+                  );
+          },
+        }
+      );
+      activeRuntime.start();
+      await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+      click("open-secure-sign-in");
+      await waitForReady();
+      if (removed) click("remove-selection");
+      const input = setQuestion("Synthetic draft\nSecond line");
+      const captures = word.captureCalls;
+      click("toggle-settings");
+      click("check-connection");
+      await vi.waitFor(() =>
+        expect(root().querySelector("#olc-connection-check-result")?.textContent).toContain(
+          locale === "sl-SI" ? "Obe preverjanji" : "Both access checks"
+        )
+      );
+      expect(root().querySelector("#runtime-legal-question")).toBe(input);
+      expect(input.value).toBe("Synthetic draft\nSecond line");
+      expect(Boolean(root().querySelector(".olc-selection-attachment"))).toBe(!removed);
+      expect(document.documentElement.lang).toBe(locale);
+      expect(word.captureCalls).toBe(captures);
+      expect(word.applyCalls).toHaveLength(0);
+      expect(requests.map((x) => x.url)).toEqual([
+        "/word-api/session/exchange",
+        "/word-api/session",
+        "/word-api/v1/models",
+        "/word-api/session",
+        "/word-api/v1/models",
+      ]);
+      for (const { init } of requests.slice(1))
+        expect(init).toMatchObject({
+          method: "GET",
+          credentials: "omit",
+          redirect: "manual",
+          cache: "no-store",
+        });
+      const previous = root().querySelector("#olc-connection-check-result")!.textContent;
+      now.mockReturnValue(1_800_000_010_000);
+      click("check-connection");
+      await vi.waitFor(() => expect(requests).toHaveLength(7));
+      await vi.waitFor(() =>
+        expect(root().querySelector("#olc-connection-check-result")?.textContent).not.toBe(previous)
+      );
+      expect(root().querySelector("#runtime-legal-question")).toBe(input);
+    }
+  );
+
+  it("allows typing and locale changes during a single check, blocks duplicate checks and Send, and retains the removed attachment", async () => {
+    const state = setup({ locale: "sl-SI" });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    click("remove-selection");
+    let input = setQuestion("Before check\nLine two");
+    let finish!: () => void;
+    vi.spyOn(state.olcEngine, "checkConnection").mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        })
+    );
+    click("toggle-settings");
+    click("check-connection");
+    click("check-connection");
+    await vi.waitFor(() => expect(state.olcEngine.checkConnection).toHaveBeenCalledTimes(1));
+    expect(
+      root().querySelector<HTMLButtonElement>('[data-action-id="check-connection"]')?.disabled
+    ).toBe(true);
+    expect(root().querySelector<HTMLButtonElement>('[data-action-id="send"]')?.disabled).toBe(true);
+    pressEnter(input);
+    expect(state.olcEngine.requests).toHaveLength(0);
+    input = setQuestion("Edited during check\nSecond line");
+    const language = root().querySelector<HTMLInputElement>(
+      'input[name="olc-ui-language"][value="en-US"]'
+    )!;
+    language.checked = true;
+    language.dispatchEvent(new Event("change", { bubbles: true }));
+    finish();
+    await vi.waitFor(() =>
+      expect(root().querySelector("#olc-connection-check-result")?.textContent).toContain(
+        "Both access checks"
+      )
+    );
+    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+      "Edited during check\nSecond line"
+    );
+    expect(root().querySelector(".olc-selection-attachment")).toBeNull();
+    expect(document.documentElement.lang).toBe("en-US");
     expect(state.olcEngine.requests).toHaveLength(0);
     expect(state.word.applyCalls).toHaveLength(0);
   });
 
-  it("creates semantically identical requests in en-US and sl-SI", async () => {
-    const english = setup({ locale: "en-US" });
-    activeRuntime = english.runtime;
-    click("select-olc-engine");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Isto vprašanje");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    const englishRequest = structuredClone(english.olcEngine.requests[0]);
-    english.runtime.dispose();
-    activeRuntime = undefined;
-
-    document.body.innerHTML = '<div id="taskpane-root"></div>';
-    const slovenian = setup({ locale: "sl-SI" });
-    activeRuntime = slovenian.runtime;
-    click("select-olc-engine");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Isto vprašanje");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-
-    expect(slovenian.olcEngine.requests[0]).toEqual(englishRequest);
-    expect(slovenian.olcEngine.requests[0].uiLocale).toBe("en-US");
-    expect(slovenian.word.captureCalls).toBe(0);
-    expect(slovenian.word.applyCalls).toHaveLength(0);
-  });
-
-  it.each([
-    "https://word.openlegalcore.org",
-    "https://word.example.invalid",
-    "https://partner.example.invalid",
-  ])("builds the exact same-origin secure sign-in URL for %s", (origin) => {
-    expect(secureSignInUrlForOrigin(origin)).toBe(`${origin}/api/session`);
-    expect(secureSignInUrlForOrigin(origin)).not.toContain("/api/unsupported");
-  });
-
-  it.each([
-    "http://word.example.invalid",
-    "https://word.example.invalid:443",
-    "https://word.example.invalid/path",
-    "https://word.example.invalid/",
-    "https://word.example.invalid@evil.example",
-    "not-a-url",
-  ])("rejects an unsafe secure sign-in origin: %s", (origin) => {
-    expect(() => secureSignInUrlForOrigin(origin)).toThrow("secure sign-in origin");
-  });
-
-  it("opens the exact sign-in target in a disowned no-referrer tab", () => {
-    const popupDocument = document.implementation.createHTMLDocument("Secure sign-in");
-    const popup = {
-      close: vi.fn(),
-      document: popupDocument,
-      opener: window,
-    } as unknown as Window;
-    const openWindow = vi.fn(() => popup);
-    const navigation: Array<Record<string, string>> = [];
-    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
-      this: HTMLAnchorElement
-    ) {
-      navigation.push({
-        href: this.href,
-        referrerPolicy: this.referrerPolicy,
-        rel: this.rel,
-        target: this.target,
+  it.each([false, true])(
+    "uses explicit recovery after a settings check, preserves original attachment state %s, and never submits",
+    async (removed) => {
+      const state = setup({ locale: "sl-SI", openSignIn: async () => "completed" as const });
+      activeRuntime = state.runtime;
+      await waitForReady();
+      if (removed) click("remove-selection");
+      setQuestion("Ohrani osnutek\nDruga vrstica");
+      const captures = state.word.captureCalls;
+      state.olcEngine.connectionError = new ChatGatewayError("SESSION_EXPIRED");
+      click("toggle-settings");
+      click("check-connection");
+      await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+      state.word.emitSelectionChange({
+        ...SNAPSHOT,
+        snapshotId: "late-other-selection",
+        text: "Different selection",
       });
-    });
-
-    expect(openSecureSignInWindow("https://word.example.invalid", openWindow)).toBe(true);
-    expect(openWindow).toHaveBeenCalledWith("", "_blank");
-    expect(popup.opener).toBeNull();
-    expect(navigation).toEqual([
-      {
-        href: "https://word.example.invalid/api/session",
-        referrerPolicy: "no-referrer",
-        rel: "noopener noreferrer",
-        target: "_self",
-      },
-    ]);
-    expect(popupDocument.querySelector("a")).toBeNull();
-    expect(popup.close).not.toHaveBeenCalled();
-  });
-
-  it("fails closed when a secure sign-in tab is blocked or the origin is unsafe", () => {
-    const blocked = vi.fn(() => null);
-    expect(openSecureSignInWindow("https://word.openlegalcore.org", blocked)).toBe(false);
-    expect(blocked).toHaveBeenCalledOnce();
-
-    const unsafe = vi.fn();
-    expect(openSecureSignInWindow("http://word.example.invalid", unsafe)).toBe(false);
-    expect(unsafe).not.toHaveBeenCalled();
-  });
-
-  it("closes a disowned tab when secure navigation cannot be started", () => {
-    const popupDocument = document.implementation.createHTMLDocument("Secure sign-in");
-    const popup = {
-      close: vi.fn(),
-      document: popupDocument,
-      opener: window,
-    } as unknown as Window;
-    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {
-      throw new Error("navigation failed");
-    });
-
-    expect(openSecureSignInWindow("https://word.example.invalid", () => popup)).toBe(false);
-    expect(popup.opener).toBeNull();
-    expect(popup.close).toHaveBeenCalledOnce();
-  });
-
-  it("configures exact same-origin routes and browser-session credentials only", async () => {
-    const fetch = vi.fn(async (input: string, init?: RequestInit): Promise<Response> => {
-      void init;
-      return new Response(
-        JSON.stringify(
-          input === "/v1/models"
-            ? { object: "list", data: [{ id: DEFAULT_WORD_MODEL_ID }] }
-            : { data: [{ id: DEFAULT_WORD_MODEL_ID }] }
-        ),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+      click("open-secure-sign-in");
+      await vi.waitFor(() =>
+        expect(root().textContent).toContain("Dostop iz Word podokna je še zavrnjen")
       );
-    });
-    const gateways = createSameOriginProductionGateways({ fetch });
-
-    await gateways.openWebUI.checkConnection();
-    await gateways.olcEngine.checkConnection();
-
-    expect(fetch.mock.calls.map(([input]) => input)).toEqual(["/api/models", "/v1/models"]);
-    for (const [, init] of fetch.mock.calls) {
-      expect(init).toMatchObject({ credentials: "same-origin", redirect: "manual" });
-      expect(init?.headers).not.toHaveProperty("Authorization");
-      expect(init?.headers).not.toHaveProperty("CF-Access-Client-ID");
-      expect(init?.headers).not.toHaveProperty("CF-Access-Client-Secret");
+      state.olcEngine.connectionError = undefined;
+      click("retry-search");
+      await waitForReady();
+      expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+        "Ohrani osnutek\nDruga vrstica"
+      );
+      expect(Boolean(root().querySelector(".olc-selection-attachment"))).toBe(!removed);
+      if (!removed)
+        expect(root().querySelector(".olc-selection-preview")?.textContent).toBe(SNAPSHOT.text);
+      expect(state.word.captureCalls).toBe(captures);
+      expect(state.word.applyCalls).toHaveLength(0);
+      expect(state.olcEngine.requests).toHaveLength(0);
+      expect(document.documentElement.lang).toBe("sl-SI");
     }
-  });
+  );
 
-  it("uses an operator-supplied model ID for both provider paths", async () => {
-    const modelId = "partner-legal-model";
-    const fetch = vi.fn(async (input: string): Promise<Response> => {
-      return new Response(
-        JSON.stringify(
-          input === "/v1/models"
-            ? { object: "list", data: [{ id: modelId }] }
-            : { data: [{ id: modelId }] }
-        ),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+  it.each(["ACCESS_DENIED", "TIMEOUT", "NETWORK_ERROR"] as const)(
+    "reports a fresh %s failure, then explicitly retries only the connection",
+    async (code) => {
+      const state = setup();
+      activeRuntime = state.runtime;
+      await waitForReady();
+      click("remove-selection");
+      setQuestion("Retained draft\nSecond line");
+      state.olcEngine.connectionError = new ChatGatewayError(code);
+      click("toggle-settings");
+      click("check-connection");
+      await vi.waitFor(() => expect(viewState()).toBe("connection-error"));
+      expect(root().querySelector("#olc-connection-check-result")?.textContent).toContain(code);
+      expect(root().querySelector("#olc-connection-check-result")?.textContent).not.toContain(
+        "Both access checks passed"
       );
-    });
-    const gateways = createSameOriginProductionGateways({ fetch, modelId });
+      state.olcEngine.connectionError = undefined;
+      click("retry-connection");
+      await waitForReady();
+      expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+        "Retained draft\nSecond line"
+      );
+      expect(root().querySelector(".olc-selection-attachment")).toBeNull();
+      expect(state.olcEngine.requests).toHaveLength(0);
+      expect(state.word.applyCalls).toHaveLength(0);
+    }
+  );
 
-    await gateways.openWebUI.checkConnection();
-    await gateways.olcEngine.checkConnection();
-
-    expect(fetch).toHaveBeenCalledTimes(2);
+  it("ignores a late settings-check response after disposal and aborts its signal", async () => {
+    const state = setup();
+    activeRuntime = state.runtime;
+    await waitForReady();
+    setQuestion("Draft stays");
+    let finish!: () => void;
+    let signal: AbortSignal | undefined;
+    const check: ChatGateway["checkConnection"] = (s) => {
+      signal = s;
+      return new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+    };
+    vi.spyOn(state.olcEngine, "checkConnection").mockImplementation(check);
+    click("toggle-settings");
+    click("check-connection");
+    await vi.waitFor(() => expect(signal).toBeDefined());
+    state.runtime.dispose();
+    const before = root().innerHTML;
+    finish();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(signal?.aborted).toBe(true);
+    expect(root().innerHTML).toBe(before);
+    expect(state.olcEngine.requests).toHaveLength(0);
   });
 
-  it("defaults to no document context and reads nothing before Search", async () => {
-    const { word, openWebUI, runtime } = setup();
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
+  it("disables settings checks during streaming and keeps a completed answer on later successful checks", async () => {
+    const state = setup({ pending: true });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    setQuestion("Synthetic request");
+    click("send");
+    await vi.waitFor(() => expect(viewState()).toBe("searching"));
+    click("toggle-settings");
+    click("check-connection");
+    expect(state.olcEngine.connectionChecks).toBe(1);
+    expect(
+      root().querySelector<HTMLButtonElement>('[data-action-id="check-connection"]')?.disabled
+    ).toBe(true);
+    state.olcEngine.resolveLate();
+    await vi.waitFor(() => expect(viewState()).toBe("result"));
+    const workspace = root().querySelector("#olc-workspace");
+    click("check-connection");
+    await vi.waitFor(() => expect(state.olcEngine.connectionChecks).toBe(2));
+    expect(root().querySelector("#olc-workspace")).toBe(workspace);
+    expect(viewState()).toBe("result");
+    expect(state.olcEngine.requests).toHaveLength(1);
+    expect(state.word.applyCalls).toHaveLength(0);
+  });
+  it("reports dialog close/disconnection without claiming authentication, losing the draft or retrying", async () => {
+    const state = setup({ locale: "sl-SI", openSignIn: async () => "closed" as const });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    setQuestion("Sintetični vnos po zaprtem oknu.");
+    state.olcEngine.completionError = new ChatGatewayError("SESSION_EXPIRED");
+    click("send");
+    await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+    click("open-secure-sign-in");
+    await vi.waitFor(() => expect(root().textContent).toContain("Prijava ni bila dokončana"));
+    expect(state.olcEngine.connectionChecks).toBe(1);
+    expect(state.olcEngine.requests).toHaveLength(1);
+    click("retry-search");
+    await waitForReady();
+    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+      "Sintetični vnos po zaprtem oknu."
+    );
+    expect(state.olcEngine.requests).toHaveLength(1);
+    expect(state.word.applyCalls).toHaveLength(0);
+  });
+  it("starts unauthenticated without probing legacy cookie-protected routes", async () => {
+    const fetch = vi.fn();
+    activeRuntime = createProductionTaskPaneRuntime(
+      root(),
+      new FakeWordAdapter(SNAPSHOT),
+      "STAGING",
+      new TaskPaneView(root()),
+      { fetch }
+    );
+    activeRuntime.start();
+    await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+    expect(fetch).not.toHaveBeenCalled();
+    expect(root().querySelector('[data-action-id="allow-pane-cookies"]')).toBeNull();
+  });
+  it.each(["granted", "denied", "unsupported"] as const)(
+    "recovers without %s cookie permissions, retaining draft/locale/removal and never resending",
+    async (permission) => {
+      const request = vi.fn(async () => {
+        throw new Error("blocked");
+      });
+      Object.defineProperty(document, "requestStorageAccess", {
+        configurable: true,
+        value: permission === "unsupported" ? undefined : request,
+      });
+      const state = setup({ locale: "sl-SI", openSignIn: async () => "completed" as const });
+      activeRuntime = state.runtime;
+      await waitForReady();
+      setQuestion("Ohranjen sintetični vnos.\nDruga vrstica.");
+      click("remove-selection");
+      state.olcEngine.connectionError = new ChatGatewayError("SESSION_EXPIRED");
+      click("toggle-settings");
+      click("check-connection");
+      await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+      state.olcEngine.connectionError = undefined;
+      click("open-secure-sign-in");
+      await waitForReady();
+      expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+        "Ohranjen sintetični vnos.\nDruga vrstica."
+      );
+      expect(root().querySelector(".olc-selection-attachment")).toBeNull();
+      expect(document.documentElement.lang).toBe("sl-SI");
+      expect(request).not.toHaveBeenCalled();
+      expect(state.olcEngine.requests).toHaveLength(0);
+      expect(state.word.applyCalls).toHaveLength(0);
+    }
+  );
 
-    expect(root().textContent).toContain("Search legal sources");
-    expect(root().textContent).toContain("No document context");
-    expect(root().querySelector<HTMLInputElement>('input[value="none"]')?.checked).toBe(true);
+  it("ignores a late dialog completion after runtime disposal without a connection or submission", async () => {
+    let finish!: (value: "completed") => void;
+    const state = setup({
+      connectionError: new ChatGatewayError("SESSION_EXPIRED"),
+      openSignIn: () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    });
+    activeRuntime = state.runtime;
+    await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+    click("open-secure-sign-in");
+    state.runtime.dispose();
+    const before = root().innerHTML;
+    finish("completed");
+    await Promise.resolve();
+    expect(root().innerHTML).toBe(before);
+    expect(state.olcEngine.connectionChecks).toBe(1);
+    expect(state.olcEngine.requests).toHaveLength(0);
+  });
+  it("previews an exact explicit proposal separately and applies it only through a localized click", async () => {
+    const s = setup({ locale: "sl-SI" });
+    activeRuntime = s.runtime;
+    const replace = vi.fn(async () => {});
+    const insert = vi.fn(async () => {});
+    Object.assign(s.word, {
+      documentWriter: { applyReplacement: replace, insertAtCursor: insert },
+    });
+    const text = "Literal <img src=x onerror=alert(1)> [Z1]";
+    s.olcEngine.result = {
+      text: "Uporabi se pravilo [Z1].",
+      sources: [{ label: "Z1", title: "Ločen vir", locator: "fixture", url: "" }],
+      rawResponse: "RAW JSON MUST NOT RENDER",
+      usage: null,
+      proposal: { text, language: "sl", changeSummary: "Sintetični predlog" },
+    };
+    await waitForReady();
+    setQuestion("Pripravi besedilo");
+    click("send");
+    await vi.waitFor(() => expect(viewState()).toBe("result"));
+    expect(root().querySelector(".olc-proposal-text")?.textContent).toBe(text);
+    expect(root().querySelector(".olc-proposal-text img")).toBeNull();
+    expect(root().querySelector(".olc-legal-result")?.textContent).toContain("Uporabi se pravilo");
+    expect(root().querySelector(".olc-legal-sources")?.textContent).toContain("Ločen vir");
+    expect(root().querySelector(".olc-legal-answer")?.textContent).not.toContain("Ločen vir");
+    expect(root().textContent).not.toContain("RAW JSON MUST NOT RENDER");
+    expect(replace).not.toHaveBeenCalled();
+    expect(root().querySelector('[data-action-id="replace-proposal"]')?.textContent).toBe(
+      "Zamenjaj označeno besedilo"
+    );
+    expect(root().querySelector('[data-action-id="insert-proposal"]')?.textContent).toBe(
+      "Vstavi na mesto kazalca"
+    );
+    click("replace-proposal");
+    await vi.waitFor(() =>
+      expect(root().querySelector(".olc-proposal-feedback")?.textContent).toContain("vnesen enkrat")
+    );
+    expect(replace).toHaveBeenCalledWith(SNAPSHOT, text);
+    click("replace-proposal");
+    click("insert-proposal");
+    expect(replace).toHaveBeenCalledTimes(1);
+    expect(insert).not.toHaveBeenCalled();
+  });
+  it("checks the connection automatically and opens the input without sending a message", async () => {
+    const state = setup();
+    activeRuntime = state.runtime;
+
+    expect(["connecting", "ready"]).toContain(viewState());
+    await waitForReady();
+
+    expect(state.olcEngine.connectionChecks).toBe(1);
+    expect(state.olcEngine.requests).toHaveLength(0);
+    expect(root().textContent).not.toContain("Connect to OLC Engine");
+    expect(root().textContent).not.toContain("Use OLC Engine");
     expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.placeholder).toBe(
       LEGAL_QUESTION_PLACEHOLDER
     );
-    expect(word.captureCalls).toBe(0);
-    expect(openWebUI.requests).toHaveLength(0);
+    const input = root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")!;
+    const inputLabel = root().querySelector<HTMLLabelElement>(
+      'label[for="runtime-legal-question"]'
+    );
+    expect(inputLabel?.textContent).toBe("Message");
+    expect(inputLabel?.classList.contains("olc-sr-only")).toBe(true);
+    expect(Array.from(input.labels)).toContain(inputLabel);
+    expect(root().querySelectorAll(".olc-section-heading")).toHaveLength(0);
+    expect(root().querySelectorAll(".olc-fields .olc-field-label:not(.olc-sr-only)")).toHaveLength(
+      0
+    );
+    expect(root().textContent).not.toMatch(/ASSISTANT|REQUEST INPUT/);
+    expect(root().querySelector(".olc-selection-attachment")?.textContent).toContain(
+      "Selected text"
+    );
   });
 
-  it("updates the document boundary in both directions without reading or sending content", async () => {
-    const { word, openWebUI, runtime } = setup();
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
+  it("sends only the message when Word has no selection", async () => {
+    const state = setup({ selection: null });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    expect(root().querySelector(".olc-selection-attachment")).toBeNull();
 
-    selectContext("selected-text");
-    expect(root().querySelector(".olc-action-region-message")?.textContent).toBe(
-      "Only the exact selection will be read and sent when you start the search."
-    );
-    expect(word.captureCalls).toBe(0);
-    expect(openWebUI.connectionChecks).toBe(1);
-    expect(openWebUI.requests).toHaveLength(0);
-
-    selectContext("none");
-    expect(root().querySelector(".olc-action-region-message")?.textContent).toBe(
-      "No document content will be read or sent."
-    );
-    expect(word.captureCalls).toBe(0);
-    expect(openWebUI.connectionChecks).toBe(1);
-    expect(openWebUI.requests).toHaveLength(0);
-  });
-
-  it("sends the exact legal question without rewrite fields or Word access", async () => {
-    const { word, openWebUI, runtime } = setup();
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    const question = "  Kateri zakon je veljal leta 2012?  ";
-    setQuestion(question);
-    click("search");
+    setQuestion("Explain the rule.");
+    click("send");
     await vi.waitFor(() => expect(viewState()).toBe("result"));
 
-    expect(openWebUI.requests).toEqual([
-      { question, context: { type: "none" }, uiLocale: "en-US" },
+    expect(state.olcEngine.requests).toEqual([
+      { question: "Explain the rule.", context: { type: "none" }, uiLocale: "en-US" },
     ]);
-    expect(Object.keys(openWebUI.requests[0]).sort()).toEqual(["context", "question", "uiLocale"]);
-    expect(word.captureCalls).toBe(0);
-    expect(word.applyCalls).toHaveLength(0);
+    expect(state.word.applyCalls).toHaveLength(0);
   });
 
-  it("captures selected text only on Search and keeps it quoted from the question", async () => {
-    const { word, olcEngine, runtime } = setup();
-    activeRuntime = runtime;
-    click("select-olc-engine");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Kako se zakon uporabi?");
-    selectContext("selected-text");
-    expect(root().querySelector(".olc-action-region-message")?.textContent).toBe(
-      "Only the exact selection will be read and sent when you start the search."
-    );
-    expect(word.captureCalls).toBe(0);
-    expect(olcEngine.requests).toHaveLength(0);
+  it("blocks an invalid Word selection instead of silently sending message-only", async () => {
+    const state = setup({ selectionError: new WordAdapterError("SELECTION_TOO_LARGE") });
+    activeRuntime = state.runtime;
+    await waitForReady();
 
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-
-    expect(olcEngine.requests).toEqual([
-      {
-        question: "Kako se zakon uporabi?",
-        context: { type: "selected_text", quotedText: snapshot.text },
-        uiLocale: "en-US",
-      },
-    ]);
-    expect(word.captureCalls).toBe(1);
-    expect(word.releaseCalls).toHaveLength(1);
-    expect(word.applyCalls).toHaveLength(0);
-  });
-
-  it("renders an analysis-only answer with separate safe sources and no rewrite controls", async () => {
-    const { runtime } = setup();
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Question");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-
-    expect(root().textContent).toContain("Answer ready");
-    expect(root().querySelector(".olc-legal-sources h2")?.textContent).toBe("Sources");
-    expect(root().querySelectorAll("a")).toHaveLength(2);
-    expect(root().textContent).not.toMatch(
-      /Original|Proposed|Apply to document|Discard|Regenerate|Improve|Shorten|Formalize/
-    );
-  });
-
-  it.each([
-    ["Open WebUI", "select-open-webui", "openWebUI", "olcEngine"],
-    ["OLC Engine", "select-olc-engine", "olcEngine", "openWebUI"],
-  ] as const)(
-    "renders the same safe reference-style result for %s without fallback or Word mutation",
-    async (_provider, actionId, selectedKey, otherKey) => {
-      const state = setup();
-      activeRuntime = state.runtime;
-      state[selectedKey].result = { text: REFERENCE_ANSWER };
-      click(actionId);
-      await vi.waitFor(() => expect(viewState()).toBe("ready"));
-      setQuestion("Question");
-      click("search");
-      await vi.waitFor(() => expect(viewState()).toBe("result"));
-
-      expect(
-        Array.from(root().querySelectorAll<HTMLAnchorElement>("a"), (link) => [
-          link.textContent,
-          link.href,
-        ])
-      ).toEqual([
-        ["[S1]", "https://www.sodnapraksa.si/?q=id:example"],
-        ["VSL sodba III Cp 975/2016", "https://www.sodnapraksa.si/?q=id:example"],
-      ]);
-      expect(root().textContent).not.toContain("[S1]:");
-      expect(state[selectedKey].requests).toHaveLength(1);
-      expect(state[otherKey].connectionChecks).toBe(0);
-      expect(state[otherKey].requests).toHaveLength(0);
-      expect(state.word.captureCalls).toBe(0);
-      expect(state.word.applyCalls).toHaveLength(0);
-    }
-  );
-
-  it("copies the exact plain-text answer with the Clipboard API and reports success", async () => {
-    installResultWorkspaceGeometry();
-    const focus = vi.spyOn(HTMLElement.prototype, "focus");
-    const writeText = vi.fn(async () => undefined);
-    const execCommand = installExecCommand(() => true);
-    const { word, openWebUI, olcEngine, runtime } = setup({ clipboard: { writeText } });
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Preserved question");
-    selectContext("selected-text");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    const previous = focusCopyActionAtWorkspaceBottom();
-    vi.useFakeTimers();
-
-    click("copy-answer");
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(writeText).toHaveBeenCalledWith(ANSWER);
-    expect(root().querySelector(".olc-notice[role='status']")?.textContent).toContain("Copied");
-    expect(
-      root().querySelector<HTMLButtonElement>('button[data-action-id="copy-answer"]')?.textContent
-    ).toBe("Copied");
-    expectPreservedCopyFeedbackPosition(previous, "Copied");
-    expect(focus).toHaveBeenLastCalledWith({ preventScroll: true });
-    expect(execCommand).not.toHaveBeenCalled();
-    expect(word.captureCalls).toBe(1);
-    expect(word.applyCalls).toHaveLength(0);
-    expect(openWebUI.requests).toHaveLength(1);
-    expect(olcEngine.requests).toHaveLength(0);
-
-    await vi.advanceTimersByTimeAsync(1_999);
-    expect(root().querySelector(".olc-notice[role='status']")?.textContent).toContain("Copied");
-    expect(
-      root().querySelector<HTMLButtonElement>('button[data-action-id="copy-answer"]')?.textContent
-    ).toBe("Copied");
-
-    await vi.advanceTimersByTimeAsync(1);
-    expect(root().querySelector(".olc-notice")).toBeNull();
-    const resetButton = root().querySelector<HTMLButtonElement>(
-      'button[data-action-id="copy-answer"]'
-    );
-    expect(resetButton?.textContent).toBe("Copy answer");
-    expect(resetButton?.className).toBe("olc-action olc-action-primary");
-    expect(resetButton?.disabled).toBe(false);
-    expect(resetButton?.getAttribute("aria-disabled")).toBeNull();
-    expect(document.activeElement).toBe(resetButton);
-    expect(root().querySelector(".olc-status-row")?.getAttribute("aria-live")).toBe("polite");
-    expect(word.captureCalls).toBe(1);
-    expect(word.applyCalls).toHaveLength(0);
-    expect(openWebUI.requests).toHaveLength(1);
-    expect(olcEngine.requests).toHaveLength(0);
-  });
-
-  it("restarts one copy confirmation timer after a second successful copy", async () => {
-    const writeText = vi.fn(async () => undefined);
-    const { word, openWebUI, olcEngine, runtime } = setup({ clipboard: { writeText } });
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Question");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    vi.useFakeTimers();
-
-    click("copy-answer");
-    await Promise.resolve();
-    await Promise.resolve();
-    await vi.advanceTimersByTimeAsync(1_500);
-
-    click("copy-answer");
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(writeText).toHaveBeenCalledTimes(2);
-    await vi.advanceTimersByTimeAsync(1_999);
-    expect(root().querySelector(".olc-notice")?.textContent).toContain("Copied");
-    await vi.advanceTimersByTimeAsync(1);
-    expect(root().querySelector(".olc-notice")).toBeNull();
-    expect(
-      root().querySelector<HTMLButtonElement>('button[data-action-id="copy-answer"]')?.textContent
-    ).toBe("Copy answer");
-    expect(word.captureCalls).toBe(0);
-    expect(word.applyCalls).toHaveLength(0);
-    expect(openWebUI.requests).toHaveLength(1);
-    expect(olcEngine.requests).toHaveLength(0);
-  });
-
-  it("ignores an older clipboard success without changing the newer timer", async () => {
-    const firstCopy = deferred<void>();
-    const secondCopy = deferred<void>();
-    const writeText = vi
-      .fn<Pick<Navigator["clipboard"], "writeText">["writeText"]>()
-      .mockImplementationOnce(() => firstCopy.promise)
-      .mockImplementationOnce(() => secondCopy.promise);
-    const { word, openWebUI, olcEngine, runtime } = setup({ clipboard: { writeText } });
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Question");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    vi.useFakeTimers();
-
-    click("copy-answer");
-    await Promise.resolve();
-    click("copy-answer");
-    await Promise.resolve();
-    secondCopy.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(root().querySelector(".olc-notice")?.textContent).toContain("Copied");
-
-    await vi.advanceTimersByTimeAsync(1_500);
-    firstCopy.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
-    await vi.advanceTimersByTimeAsync(499);
-    expect(root().querySelector(".olc-notice")?.textContent).toContain("Copied");
-    await vi.advanceTimersByTimeAsync(1);
-    expect(root().querySelector(".olc-notice")).toBeNull();
-    expect(
-      root().querySelector<HTMLButtonElement>('button[data-action-id="copy-answer"]')?.textContent
-    ).toBe("Copy answer");
-    expect(writeText).toHaveBeenCalledTimes(2);
-    expect(word.captureCalls).toBe(0);
-    expect(word.applyCalls).toHaveLength(0);
-    expect(openWebUI.requests).toHaveLength(1);
-    expect(olcEngine.requests).toHaveLength(0);
-  });
-
-  it("ignores an older clipboard rejection without fallback or failure feedback", async () => {
-    const firstCopy = deferred<void>();
-    const secondCopy = deferred<void>();
-    const writeText = vi
-      .fn<Pick<Navigator["clipboard"], "writeText">["writeText"]>()
-      .mockImplementationOnce(() => firstCopy.promise)
-      .mockImplementationOnce(() => secondCopy.promise);
-    const execCommand = installExecCommand(() => true);
-    const { word, openWebUI, olcEngine, runtime } = setup({ clipboard: { writeText } });
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Question");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    vi.useFakeTimers();
-
-    click("copy-answer");
-    await Promise.resolve();
-    click("copy-answer");
-    await Promise.resolve();
-    secondCopy.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
-    await vi.advanceTimersByTimeAsync(1_500);
-
-    firstCopy.reject(new Error("older clipboard rejection"));
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(execCommand).not.toHaveBeenCalled();
-    expect(root().querySelector("[role='alert']")).toBeNull();
-    expect(root().querySelector(".olc-notice")?.textContent).toContain("Copied");
-    await vi.advanceTimersByTimeAsync(500);
-    expect(root().querySelector(".olc-notice")).toBeNull();
-    expect(
-      root().querySelector<HTMLButtonElement>('button[data-action-id="copy-answer"]')?.textContent
-    ).toBe("Copy answer");
-    expect(word.captureCalls).toBe(0);
-    expect(word.applyCalls).toHaveLength(0);
-    expect(openWebUI.requests).toHaveLength(1);
-    expect(olcEngine.requests).toHaveLength(0);
-  });
-
-  it("preserves result DOM identity, focus, and scroll when confirmation expires", async () => {
-    const writeText = vi.fn(async () => undefined);
-    const { runtime } = setup({ clipboard: { writeText } });
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Question");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    vi.useFakeTimers();
-
-    click("copy-answer");
-    await Promise.resolve();
-    await Promise.resolve();
-    const workspace = root().querySelector<HTMLElement>(".olc-workspace")!;
-    const copyButton = root().querySelector<HTMLButtonElement>(
-      'button[data-action-id="copy-answer"]'
-    )!;
-    const refineButton = root().querySelector<HTMLButtonElement>(
-      'button[data-action-id="refine-question"]'
-    )!;
-    const citation = root().querySelector<HTMLAnchorElement>(".olc-legal-sources a")!;
-    workspace.scrollTop = 137;
-    citation.focus();
-
-    await vi.advanceTimersByTimeAsync(1_999);
-    expect(copyButton.textContent).toBe("Copied");
-    expect(document.activeElement).toBe(citation);
-    await vi.advanceTimersByTimeAsync(1);
-
-    expect(root().querySelector(".olc-workspace")).toBe(workspace);
-    expect(root().querySelector('button[data-action-id="copy-answer"]')).toBe(copyButton);
-    expect(root().querySelector('button[data-action-id="refine-question"]')).toBe(refineButton);
-    expect(root().querySelector(".olc-legal-sources a")).toBe(citation);
-    expect(document.activeElement).toBe(citation);
-    expect(workspace.scrollTop).toBe(137);
-    expect(copyButton.textContent).toBe("Copy answer");
-    expect(copyButton.className).toBe("olc-action olc-action-primary");
-    expect(copyButton.disabled).toBe(false);
-    expect(copyButton.getAttribute("aria-disabled")).toBeNull();
-    expect(root().querySelector(".olc-notice")).toBeNull();
-    expect(root().querySelector(".olc-status-row")?.getAttribute("aria-live")).toBe("polite");
-  });
-
-  it("invalidates pending clipboard work through controller non-result notifications", async () => {
-    const pendingCopy = deferred<void>();
-    const writeText = vi.fn(() => pendingCopy.promise);
-    const execCommand = installExecCommand(() => true);
-    const { word, openWebUI, olcEngine, runtime } = setup({ clipboard: { writeText } });
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Question");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    vi.useFakeTimers();
-
-    click("copy-answer");
-    await Promise.resolve();
-    expect(writeText).toHaveBeenCalledWith(ANSWER);
-    expect(vi.getTimerCount()).toBe(0);
-
-    emitControllerState(runtime, { kind: "ready" });
-    const nonResultScreen = root().querySelector<HTMLElement>(".olc-app")!;
-    expect(viewState()).toBe("ready");
-
-    const replacementAnswer = "## Different answer\nThis is the replacement legal result.";
-    emitControllerState(runtime, {
-      kind: "result",
-      request: {
-        question: "Different legal question",
-        context: { type: "none" },
-        uiLocale: "en-US",
-      },
-      result: { text: replacementAnswer },
-    });
-    const replacementScreen = root().querySelector<HTMLElement>(".olc-app")!;
-    const replacementMarkup = root().innerHTML;
-    const providerRequestsBeforeResolution = openWebUI.requests.length;
-    expect(replacementScreen).not.toBe(nonResultScreen);
-    expect(viewState()).toBe("result");
-    expect(root().textContent).toContain("This is the replacement legal result.");
-    expect(
-      root().querySelector<HTMLButtonElement>('button[data-action-id="copy-answer"]')?.textContent
-    ).toBe("Copy answer");
-    expect(root().textContent).not.toContain("Copied");
-    expect(vi.getTimerCount()).toBe(0);
-
-    pendingCopy.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
-    await vi.advanceTimersByTimeAsync(2_000);
-
-    expect(viewState()).toBe("result");
-    expect(root().querySelector(".olc-app")).toBe(replacementScreen);
-    expect(root().innerHTML).toBe(replacementMarkup);
-    expect(root().textContent).toContain("This is the replacement legal result.");
-    expect(
-      root().querySelector<HTMLButtonElement>('button[data-action-id="copy-answer"]')?.textContent
-    ).toBe("Copy answer");
-    expect(root().textContent).not.toContain("Copied");
-    expect(root().textContent).not.toContain("Copy failed");
-    expect(vi.getTimerCount()).toBe(0);
-    expect(execCommand).not.toHaveBeenCalled();
-    expect(word.captureCalls).toBe(0);
-    expect(word.applyCalls).toHaveLength(0);
-    expect(openWebUI.requests).toHaveLength(providerRequestsBeforeResolution);
-    expect(openWebUI.requests).toHaveLength(1);
-    expect(olcEngine.requests).toHaveLength(0);
-  });
-
-  it.each(["refine-question", "new-search", "change-backend", "lifecycle-reset"])(
-    "cancels pending copy feedback when %s leaves the answer",
-    async (actionId) => {
-      const writeText = vi.fn(async () => undefined);
-      const { word, openWebUI, olcEngine, runtime } = setup({ clipboard: { writeText } });
-      activeRuntime = runtime;
-      click("select-open-webui");
-      await vi.waitFor(() => expect(viewState()).toBe("ready"));
-      setQuestion("Question");
-      click("search");
-      await vi.waitFor(() => expect(viewState()).toBe("result"));
-      vi.useFakeTimers();
-
-      click("copy-answer");
-      await Promise.resolve();
-      await Promise.resolve();
-      if (actionId === "lifecycle-reset") {
-        runtime.start();
-      } else {
-        click(actionId);
-      }
-      const stateAfterAction = root().innerHTML;
-
-      await vi.advanceTimersByTimeAsync(2_000);
-      expect(root().innerHTML).toBe(stateAfterAction);
-      expect(root().textContent).not.toContain("Copied");
-      expect(word.captureCalls).toBe(0);
-      expect(word.applyCalls).toHaveLength(0);
-      expect(openWebUI.requests).toHaveLength(1);
-      expect(olcEngine.requests).toHaveLength(0);
-    }
-  );
-
-  it("cancels pending copy feedback on dispose without a stale render", async () => {
-    const writeText = vi.fn(async () => undefined);
-    const { runtime } = setup({ clipboard: { writeText } });
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Question");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    vi.useFakeTimers();
-
-    click("copy-answer");
-    await Promise.resolve();
-    await Promise.resolve();
-    runtime.dispose();
-    activeRuntime = undefined;
-    const disposedState = root().innerHTML;
-
-    await vi.advanceTimersByTimeAsync(2_000);
-    expect(root().innerHTML).toBe(disposedState);
-  });
-
-  it("uses a removable plain-text fallback when the Clipboard API is unavailable", async () => {
-    installResultWorkspaceGeometry();
-    const focus = vi.spyOn(HTMLElement.prototype, "focus");
-    const copiedValues: string[] = [];
-    const execCommand = installExecCommand((commandId) => {
-      expect(commandId).toBe("copy");
-      const textarea = document.body.querySelector<HTMLTextAreaElement>(
-        'textarea[aria-hidden="true"]'
-      );
-      expect(textarea?.readOnly).toBe(true);
-      copiedValues.push(textarea?.value ?? "");
-      return true;
-    });
-    const { word, openWebUI, olcEngine, runtime } = setup();
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Question");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    const previous = focusCopyActionAtWorkspaceBottom();
-
-    click("copy-answer");
-    await vi.waitFor(() => expect(execCommand).toHaveBeenCalledOnce());
-
-    expect(copiedValues).toEqual([ANSWER]);
-    expect(document.body.querySelector('textarea[aria-hidden="true"]')).toBeNull();
-    expect(root().querySelector(".olc-notice[role='status']")?.textContent).toContain("Copied");
-    expectPreservedCopyFeedbackPosition(previous, "Copied");
-    expect(focus).toHaveBeenLastCalledWith({ preventScroll: true });
-    expect(word.captureCalls).toBe(0);
-    expect(word.applyCalls).toHaveLength(0);
-    expect(openWebUI.requests).toHaveLength(1);
-    expect(olcEngine.requests).toHaveLength(0);
-  });
-
-  it("falls back after Clipboard API rejection and removes the temporary textarea", async () => {
-    const writeText = vi.fn(async () => Promise.reject(new Error("clipboard denied")));
-    const execCommand = installExecCommand(() => true);
-    const { runtime } = setup({ clipboard: { writeText } });
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Question");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-
-    click("copy-answer");
-    await vi.waitFor(() => expect(execCommand).toHaveBeenCalledWith("copy"));
-
-    expect(writeText).toHaveBeenCalledWith(ANSWER);
-    expect(document.body.querySelector('textarea[aria-hidden="true"]')).toBeNull();
-    expect(root().querySelector(".olc-notice[role='status']")?.textContent).toContain("Copied");
-  });
-
-  it("reports an accessible error when both clipboard mechanisms fail without side effects", async () => {
-    installResultWorkspaceGeometry();
-    const nativeFocus = HTMLElement.prototype.focus;
-    const focus = vi.spyOn(HTMLElement.prototype, "focus").mockImplementation(function (
-      this: HTMLElement,
-      options
-    ) {
-      if (options) {
-        throw new TypeError("focus options unsupported");
-      }
-      nativeFocus.call(this);
-    });
-    const writeText = vi.fn(async () => Promise.reject(new Error("clipboard denied")));
-    const execCommand = installExecCommand(() => false);
-    const { word, openWebUI, olcEngine, runtime } = setup({ clipboard: { writeText } });
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Question");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    const previous = focusCopyActionAtWorkspaceBottom();
-    vi.useFakeTimers();
-
-    click("copy-answer");
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
-
-    expect(root().querySelector("[role='alert']")?.textContent).toContain("Copy failed");
-    expect(root().textContent).not.toContain("Copied");
-    expect(writeText).toHaveBeenCalledTimes(1);
-    expect(execCommand).toHaveBeenCalledTimes(1);
-    expect(document.body.querySelector('textarea[aria-hidden="true"]')).toBeNull();
-    expectPreservedCopyFeedbackPosition(previous, "Copy answer");
-    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
-    expect(word.captureCalls).toBe(0);
-    expect(word.applyCalls).toHaveLength(0);
-    expect(openWebUI.requests).toHaveLength(1);
-    expect(olcEngine.connectionChecks).toBe(0);
-    expect(olcEngine.requests).toHaveLength(0);
-    await vi.advanceTimersByTimeAsync(2_000);
-    expect(root().querySelector("[role='alert']")?.textContent).toContain("Copy failed");
-    expect(root().textContent).not.toContain("Copied");
-  });
-
-  it("removes action listeners on dispose", async () => {
-    const writeText = vi.fn(async () => undefined);
-    const { runtime } = setup({ clipboard: { writeText } });
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Question");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    const copyButton = root().querySelector<HTMLButtonElement>(
-      'button[data-action-id="copy-answer"]'
-    )!;
-
-    runtime.dispose();
-    activeRuntime = undefined;
-    copyButton.click();
-    await Promise.resolve();
-
-    expect(writeText).not.toHaveBeenCalled();
-  });
-
-  it("does not run the fallback or render feedback after dispose during clipboard work", async () => {
-    let rejectWrite: ((error: Error) => void) | undefined;
-    const writeText = vi.fn(
-      () =>
-        new Promise<void>((_resolve, reject) => {
-          rejectWrite = reject;
-        })
-    );
-    const execCommand = installExecCommand(() => true);
-    const { runtime } = setup({ clipboard: { writeText } });
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Question");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-
-    click("copy-answer");
-    await vi.waitFor(() => expect(writeText).toHaveBeenCalledOnce());
-    runtime.dispose();
-    activeRuntime = undefined;
-    rejectWrite?.(new Error("clipboard denied"));
-    await Promise.resolve();
-
-    expect(execCommand).not.toHaveBeenCalled();
-    expect(document.body.querySelector('textarea[aria-hidden="true"]')).toBeNull();
-    expect(root().querySelector(".olc-notice")).toBeNull();
-  });
-
-  it("supports refine and new-search state transitions after a result", async () => {
-    const { runtime } = setup();
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Preserved question");
-    selectContext("selected-text");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-
-    click("refine-question");
-    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
-      "Preserved question"
-    );
-    expect(root().querySelector<HTMLInputElement>('input[value="selected-text"]')?.checked).toBe(
+    expect(root().querySelector("[role='alert']")?.textContent).toContain("Selection not attached");
+    expect(root().querySelector<HTMLButtonElement>('button[data-action-id="send"]')?.disabled).toBe(
       true
     );
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("result"));
-    click("new-search");
-    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe("");
-    expect(root().querySelector<HTMLInputElement>('input[value="none"]')?.checked).toBe(true);
+    const input = setQuestion("Do not send this yet.");
+    pressEnter(input);
+    await Promise.resolve();
+    expect(state.olcEngine.requests).toHaveLength(0);
+    expect(state.word.applyCalls).toHaveLength(0);
   });
 
-  it("cancels and ignores a late response without mutating Word", async () => {
-    const { word, openWebUI, runtime } = setup();
-    activeRuntime = runtime;
-    openWebUI.pending = true;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    setQuestion("Question");
-    click("search");
-    await vi.waitFor(() => expect(viewState()).toBe("searching"));
-    expect(root().textContent).toContain("Searching legislation and case law…");
+  it("updates and removes the compact selection attachment without clearing the message", async () => {
+    const state = setup();
+    activeRuntime = state.runtime;
+    await waitForReady();
+    const input = setQuestion("Ohrani ta vnos.");
+    input.blur();
 
+    const changed = {
+      ...SNAPSHOT,
+      snapshotId: "selection-2",
+      text: "Drugo izbrano besedilo z daljšim predogledom.",
+    };
+    state.word.emitSelectionChange(changed);
+    await vi.waitFor(() =>
+      expect(root().querySelector(".olc-selection-preview")?.textContent).toContain("Drugo izbrano")
+    );
+    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+      "Ohrani ta vnos."
+    );
+
+    click("remove-selection");
+    await vi.waitFor(() => expect(root().querySelector(".olc-selection-attachment")).toBeNull());
+    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+      "Ohrani ta vnos."
+    );
+    click("send");
+    await vi.waitFor(() => expect(viewState()).toBe("result"));
+    expect(state.olcEngine.requests[0].context).toEqual({ type: "none" });
+  });
+
+  it("preserves the displayed selection while focus moves into the message input", async () => {
+    const state = setup();
+    activeRuntime = state.runtime;
+    await waitForReady();
+    const input = setQuestion("Vprašanje ostane.");
+    input.focus();
+    const changed = { ...SNAPSHOT, snapshotId: "selection-ignored", text: "Pozni izbor" };
+
+    state.word.emitSelectionChange(changed);
+    await Promise.resolve();
+
+    expect(document.activeElement).toBe(input);
+    expect(input.value).toBe("Vprašanje ostane.");
+    expect(root().querySelector(".olc-selection-preview")?.textContent).toContain(SNAPSHOT.text);
+  });
+
+  it("freezes the displayed selection and language when Send is selected", async () => {
+    const state = setup({ locale: "sl-SI", pending: true });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    setQuestion("Razloži izbrano besedilo.");
+    click("send");
+    await vi.waitFor(() => expect(viewState()).toBe("searching"));
+
+    selectLocale("en-US");
+    state.word.emitSelectionChange({
+      ...SNAPSHOT,
+      snapshotId: "selection-late",
+      text: "Poznejši izbor",
+    });
+
+    expect(state.olcEngine.requests).toEqual([
+      {
+        question: "Razloži izbrano besedilo.",
+        context: { type: "selected_text", quotedText: SNAPSHOT.text },
+        uiLocale: "sl-SI",
+      },
+    ]);
+    expect(state.word.applyCalls).toHaveLength(0);
+  });
+
+  it("uses Enter to send, Shift+Enter for a line break, and ignores IME composition", async () => {
+    const shift = setup({ selection: null });
+    activeRuntime = shift.runtime;
+    await waitForReady();
+    let input = setQuestion("First line");
+    expect(pressEnter(input, { shiftKey: true }).defaultPrevented).toBe(false);
+    expect(shift.olcEngine.requests).toHaveLength(0);
+    expect(pressEnter(input, { isComposing: true }).defaultPrevented).toBe(false);
+    expect(shift.olcEngine.requests).toHaveLength(0);
+
+    const sendEvent = pressEnter(input);
+    expect(sendEvent.defaultPrevented).toBe(true);
+    await vi.waitFor(() => expect(viewState()).toBe("result"));
+    expect(shift.olcEngine.requests).toHaveLength(1);
+  });
+
+  it("shows Stop while streaming, aborts, and ignores late deltas and completion", async () => {
+    const state = setup({ pending: true });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    setQuestion("Pripravi odgovor.");
+    click("send");
+    await vi.waitFor(() => expect(viewState()).toBe("searching"));
+    expect(root().textContent).toContain("Preparing response");
+    expect(
+      root().querySelector<HTMLButtonElement>('button[data-action-id="cancel"]')?.textContent
+    ).toBe("Stop");
+
+    state.olcEngine.emitDelta("Delni odgovor");
+    expect(root().textContent).toContain("Delni odgovor");
     click("cancel");
     await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    expect(openWebUI.signals[0]?.aborted).toBe(true);
-    openWebUI.resolveLate();
-    await new Promise<void>((resolve) => setTimeout(resolve, 0));
-    expect(root().textContent).not.toContain("Late answer");
-    expect(word.applyCalls).toHaveLength(0);
+    state.olcEngine.emitDelta(" prezrt");
+    state.olcEngine.resolveLate({ text: "Pozni odgovor" });
+    await Promise.resolve();
+
+    expect(state.olcEngine.signals[0]?.aborted).toBe(true);
+    expect(root().textContent).not.toContain("Pozni odgovor");
+    expect(state.word.applyCalls).toHaveLength(0);
   });
 
-  it.each([
-    ["Open WebUI", "select-open-webui", "openWebUI", "olcEngine"],
-    ["OLC Engine", "select-olc-engine", "olcEngine", "openWebUI"],
-  ] as const)(
-    "recovers explicitly from an expired %s session while preserving search state",
-    async (_provider, actionId, selectedKey, otherKey) => {
-      const openSignIn = vi.fn(() => true);
-      const state = setup({ openSignIn });
-      activeRuntime = state.runtime;
-      state[selectedKey].completionError = new ChatGatewayError("SESSION_EXPIRED");
-      click(actionId);
-      await vi.waitFor(() => expect(viewState()).toBe("ready"));
-      setQuestion("Preserve this question");
-      selectContext("selected-text");
-      click("search");
-      await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+  it("renders safe sources and exact usage after the validated SSE terminal", async () => {
+    const state = setup({ selection: null, locale: "sl-SI" });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    setQuestion("Vprašanje");
+    click("send");
+    await vi.waitFor(() => expect(viewState()).toBe("result"));
 
-      expect(root().textContent).toContain("Your protected session has expired.");
-      expect(state.word.captureCalls).toBe(1);
-      expect(state[selectedKey].requests).toHaveLength(1);
-      click("open-secure-sign-in");
-      expect(openSignIn).toHaveBeenCalledTimes(1);
-      expect(root().textContent).toContain("Secure sign-in opened");
-      expect(root().textContent).toContain("Retry search");
-      expect(state.word.captureCalls).toBe(1);
-      expect(state.word.applyCalls).toHaveLength(0);
-      expect(state[selectedKey].requests).toHaveLength(1);
-      expect(state[otherKey].connectionChecks).toBe(0);
-      expect(state[otherKey].requests).toHaveLength(0);
+    expect(root().querySelector(".olc-legal-sources h2")?.textContent).toBe("Viri");
+    expect(root().querySelector<HTMLAnchorElement>(".olc-legal-sources a")?.href).toBe(
+      "https://pisrs.si/pregledPredpisa?id=ZAKO2008"
+    );
+    expect(root().textContent).toContain("Poraba: 12 vhodnih · 34 izhodnih · 46 žetonov skupaj");
+    expect(state.word.applyCalls).toHaveLength(0);
+  });
 
-      state[selectedKey].completionError = undefined;
-      click("retry-search");
-      await vi.waitFor(() => expect(viewState()).toBe("result"));
-
-      expect(state[selectedKey].requests).toHaveLength(2);
-      expect(state[selectedKey].requests[1]).toEqual(state[selectedKey].requests[0]);
-      expect(state[otherKey].connectionChecks).toBe(0);
-      expect(state[otherKey].requests).toHaveLength(0);
-      expect(state.word.applyCalls).toHaveLength(0);
-    }
-  );
-
-  it("reports a blocked secure sign-in without retrying or touching Word", async () => {
-    const openSignIn = vi.fn(() => false);
-    const { word, openWebUI, olcEngine, runtime } = setup({ openSignIn });
-    activeRuntime = runtime;
-    openWebUI.connectionError = new ChatGatewayError("SESSION_EXPIRED");
-    click("select-open-webui");
+  it("keeps sign-in explicit and returns to the form without resending a message", async () => {
+    const openSignIn = vi.fn(() => true);
+    const state = setup({
+      selection: null,
+      connectionError: new ChatGatewayError("SESSION_EXPIRED"),
+      openSignIn,
+    });
+    activeRuntime = state.runtime;
     await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+    expect(state.olcEngine.requests).toHaveLength(0);
 
     click("open-secure-sign-in");
-
-    expect(root().querySelector("[role='alert']")?.textContent).toContain(
-      "Secure sign-in could not open"
+    expect(openSignIn).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() =>
+      expect(
+        root().querySelector<HTMLButtonElement>('[data-action-id="retry-search"]')?.disabled
+      ).toBe(false)
     );
-    expect(root().textContent).not.toContain("Retry search");
-    expect(openSignIn).toHaveBeenCalledOnce();
-    expect(openWebUI.connectionChecks).toBe(1);
-    expect(openWebUI.requests).toHaveLength(0);
-    expect(olcEngine.connectionChecks).toBe(0);
-    expect(olcEngine.requests).toHaveLength(0);
-    expect(word.captureCalls).toBe(0);
-    expect(word.applyCalls).toHaveLength(0);
+    state.olcEngine.connectionError = undefined;
+    click("retry-search");
+    await waitForReady();
+
+    expect(state.olcEngine.connectionChecks).toBe(2);
+    expect(state.olcEngine.requests).toHaveLength(0);
   });
 
-  it("removes the secure sign-in action on dispose", async () => {
-    const openSignIn = vi.fn(() => true);
-    const { openWebUI, runtime } = setup({ openSignIn });
-    activeRuntime = runtime;
-    openWebUI.connectionError = new ChatGatewayError("SESSION_EXPIRED");
-    click("select-open-webui");
+  it("retains a draft across repeated session recovery after an idle-time rejection, without resubmitting", async () => {
+    const state = setup({ locale: "sl-SI", openSignIn: () => true });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    setQuestion("Sintetični vnos ostane.\nDruga vrstica.");
+    click("remove-selection");
+    state.olcEngine.completionError = new ChatGatewayError("SESSION_EXPIRED");
+    click("send");
     await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
-    const signInButton = root().querySelector<HTMLButtonElement>(
-      'button[data-action-id="open-secure-sign-in"]'
-    )!;
-
-    runtime.dispose();
-    activeRuntime = undefined;
-    signInButton.click();
-
-    expect(openSignIn).not.toHaveBeenCalled();
+    click("open-secure-sign-in");
+    await vi.waitFor(() =>
+      expect(
+        root().querySelector<HTMLButtonElement>('[data-action-id="retry-search"]')?.disabled
+      ).toBe(false)
+    );
+    state.olcEngine.connectionError = new ChatGatewayError("SESSION_EXPIRED");
+    click("retry-search");
+    await vi.waitFor(() => expect(state.olcEngine.connectionChecks).toBe(2));
+    await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+    click("open-secure-sign-in");
+    await vi.waitFor(() =>
+      expect(
+        root().querySelector<HTMLButtonElement>('[data-action-id="retry-search"]')?.disabled
+      ).toBe(false)
+    );
+    state.olcEngine.connectionError = undefined;
+    click("retry-search");
+    await waitForReady();
+    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+      "Sintetični vnos ostane.\nDruga vrstica."
+    );
+    expect(root().querySelector(".olc-selection-attachment")).toBeNull();
+    expect(state.olcEngine.requests).toHaveLength(1);
+    expect(state.word.applyCalls).toHaveLength(0);
   });
 
-  it("keeps provider selection explicit and never falls back", async () => {
-    const { openWebUI, olcEngine, runtime } = setup();
-    activeRuntime = runtime;
-    click("select-open-webui");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
-    click("change-backend");
-    expect(viewState()).toBe("backend-selection");
-    expect(openWebUI.disconnects).toBe(1);
-    expect(olcEngine.connectionChecks).toBe(0);
+  it("does not retry a failed completion automatically", async () => {
+    const state = setup({
+      selection: null,
+      completionError: new ChatGatewayError("SERVICE_UNAVAILABLE"),
+    });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    setQuestion("Vprašanje");
+    click("send");
+    await vi.waitFor(() => expect(viewState()).toBe("error"));
+    await Promise.resolve();
+    expect(state.olcEngine.requests).toHaveLength(1);
+  });
+
+  it("localizes the neutral request flow in Slovenian and English", async () => {
+    const state = setup({ selection: null, locale: "sl-SI" });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    expect(root().querySelector("h1")?.textContent).toBe("Vprašajte OpenLegalCore");
+    expect(root().textContent).not.toContain("POMOČNIK");
+    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.placeholder).toBe(
+      "Vprašajte ali napišite navodilo …"
+    );
+    expect(
+      root().querySelector<HTMLButtonElement>('button[data-action-id="send"]')?.textContent
+    ).toBe("Pošlji");
+
+    selectLocale("en-US");
+    expect(root().querySelector("h1")?.textContent).toBe("Ask OpenLegalCore");
+    expect(
+      root().querySelector<HTMLButtonElement>('button[data-action-id="send"]')?.textContent
+    ).toBe("Send");
+  });
+
+  it("copies only the answer as plain text", async () => {
+    const writeText = vi.fn(async () => undefined);
+    const state = setup({ selection: null, clipboard: { writeText } });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    setQuestion("Question");
+    click("send");
+    await vi.waitFor(() => expect(viewState()).toBe("result"));
+    click("copy-answer");
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith(ANSWER));
+    expect(state.word.applyCalls).toHaveLength(0);
   });
 });
 
-describe("production frontend security boundary", () => {
-  it("contains no frontend credential, storage, rewrite, or Apply path", () => {
-    const productionComposition = [
-      "src/taskpane/taskpane.ts",
-      "src/taskpane/ProductionTaskPaneRuntime.ts",
-    ]
-      .map((path) => readFileSync(path, "utf8"))
-      .join("\n");
+describe("secure same-origin composition", () => {
+  it("uses same-origin session credentials without exposing Engine or Access headers", async () => {
+    const fetch = vi.fn(async (_input: string, _init?: RequestInit): Promise<Response> => {
+      return new Response(JSON.stringify({ object: "list", data: [{ id: OLC_ENGINE_MODEL_ID }] }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+    const gateways = createSameOriginProductionGateways({ fetch });
 
-    expect(productionComposition).not.toMatch(/CF-Access-Client-(?:ID|Secret)/);
-    expect(productionComposition).not.toMatch(/\bAuthorization\b|\bBearer\b/);
-    expect(productionComposition).not.toMatch(
-      /localStorage|sessionStorage|indexedDB|document\.settings/
-    );
-    expect(productionComposition).not.toMatch(/applyReplacement|Apply to document|Regenerate/);
-    expect(SECURE_SIGN_IN_PATH).toBe("/api/session");
-    expect(productionComposition).not.toContain("/api/unsupported");
+    await gateways.olcEngine.checkConnection();
+
+    expect(fetch.mock.calls.map(([input]) => input)).toEqual(["/v1/models"]);
+    expect(fetch.mock.calls[0][1]).toMatchObject({
+      credentials: "same-origin",
+      redirect: "manual",
+    });
+    expect(fetch.mock.calls[0][1]?.headers).not.toHaveProperty("Authorization");
+    expect(fetch.mock.calls[0][1]?.headers).not.toHaveProperty("CF-Access-Client-ID");
+    expect(fetch.mock.calls[0][1]?.headers).not.toHaveProperty("CF-Access-Client-Secret");
   });
 });

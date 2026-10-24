@@ -11,6 +11,7 @@ export type WordAdapterErrorCode =
   | "SELECTION_TOO_LARGE"
   | "UNSUPPORTED_SELECTION"
   | "SELECTION_CHANGED"
+  | "CURSOR_REQUIRED"
   | "WORD_READ_FAILED"
   | "WORD_WRITE_FAILED";
 
@@ -22,6 +23,13 @@ export class WordAdapterError extends Error {
 }
 
 export interface WordAdapter {
+  readonly documentWriter?: WordDocumentWriter;
   captureSelection(): Promise<SelectionSnapshot>;
   releaseSelection(snapshot: SelectionSnapshot): Promise<void>;
+  subscribeToSelectionChanges(listener: () => void): Promise<() => void>;
+}
+
+export interface WordDocumentWriter {
+  applyReplacement(snapshot: SelectionSnapshot, proposedText: string): Promise<void>;
+  insertAtCursor(proposedText: string): Promise<void>;
 }

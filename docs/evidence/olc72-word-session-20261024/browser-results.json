@@ -1,0 +1,95 @@
+{
+  "observedAt": "2026-10-24T13:50:40.782Z",
+  "browser": "Firefox 157.0",
+  "mode": "headless, intercepted synthetic HTTPS origins, actual production bundles; Office/Access/Engine are synthetic",
+  "actualWord": "NOT_RUN",
+  "cookies": "all blocked by Firefox preference",
+  "freshPaneRequiresGesture": true,
+  "pkceExchangeAndSafeChecks": true,
+  "simulatedExpiryRecovery": true,
+  "multilineDraftRetained": true,
+  "localeRetained": true,
+  "removedAttachmentRetained": true,
+  "reopenedPaneNewSession": true,
+  "completionCalls": 0,
+  "calls": [
+    {
+      "path": "/word-auth/authorize",
+      "method": "GET",
+      "status": 200,
+      "cookiePresent": false
+    },
+    {
+      "path": "/word-api/session/exchange",
+      "method": "POST",
+      "status": 200,
+      "cookiePresent": false
+    },
+    {
+      "path": "/word-api/session",
+      "method": "GET",
+      "status": 200,
+      "cookiePresent": false
+    },
+    {
+      "path": "/word-api/v1/models",
+      "method": "GET",
+      "status": 200,
+      "cookiePresent": false
+    },
+    {
+      "path": "/word-api/session",
+      "method": "GET",
+      "status": 401,
+      "cookiePresent": false
+    },
+    {
+      "path": "/word-auth/authorize",
+      "method": "GET",
+      "status": 200,
+      "cookiePresent": false
+    },
+    {
+      "path": "/word-api/session/exchange",
+      "method": "POST",
+      "status": 200,
+      "cookiePresent": false
+    },
+    {
+      "path": "/word-api/session",
+      "method": "GET",
+      "status": 200,
+      "cookiePresent": false
+    },
+    {
+      "path": "/word-api/v1/models",
+      "method": "GET",
+      "status": 200,
+      "cookiePresent": false
+    },
+    {
+      "path": "/word-auth/authorize",
+      "method": "GET",
+      "status": 200,
+      "cookiePresent": false
+    },
+    {
+      "path": "/word-api/session/exchange",
+      "method": "POST",
+      "status": 200,
+      "cookiePresent": false
+    },
+    {
+      "path": "/word-api/session",
+      "method": "GET",
+      "status": 200,
+      "cookiePresent": false
+    },
+    {
+      "path": "/word-api/v1/models",
+      "method": "GET",
+      "status": 200,
+      "cookiePresent": false
+    }
+  ]
+}

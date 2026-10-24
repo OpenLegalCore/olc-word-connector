@@ -6,8 +6,6 @@ export const slSIMessages = {
     brandName: "OpenLegalCore za Word",
     brandImageAlt: "OpenLegalCore",
     availableActions: "Razpoložljiva dejanja",
-    requestInput: "VNOS ZAHTEVE",
-    questionSection: "Vprašanje",
     answerAriaLabel: "Odgovor",
     sourcesHeading: "Viri",
   },
@@ -19,6 +17,12 @@ export const slSIMessages = {
     slovenian: "Slovenščina",
     english: "English",
     languageChanged: (language: string): string => `Izbrani jezik: ${language}.`,
+    checkConnection: "Preveri povezavo",
+    checkingConnection: "Preverjam povezavo …",
+    connectionUnchecked: "Preverite dostop iz tega podokna brez oddaje sporočila.",
+    connectionPassed: "Obe preverjanji dostopa sta uspeli. Sporočilo ni bilo poslano.",
+    connectionFailed: "Preverjanje dostopa ni uspelo. Vaš vnos je ohranjen.",
+    checkedAt: (time: string): string => `Zadnje preverjanje: ${time}`,
   },
   initializing: {
     statusLabel: "Vzpostavljanje povezave z Wordom",
@@ -41,18 +45,6 @@ export const slSIMessages = {
     footerEyebrow: "MEJA DOSTOPA DO DOKUMENTA",
     footerMessage: "NEAKTIVNO",
   },
-  providerSelection: {
-    statusLabel: "Povezava z Wordom je pripravljena",
-    statusDetail: "IZBERITE STORITEV",
-    eyebrow: "ISKANJE PRAVNIH VIROV",
-    heading: "Izberite storitev za iskanje pravnih virov",
-    description:
-      "Zaščitena seja brskalnika se lahko hkrati poveže le z eno storitvijo. V tem podoknu niso shranjene nobene poverilnice za storitev.",
-    useOpenWebUI: "Uporabi Open WebUI",
-    useOlcEngine: "Uporabi OLC Engine",
-    footerEyebrow: "MEJA DOSTOPA DO DOKUMENTA",
-    footerMessage: "VSEBINA DOKUMENTA NI PREBRANA",
-  },
   connecting: {
     statusLabel: (provider: string): string => `Preverjanje storitve ${provider}`,
     statusDetail: "POVEZOVANJE",
@@ -66,88 +58,125 @@ export const slSIMessages = {
   ready: {
     connectedStatus: (provider: string): string => `${provider} je povezan`,
     statusDetail: "POVEZANO",
-    changeProvider: "Spremeni",
-    eyebrow: "ISKANJE PRAVNIH VIROV",
-    heading: "Iskanje pravnih virov",
-    description: "Zastavite vprašanje na podlagi slovenske zakonodaje in sodne prakse.",
-    contextLegend: "Kontekst",
-    noDocumentContext: "Brez konteksta dokumenta",
+    heading: "Vprašajte OpenLegalCore",
+    description: "Zastavite vprašanje ali napišite navodilo.",
     selectedText: "Izbrano besedilo",
-    questionLabel: "Pravno vprašanje",
-    questionPlaceholder:
-      "Vprašajte o veljavni ali zgodovinski zakonodaji, slovenski sodni praksi ali njuni skupni uporabi.",
-    searchAction: "Išči pravne vire",
+    removeSelectedText: "Odstrani",
+    questionLabel: "Sporočilo",
+    questionPlaceholder: "Vprašajte ali napišite navodilo …",
+    sendAction: "Pošlji",
     footerEyebrow: "MEJA DOSTOPA DO DOKUMENTA",
-    selectedTextBoundary:
-      "Ko začnete iskanje, bo prebran in poslan samo natančno izbrani del besedila.",
+    selectedTextBoundary: "S sporočilom bo poslano samo pripeto izbrano besedilo.",
     noDocumentBoundary: "Vsebina dokumenta ne bo prebrana ali poslana.",
-    validationTitle: "Vnesite pravno vprašanje",
+    validationTitle: "Vnesite sporočilo",
     validationMessage:
-      "Vnesite vprašanje, dolgo od 1 do 4.000 znakov. Vsebina dokumenta ni bila prebrana.",
+      "Vnesite sporočilo, dolgo od 1 do 4.000 znakov. Vsebina dokumenta ni bila poslana.",
+    selectionUnavailableTitle: "Izbor ni pripet",
+    selectionUnavailableMessage:
+      "Izberite podprto besedilo v enem delu Wordovega dokumenta ali eni celici oziroma izbor pred pošiljanjem počistite.",
   },
   searching: {
-    statusLabel: "Iskanje poteka",
-    eyebrow: "ISKANJE PRAVNIH VIROV",
-    heading: "Iskanje po zakonodaji in sodni praksi …",
+    statusLabel: "Pripravljanje odgovora",
+    eyebrow: "POMOČNIK",
+    heading: "Pripravljam odgovor …",
+    streamingHeading: "Odgovor prihaja …",
     description: "Dokument ni bil spremenjen.",
     footerEyebrow: "MEJA DOSTOPA DO DOKUMENTA",
     footerMessage: "SAMO ANALIZA",
-    cancel: "Prekliči",
+    cancel: "Ustavi",
   },
   result: {
     statusLabel: "Odgovor je pripravljen",
-    changeProvider: "Spremeni",
-    eyebrow: "ISKANJE PRAVNIH VIROV",
+    eyebrow: "POMOČNIK",
     heading: "Odgovor",
+    usage: (input: number, output: number, total: number): string =>
+      `Poraba: ${input} vhodnih · ${output} izhodnih · ${total} žetonov skupaj`,
+    usageUnavailable: "Poraba: storitev je ni sporočila",
     copiedTitle: "Kopirano",
     copiedMessage: "Celoten odgovor je bil kopiran kot navadno besedilo.",
     copyFailedTitle: "Kopiranje ni uspelo",
     copyFailedMessage: "Kopiranje ni na voljo. Izberite besedilo odgovora in ga kopirajte ročno.",
     copyAction: "Kopiraj odgovor",
     copiedAction: "Kopirano",
-    refineQuestion: "Dopolni vprašanje",
-    newSearch: "Novo iskanje",
+    refineQuestion: "Uredi sporočilo",
+    newSearch: "Novo sporočilo",
     footerEyebrow: "MEJA DOSTOPA DO DOKUMENTA",
     footerMessage: "SAMO ANALIZA · DOKUMENT NI SPREMENJEN",
   },
+  proposal: {
+    heading: "Predlog besedila za dokument",
+    replaceSelection: "Zamenjaj označeno besedilo",
+    insertAtCursor: "Vstavi na mesto kazalca",
+    ready: "Preglejte natančen predlog. Word se spremeni samo ob vašem kliku.",
+    applying: "Vnašam predlog …",
+    applied: "Predlog je vnesen enkrat. Za pregled ali povrnitev uporabite Wordov Undo/Redo.",
+    selectionChanged:
+      "Prvotni izbor je spremenjen ali ni več označen. Nič ni zapisano. Začnite novo zahtevo.",
+    cursorRequired:
+      "Postavite kazalec brez označenega besedila. Nič ni zapisano. Začnite novo zahtevo.",
+    writeUnconfirmed:
+      "Zapisa ni bilo mogoče potrditi. Preverite Word in po potrebi uporabite Undo. Dejanja ne ponavljajte.",
+  },
   error: {
-    statusLabel: "Iskanje se je varno ustavilo",
+    statusLabel: "Zahteva se je varno ustavila",
     eyebrow: "OBNOVITEV",
     heading: "Dokument je nespremenjen",
-    description:
-      "Ponovni poskus se izvede samo na vašo zahtevo. Samodejnega preklopa na drugo storitev ni.",
+    description: "Ponovni poskus se izvede samo na vašo zahtevo. Samodejnega pošiljanja ni.",
     noticeTitle: "Dokument ni bil spremenjen",
-    noticeMessage: "Preverite storitev in vprašanje, nato ponovite iskanje.",
-    retrySearch: "Ponovi iskanje",
-    refineQuestion: "Dopolni vprašanje",
+    noticeMessage: "Preverite storitev in sporočilo, nato poskusite znova.",
+    retrySearch: "Poskusi znova",
+    refineQuestion: "Uredi sporočilo",
     footerEyebrow: "MEJA DOSTOPA DO DOKUMENTA",
     footerMessage: "NESPREMENJENO",
   },
   session: {
-    statusLabel: "Seja je potekla",
+    expiredTitle: "Prijava ni več veljavna",
+    expiredMessage:
+      "Prijavna koda ali Word seja ni več veljavna. Vnos je ohranjen; znova odprite prijavo, ko želite.",
+    statusLabel: "Potreben je dostop",
     eyebrow: "ZAŠČITENA SEJA",
-    heading: "Seja je potekla",
+    heading: "Potreben je dostop",
     description:
-      "Vaša zaščitena seja je potekla. Za nadaljevanje se znova prijavite. Dokument ni bil spremenjen.",
+      "Za kratkotrajno Word sejo se prijavite v ločenem oknu. Vnos je ohranjen in ne bo samodejno poslan.",
     signInOpenedTitle: "Varna prijava je odprta",
     signInOpenedMessage:
-      "Dokončajte prijavo v novem zavihku, vrnite se v Word in izberite »Ponovi iskanje«.",
-    signInFailedTitle: "Varne prijave ni bilo mogoče odpreti",
+      "Office lahko pred odprtjem okna vpraša Allow / Ignore. Allow odpre varno prijavo; Ignore dostopa ne spremeni. Po vrnitvi se preveri samo povezava, vaše sporočilo se ne pošlje.",
+    signInFailedTitle: "Varne prijave ni bilo mogoče dokončati",
     signInFailedMessage:
-      "Dovolite pojavna okna za to podokno in nato znova poskusite odpreti varno prijavo.",
-    retrySearch: "Ponovi iskanje",
+      "Prijave ali varne izmenjave kode ni bilo mogoče dokončati. Vnos je ohranjen; prijavo znova odprite, ko želite.",
+    retrySearch: "Preveri povezavo",
     openSecureSignIn: "Odpri varno prijavo",
+    completedTitle: "Word seja je ustvarjena",
+    closedTitle: "Prijava ni bila dokončana",
+    closedMessage:
+      "Okno je bilo odklonjeno, zaprto ali prekinjeno. To ni zavrnitev pravilnika dostopa. Vnos je ohranjen; prijavo odprite, ko želite.",
+    completedMessage: "Preverjam Word sejo in povezavo. Vaše sporočilo ne bo poslano.",
+    paneRejectedTitle: "Dostop iz Word podokna je še zavrnjen",
+    paneRejectedMessage:
+      "Word seja ni več veljavna. Vnos je ohranjen; znova se prijavite, ko želite.",
     footerEyebrow: "MEJA DOSTOPA DO DOKUMENTA",
     footerMessage: "NESPREMENJENO",
   },
   connectionError: {
+    deniedHeading: "Dostop je zavrnjen",
+    descriptionFor: (code: string): string => {
+      if (code === "ACCESS_DENIED")
+        return "Zaščitena zahteva je bila zavrnjena (403). To ne dokazuje poteka seje. Vnos je ohranjen; upravljavec mora preveriti dovoljenja.";
+      if (code === "NETWORK_ERROR")
+        return "Zahteva ni dosegla storitve. Preverite omrežje; ponovna prijava morda ne bo pomagala. Vnos je ohranjen.";
+      if (code === "SERVICE_UNAVAILABLE")
+        return "Strežnik je vrnil odziv o nedosegljivi storitvi. Povezavo preverite pozneje; vnos je ohranjen.";
+      if (code === "TIMEOUT")
+        return "Preverjanje povezave je trajalo predolgo. Vnos je ohranjen; sporočilo ni bilo oddano.";
+      if (code === "INVALID_RESPONSE")
+        return "Storitev je vrnila nepričakovan odziv. Ni bil sprejet kot seja ali odgovor. Vnos je ohranjen.";
+      return "Preverjanje povezave ni uspelo. Vnos je ohranjen; ponovite ga, ko želite.";
+    },
     statusLabel: (provider: string): string => `Storitev ${provider} ni na voljo`,
     eyebrow: "POVEZAVA S STORITVIJO",
     heading: "Preverjanje povezave ni uspelo",
-    description:
-      "Vsebina dokumenta ni bila prebrana. Storitev morate za ponovni poskus izbrati sami.",
+    description: "Vsebina dokumenta ni bila prebrana. Povezavo z OLC Engine morate ponoviti sami.",
     tryAgain: "Poskusi znova",
-    chooseService: "Izberi storitev",
     footerEyebrow: "MEJA DOSTOPA DO DOKUMENTA",
     footerMessage: "NESPREMENJENO",
   },

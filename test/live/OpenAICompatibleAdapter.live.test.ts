@@ -12,7 +12,7 @@ const runtimeProcess = (globalThis as typeof globalThis & { readonly process?: R
   .process;
 const environment = runtimeProcess?.env ?? {};
 const liveEnabled = environment.OLC_WORD_LIVE_OLC_ENGINE === "1";
-const exactModel = environment.OLC_WORD_LIVE_OLC_ENGINE_MODEL_ID ?? "olc-engine";
+const exactModel = environment.OLC_WORD_LIVE_OLC_ENGINE_MODEL_ID ?? "lexai-engine-local";
 
 function requiredEnvironment(name: string): string {
   const value = environment[name];
@@ -36,7 +36,7 @@ function syntheticText(values: readonly number[]): string {
 }
 
 describe.skipIf(!liveEnabled)("protected OLC Engine live contract", () => {
-  it("returns a non-empty non-stream result through the production adapter", async () => {
+  it("returns a validated native-streaming result through the production adapter", async () => {
     const diagnostic = new LiveContractDiagnostic();
     let forward: Awaited<ReturnType<typeof startLoopbackTcpForward>> | undefined;
     let gateway: OpenAICompatibleAdapter | undefined;
@@ -66,13 +66,20 @@ describe.skipIf(!liveEnabled)("protected OLC Engine live contract", () => {
       diagnostic.stage("EXACT_MODEL_FOUND");
 
       diagnostic.stage("COMPLETION_POST_STARTED");
-      const result = await gateway.complete({
-        question: syntheticText([
-          82, 101, 116, 117, 114, 110, 32, 112, 108, 97, 105, 110, 32, 116, 101, 120, 116, 46,
-        ]),
-        context: { type: "none" },
-        uiLocale: "en-US",
-      });
+      const deltas: string[] = [];
+      const result = await gateway.complete(
+        {
+          question: syntheticText([
+            82, 101, 116, 117, 114, 110, 32, 112, 108, 97, 105, 110, 32, 116, 101, 120, 116, 46,
+          ]),
+          context: { type: "none" },
+          uiLocale: "en-US",
+        },
+        undefined,
+        {
+          onTextDelta: (delta) => deltas.push(delta),
+        }
+      );
       diagnostic.stage("COMPLETION_POST_COMPLETED");
       diagnostic.stage("RESPONSE_VALIDATED");
 
@@ -83,6 +90,9 @@ describe.skipIf(!liveEnabled)("protected OLC Engine live contract", () => {
       }
       if (result.model !== exactModel) {
         diagnostic.assertion("RESULT_MODEL_EXACT");
+      }
+      if (deltas.join("") !== result.text) {
+        diagnostic.assertion("RESULT_DELTAS_EXACT");
       }
     } catch (error) {
       if (diagnostic.snapshot().current_stage === "FORWARD_START") {

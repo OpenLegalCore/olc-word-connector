@@ -3,6 +3,7 @@
 import { messagesFor, type UiLocale } from "./i18n";
 import { createSafeLegalAnswer } from "./safeLegalAnswer";
 import type {
+  ConnectionCheckStatus,
   TaskPaneAction,
   TaskPaneFieldFixture,
   TaskPaneTone,
@@ -12,7 +13,7 @@ import type {
 const canonicalMark = "/assets/office/1.0.0.2/openlegalcore-mark-80.png";
 
 type SettingsFocusTarget =
-  { readonly kind: "language"; readonly locale: UiLocale } | { readonly kind: "close" };
+  { readonly kind: "language"; readonly locale: UiLocale } | { readonly kind: "close" | "check" };
 
 function focusWithoutScroll(control: HTMLElement | null | undefined): void {
   try {
@@ -69,20 +70,14 @@ function createActions(
   return group;
 }
 
-function createSectionHeading(
-  document: Document,
-  heading: string,
-  requestInputLabel: string
-): HTMLElement {
-  const header = element(document, "header", "olc-section-heading");
-  header.append(element(document, "p", "olc-metadata", requestInputLabel));
-  header.append(element(document, "h2", "olc-section-title", heading));
-  return header;
-}
-
 function createField(document: Document, field: TaskPaneFieldFixture): HTMLElement {
   const wrapper = element(document, "div", "olc-field");
-  const label = element(document, "label", "olc-field-label", field.label);
+  const label = element(
+    document,
+    "label",
+    field.visuallyHiddenLabel ? "olc-field-label olc-sr-only" : "olc-field-label",
+    field.label
+  );
   label.htmlFor = field.id;
   wrapper.append(label);
 
@@ -152,6 +147,29 @@ function createNotice(document: Document, model: TaskPaneViewModel): HTMLElement
   return notice;
 }
 
+function createAttachment(document: Document, model: TaskPaneViewModel): HTMLElement | undefined {
+  if (!model.attachment) {
+    return undefined;
+  }
+  const attachment = element(document, "section", "olc-selection-attachment");
+  attachment.setAttribute("aria-label", model.attachment.label);
+  const copy = element(document, "div", "olc-selection-copy");
+  copy.append(
+    element(document, "strong", "olc-selection-label", model.attachment.label),
+    element(document, "p", "olc-selection-preview", model.attachment.preview)
+  );
+  const remove = element(
+    document,
+    "button",
+    "olc-selection-remove",
+    model.attachment.removeLabel
+  ) as HTMLButtonElement;
+  remove.type = "button";
+  remove.dataset.actionId = "remove-selection";
+  attachment.append(copy, remove);
+  return attachment;
+}
+
 export class TaskPaneView {
   private actionHandler?: (actionId: string) => void;
   private locale: UiLocale = "en-US";
@@ -159,6 +177,8 @@ export class TaskPaneView {
   private settingsOpen = false;
   private focusLanguageControl = false;
   private languageAnnouncement = "";
+  private connectionCheck?: ConnectionCheckStatus;
+  private readonly actionDisabledByModel = new Map<string, boolean>();
 
   constructor(
     private readonly root: HTMLElement,
@@ -231,6 +251,61 @@ export class TaskPaneView {
     this.localeChangeHandler = handler;
   }
 
+  configureConnectionCheck(status?: ConnectionCheckStatus): void {
+    this.connectionCheck = status;
+    const panel = this.root.querySelector<HTMLElement>("#olc-settings-popover");
+    if (panel && status && !panel.querySelector(".olc-connection-check")) {
+      panel
+        .querySelector('[data-action-id="close-settings"]')
+        ?.before(this.createConnectionCheck(this.root.ownerDocument));
+    }
+    const button = panel?.querySelector<HTMLButtonElement>('[data-action-id="check-connection"]');
+    const result = panel?.querySelector<HTMLElement>("#olc-connection-check-result");
+    if (button && result && status) {
+      const messages = messagesFor(this.locale).settings;
+      button.textContent =
+        status.phase === "checking" ? messages.checkingConnection : messages.checkConnection;
+      button.disabled = Boolean(status.disabled || status.phase === "checking");
+      const summary =
+        status.phase === "success"
+          ? messages.connectionPassed
+          : status.phase === "failure"
+            ? messages.connectionFailed
+            : status.phase === "checking"
+              ? messages.checkingConnection
+              : messages.connectionUnchecked;
+      const time =
+        status.checkedAt === undefined
+          ? ""
+          : messages.checkedAt(new Date(status.checkedAt).toLocaleString(this.locale));
+      result.textContent = [summary, time, status.code].filter(Boolean).join(" ");
+    }
+    for (const id of ["send", "replace-proposal", "insert-proposal", "retry-search"]) {
+      const action = this.root.querySelector<HTMLButtonElement>(`button[data-action-id="${id}"]`);
+      if (action)
+        action.disabled =
+          status?.phase === "checking" ||
+          (id === "retry-search" && Boolean(status?.disabled)) ||
+          Boolean(this.actionDisabledByModel.get(id));
+    }
+  }
+
+  private createConnectionCheck(document: Document): HTMLElement {
+    const section = element(document, "section", "olc-connection-check");
+    const button = createAction(document, {
+      id: "check-connection",
+      label: messagesFor(this.locale).settings.checkConnection,
+      variant: "secondary",
+    });
+    button.setAttribute("aria-describedby", "olc-connection-check-result");
+    const result = element(document, "p", "olc-metadata");
+    result.id = "olc-connection-check-result";
+    result.setAttribute("role", "status");
+    result.setAttribute("aria-live", "polite");
+    section.append(button, result);
+    return section;
+  }
+
   hasFocusedSettingsControl(): boolean {
     const panel = this.root.querySelector<HTMLElement>("#olc-settings-popover");
     return Boolean(this.settingsOpen && panel?.contains(this.root.ownerDocument.activeElement));
@@ -250,9 +325,10 @@ export class TaskPaneView {
     }
     if (
       activeElement instanceof HTMLButtonElement &&
-      activeElement.dataset.actionId === "close-settings"
+      (activeElement.dataset.actionId === "close-settings" ||
+        activeElement.dataset.actionId === "check-connection")
     ) {
-      return { kind: "close" };
+      return { kind: activeElement.dataset.actionId === "check-connection" ? "check" : "close" };
     }
     return undefined;
   }
@@ -263,7 +339,9 @@ export class TaskPaneView {
         ? this.root.querySelector<HTMLInputElement>(
             `input[name="olc-ui-language"][value="${target.locale}"]`
           )
-        : this.root.querySelector<HTMLButtonElement>('button[data-action-id="close-settings"]');
+        : this.root.querySelector<HTMLButtonElement>(
+            `button[data-action-id="${target.kind === "check" ? "check-connection" : "close-settings"}"]`
+          );
     focusWithoutScroll(control);
   }
 
@@ -342,11 +420,21 @@ export class TaskPaneView {
     ) as HTMLButtonElement;
     close.type = "button";
     close.dataset.actionId = "close-settings";
-    panel.append(heading, fieldset, close);
+    panel.append(heading, fieldset);
+    if (this.connectionCheck) panel.append(this.createConnectionCheck(document));
+    panel.append(close);
     return [controls, panel];
   }
 
   render(model: TaskPaneViewModel): void {
+    this.actionDisabledByModel.clear();
+    for (const action of [
+      ...(model.actions ?? []),
+      ...(model.footer.actions ?? []),
+      ...(model.proposal?.actions ?? []),
+    ]) {
+      this.actionDisabledByModel.set(action.id, Boolean(action.disabled));
+    }
     const document = this.root.ownerDocument;
     const settingsFocusTarget = this.captureSettingsFocusTarget();
     const messages = messagesFor(this.locale);
@@ -417,28 +505,53 @@ export class TaskPaneView {
     main.append(introduction);
 
     if (model.legalAnswer !== undefined) {
-      main.append(
-        createSafeLegalAnswer(document, model.legalAnswer, {
+      const answer = createSafeLegalAnswer(
+        document,
+        model.legalAnswer,
+        {
           answerAriaLabel: messages.chrome.answerAriaLabel,
           sourcesHeading: messages.chrome.sourcesHeading,
-        })
+        },
+        model.legalSources
       );
+      if (model.legalAnswerLive) {
+        answer.setAttribute("aria-live", "polite");
+        answer.setAttribute("aria-atomic", "false");
+      }
+      main.append(answer);
+      if (model.legalAnswerMeta) {
+        main.append(element(document, "p", "olc-metadata", model.legalAnswerMeta));
+      }
     }
     const choices = createChoiceGroup(document, model);
+    if (model.proposal) {
+      const proposal = element(document, "section", "olc-document-proposal");
+      proposal.setAttribute("aria-labelledby", "olc-document-proposal-heading");
+      const title = element(document, "h2", "olc-proposal-heading", model.proposal.heading);
+      title.id = "olc-document-proposal-heading";
+      const text = element(document, "pre", "olc-proposal-text", model.proposal.text);
+      const feedback = element(document, "p", "olc-proposal-feedback", model.proposal.feedback);
+      feedback.setAttribute("role", model.proposal.failed ? "alert" : "status");
+      proposal.append(
+        title,
+        element(document, "p", "olc-proposal-summary", model.proposal.summary),
+        text,
+        feedback,
+        createActions(document, model.proposal.actions, messages.chrome.availableActions)
+      );
+      main.append(proposal);
+    }
     if (choices) {
       main.append(choices);
     }
     if (model.fields?.length) {
       const fields = element(document, "section", "olc-section olc-fields");
-      fields.append(
-        createSectionHeading(
-          document,
-          messages.chrome.questionSection,
-          messages.chrome.requestInput
-        )
-      );
       for (const field of model.fields) {
         fields.append(createField(document, field));
+      }
+      const attachment = createAttachment(document, model);
+      if (attachment) {
+        fields.append(attachment);
       }
       main.append(fields);
     }
@@ -463,6 +576,7 @@ export class TaskPaneView {
 
     app.append(header, status, main, footer);
     this.root.replaceChildren(app);
+    this.configureConnectionCheck(this.connectionCheck);
     if (this.focusLanguageControl) {
       this.focusLanguageControl = false;
       const current = this.root.querySelector<HTMLInputElement>(

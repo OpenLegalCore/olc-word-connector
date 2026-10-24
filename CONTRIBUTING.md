@@ -29,14 +29,16 @@ or marks beyond the descriptive use addressed in
 ## Non-negotiable product boundaries
 
 - Send only the text explicitly selected by the user, never the whole document.
-- Do not change Word in the current beta search flow.
+- Receiving an answer must not change Word. The approved OLC-72 local proposal
+  candidate allows one explicit user-clicked write of a separately validated
+  proposal; see [proposal safety and pending qualification](docs/WORD_DOCUMENT_PROPOSAL.md).
 - Keep Word access, orchestration, provider HTTP, and view rendering in their
   existing layers.
 - Treat model output as untrusted text; never render it as model-provided HTML.
 - Keep provider credentials and private-origin credentials out of frontend
   source, bundles, manifests, URLs, browser storage, Office settings, and logs.
-- Keep provider selection explicit; do not add automatic fallback or credential
-  sharing.
+- Keep OLC Engine as the sole backend; do not add automatic retry, fallback or
+  credential sharing.
 - Cancellation, timeout, validation failure, session expiry, backend failure,
   and late responses must fail closed.
 
@@ -60,7 +62,7 @@ npm run typecheck
 npm run lint
 npx --no-install prettier --check \
   ".github/workflows/ci.yml" \
-  "src/**/*.ts" "src/**/*.css" "src/taskpane/taskpane.html" \
+  "src/**/*.ts" "src/**/*.css" "src/taskpane/*.html" "infrastructure/**/*.js" \
   "test/**/*.ts" "test/**/*.css" "test/harness/harness.html" \
   "scripts/**/*.js" "*.{js,json,mts}"
 npm run validate
@@ -72,6 +74,7 @@ npm run build:word-harness
 npm run build:dev
 npm run build:stage
 npm run build
+npm run build:word-session
 npm run verify:bundle
 ```
 

@@ -4,33 +4,41 @@ const MAX_STREAM_RESPONSE_BYTES = 1024 * 1024;
 const GATEWAY_RESPONSE_MARKER = "1";
 const SESSION_PATH = "/api/session";
 const SESSION_CSP =
-  "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+  "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; script-src https://appsforoffice.microsoft.com 'sha256-Quee0r5GP78GT84bHJzQMBkpqicS2p2+ReDogy6hq0g='";
+const SESSION_DIALOG_SCRIPT = `(function () {
+  var ready = false;
+  function receive(event) {
+    if (!ready || event.origin !== location.origin || typeof event.message !== "string" || event.message.length > 256) return;
+    try {
+      var value = JSON.parse(event.message);
+      if (Object.keys(value).sort().join(",") !== "nonce,type" || value.type !== "olc-word-session-challenge" || typeof value.nonce !== "string" || !/^[a-f0-9]{32}$/.test(value.nonce)) return;
+      Office.context.ui.messageParent(JSON.stringify({type:"olc-word-session-landing",nonce:value.nonce}), {targetOrigin:location.origin});
+    } catch (_) {}
+  }
+  Office.onReady().then(function () {
+    Office.context.ui.addHandlerAsync(Office.EventType.DialogParentMessageReceived, receive, function (result) {
+      ready = result.status === Office.AsyncResultStatus.Succeeded;
+    });
+  }).catch(function () {});
+})();`;
 const SESSION_HTML = Object.freeze({
   "en-US":
     '<!doctype html><html lang="en-US"><head><meta charset="UTF-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
-    "<title>Sign-in complete</title></head><body><main><h1>Sign-in complete</h1>" +
-    "<p>Return to Word and select “Retry search”.</p>" +
+    "<title>Sign-in return page</title></head><body><main><h1>Sign-in return page</h1>" +
+    "<p>Return to Word, check the connection, review the form, then select “Send”.</p>" +
     "<p>You can close this tab.</p></main></body></html>",
   "sl-SI":
     '<!doctype html><html lang="sl-SI"><head><meta charset="UTF-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
-    "<title>Prijava je končana</title></head><body><main><h1>Prijava je končana</h1>" +
-    "<p>Vrnite se v Word in izberite »Ponovi iskanje«.</p>" +
+    "<title>Povratna stran prijave</title></head><body><main><h1>Povratna stran prijave</h1>" +
+    "<p>Vrnite se v Word, preverite povezavo in obrazec ter nato izberite »Pošlji«.</p>" +
     "<p>Ta zavihek lahko zaprete.</p></main></body></html>",
 });
 
 const ROUTES = new Map([
-  ["/api/models", { method: "GET", provider: "owui", responseType: "application/json" }],
-  [
-    "/api/chat/completions",
-    { method: "POST", provider: "owui", responseType: "text/event-stream" },
-  ],
-  ["/v1/models", { method: "GET", provider: "engine", responseType: "application/json" }],
-  [
-    "/v1/chat/completions",
-    { method: "POST", provider: "engine", responseType: "application/json" },
-  ],
+  ["/v1/models", { method: "GET", responseType: "application/json" }],
+  ["/v1/chat/completions", { method: "POST", responseType: "text/event-stream" }],
 ]);
 
 function responseHeaders(contentType = "application/json; charset=utf-8") {
@@ -54,7 +62,12 @@ function gatewayError(status, code, extraHeaders) {
 
 function sessionHeaders(contentType) {
   const headers = responseHeaders(contentType);
-  headers.set("Content-Security-Policy", SESSION_CSP);
+  headers.set(
+    "Content-Security-Policy",
+    contentType.startsWith("text/html")
+      ? SESSION_CSP
+      : "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+  );
   headers.set("Referrer-Policy", "no-referrer");
   return headers;
 }
@@ -112,7 +125,14 @@ function sessionResponse(request) {
     });
   }
   const locale = sessionLocale(request.headers.get("Accept-Language"));
-  return new Response(SESSION_HTML[locale], {
+  const html = SESSION_HTML[locale].replace(
+    "</body>",
+    '<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>' +
+      "<script>" +
+      SESSION_DIALOG_SCRIPT +
+      "</script></body>"
+  );
+  return new Response(html, {
     status: 200,
     headers: sessionHeaders("text/html; charset=UTF-8"),
   });
@@ -188,7 +208,7 @@ function exactSecret(value) {
 function configuredEnvironment(env) {
   if (
     !env ||
-    !exactSecret(env.OWUI_API_KEY) ||
+    !exactSecret(env.ENGINE_API_KEY) ||
     !exactSecret(env.CF_ACCESS_CLIENT_ID) ||
     !exactSecret(env.CF_ACCESS_CLIENT_SECRET)
   ) {
@@ -196,12 +216,11 @@ function configuredEnvironment(env) {
   }
 
   const publicHost = exactPublicHost(env.PUBLIC_HOST);
-  const owuiOrigin = exactHttpsOrigin(env.OWUI_ORIGIN);
   const engineOrigin = exactHttpsOrigin(env.ENGINE_ORIGIN);
-  if (!publicHost || !owuiOrigin || !engineOrigin) {
+  if (!publicHost || !engineOrigin) {
     return undefined;
   }
-  return { publicHost, owuiOrigin, engineOrigin };
+  return { publicHost, engineOrigin };
 }
 
 function upstreamHeaders(route, env) {
@@ -213,9 +232,7 @@ function upstreamHeaders(route, env) {
   if (route.method === "POST") {
     headers.set("Content-Type", "application/json");
   }
-  if (route.provider === "owui") {
-    headers.set("Authorization", `Bearer ${env.OWUI_API_KEY}`);
-  }
+  headers.set("Authorization", `Bearer ${env.ENGINE_API_KEY}`);
   return headers;
 }
 
@@ -470,8 +487,7 @@ export async function handleRequest(request, env, fetchImpl = fetch) {
     body = parsed.body;
   }
 
-  const base = route.provider === "owui" ? configuration.owuiOrigin : configuration.engineOrigin;
-  const upstreamUrl = new URL(url.pathname, base);
+  const upstreamUrl = new URL(url.pathname, configuration.engineOrigin);
   let upstream;
   try {
     upstream = await fetchImpl(

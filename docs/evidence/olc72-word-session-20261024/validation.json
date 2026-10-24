@@ -1,0 +1,202 @@
+{
+  "baseHead": "d419b477c527f5437e5a32429c7b7f19319f0a20",
+  "source": "Reviewed working tree committed with this evidence; source fingerprint in source-files.json",
+  "npmCi": {
+    "exitCode": 0,
+    "ignoreScriptsFlagUsed": false,
+    "note": "Local npm install-script approval policy reported; workerd/esbuild and full gates executed"
+  },
+  "tests": {
+    "passed": 608,
+    "skipped": 1,
+    "passingFiles": 35,
+    "skippedFiles": 1,
+    "protectedLive": "NOT_RUN"
+  },
+  "productionAuditVulnerabilities": 0,
+  "newMiniflareAuditFlag": false,
+  "preexistingDevelopmentAudit": {
+    "low": 1,
+    "moderate": 9,
+    "high": 27,
+    "critical": 3
+  },
+  "gates": [
+    {
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:14.976113+00:00",
+      "endedAt": "2026-10-24T13:48:28.784384+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:28.784625+00:00",
+      "endedAt": "2026-10-24T13:48:30.662689+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:30.662851+00:00",
+      "endedAt": "2026-10-24T13:48:32.082247+00:00"
+    },
+    {
+      "command": [
+        "npx",
+        "--no-install",
+        "prettier",
+        "--check",
+        ".github/workflows/ci.yml",
+        "src/**/*.ts",
+        "src/**/*.css",
+        "src/taskpane/*.html",
+        "infrastructure/**/*.js",
+        "test/**/*.ts",
+        "test/**/*.css",
+        "test/harness/harness.html",
+        "scripts/**/*.js",
+        "*.{js,json,mts}"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:32.082414+00:00",
+      "endedAt": "2026-10-24T13:48:33.425621+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "audit",
+        "--omit=dev",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:33.425771+00:00",
+      "endedAt": "2026-10-24T13:48:33.952425+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "validate"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:33.952637+00:00",
+      "endedAt": "2026-10-24T13:48:34.545516+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "validate:dev"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:34.545669+00:00",
+      "endedAt": "2026-10-24T13:48:35.092523+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "validate:stage"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:35.092683+00:00",
+      "endedAt": "2026-10-24T13:48:35.672565+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "validate:prod"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:35.672741+00:00",
+      "endedAt": "2026-10-24T13:48:36.228772+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build:harness"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:36.228962+00:00",
+      "endedAt": "2026-10-24T13:48:37.568732+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build:word-harness"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:37.568918+00:00",
+      "endedAt": "2026-10-24T13:48:39.398072+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build:dev"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:39.398285+00:00",
+      "endedAt": "2026-10-24T13:48:40.992026+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build:stage"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:40.992254+00:00",
+      "endedAt": "2026-10-24T13:48:43.986236+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:43.986441+00:00",
+      "endedAt": "2026-10-24T13:48:46.981110+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build:word-session"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:46.981297+00:00",
+      "endedAt": "2026-10-24T13:48:47.091285+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "verify:bundle"
+      ],
+      "exitCode": 0,
+      "startedAt": "2026-10-24T13:48:47.091486+00:00",
+      "endedAt": "2026-10-24T13:48:47.184569+00:00"
+    }
+  ],
+  "actualWord": "NOT_RUN",
+  "deployment": "NOT_PERFORMED",
+  "providerCompletions": 0
+}

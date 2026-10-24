@@ -3,419 +3,173 @@
 [Documentation index](README.md) · [Installation](INSTALLATION.md) ·
 [Technical guide](TECHNICAL_GUIDE.md) · [Security](../SECURITY.md)
 
-This guide defines the public integration contract for OpenLegalCore Word
-Connector `v0.1.0-beta.1`. It is for backend developers, infrastructure teams,
-security reviewers and partners connecting the source-only add-in to an
-operator-controlled Open WebUI or OLC Engine environment.
-
-The repository provides the browser add-in and a generic same-origin gateway
-example. It does not provide a legal corpus, hosted backend, identity tenant,
-DNS zone or production service.
+This guide defines the current OLC Engine integration contract for OpenLegalCore
+Word Connector. The repository provides the browser add-in and a generic
+same-origin Cloudflare Worker example. It does not provide Engine, a legal
+corpus, hosting, identity, DNS or credentials.
 
 ## Integration principles
 
-1. **One public origin.** The task pane calls only relative routes on the same
-   HTTPS origin that serves it.
-2. **No secrets in the browser.** Provider keys, service tokens and private
-   backend origins remain on the server side.
-3. **Explicit provider choice.** Open WebUI and OLC Engine are separate paths;
-   the connector never falls back from one to the other.
-4. **Narrow contracts.** Only the required model-list and completion routes are
-   exposed.
-5. **Fail closed.** Unexpected hostnames, paths, methods, content types,
-   redirects and oversized bodies are rejected.
-6. **User-controlled document access.** The request contains no Word text or
-   only the exact selection captured after an explicit Search action.
-
-## Reference topology
+1. The task pane calls only relative routes on the HTTPS origin that serves it.
+2. OLC Engine and infrastructure credentials remain server-side.
+3. OLC Engine is the only backend. There is no fallback or automatic retry.
+4. The dedicated API exposes only `/word-api/` session, models and completion
+   operations; the separate `/word-auth/authorize` boundary verifies human login.
+5. Unexpected hosts, paths, methods, content types, redirects and oversized
+   bodies fail closed.
+6. A request contains no Word text or only the exact selection shown in the
+   removable task-pane attachment and frozen by an explicit Send action.
 
 ```mermaid
 flowchart LR
-    Word["Word task pane"] --> Gateway["Same-origin gateway"]
-    Gateway --> OWUI["Open WebUI"]
-    Gateway --> Engine["OLC Engine"]
-    Identity["Identity policy"] --> Gateway
+    Word["Word task pane"] --> API["Word-scoped API Worker"]
+    Word --> Dialog["Office top-level login"]
+    Dialog --> Auth["Human Access + verified JWT"]
+    Auth --> Store["SQLite Durable Object"]
+    API --> Store
+    API --> Engine["OLC Engine"]
+    Access["Server-only service credentials"] --> Engine
 ```
 
-| Boundary | Responsibility |
-| --- | --- |
-| Word task pane | Provider choice, question, optional selection capture, cancellation and safe rendering |
-| Browser-facing identity | Interactive user session for the public add-in origin |
-| Same-origin gateway | Route allowlist, bounds, upstream credentials, redirect rejection and response policy |
-| Open WebUI or OLC Engine | Model availability, legal-source retrieval, answer generation and source coverage |
-| Deployment operator | TLS, DNS, access policy, secrets, retention, logging, monitoring and incident response |
+## Browser-facing contract
 
-## Browser-facing provider contract
+Production wraps the Engine adapter with a memory-only Word session. Browser
+requests use `credentials:omit` and a Word-scoped Authorization capability, never
+an Engine bearer or Access service token. Human Access cookies are used only in
+the separate top-level Office dialog. See [PKCE, JWT and session boundary](WORD_SCOPED_SESSION.md).
 
-The production composition uses `credentials: "same-origin"`. It never sends a
-provider API key or infrastructure service token from the browser.
+| Route | Method | Result |
+| --- | --- | --- |
+| `/word-api/v1/models` | GET | Model list with `lexai-engine-local` |
+| `/word-api/v1/chat/completions` | POST | Bounded native SSE |
+| `/word-api/session` | GET | Authenticated session metadata |
+| `/word-api/session/exchange` | POST | Single-use code + PKCE exchange |
+| `/word-api/session/revoke` | POST | Revoke current Word capability |
+| `/word-auth/authorize` | GET | Human Access + verified JWT; exact Office return |
 
-| Provider path | Connection check | Completion | Completion transport |
-| --- | --- | --- | --- |
-| Open WebUI | `GET /api/models` | `POST /api/chat/completions` | Server-Sent Events; `stream: true` |
-| OLC Engine | `GET /v1/models` | `POST /v1/chat/completions` | JSON; `stream: false` |
-
-The connector rejects redirects, `401`, `403` and HTML responses from these
-same-origin calls as an expired protected session. It does not follow a login
-redirect inside the task pane.
-
-### Model-list responses
-
-Open WebUI must return JSON with a `data` array containing the configured model
-ID:
+The local OLC-72 candidate fixes the model and selects the documented
+`lexai_document_review_v1` profile (supported from Engine 9753ad1, not 09171ea).
+The request fixes the frozen interface language:
 
 ```json
 {
-  "data": [
-    { "id": "olc-engine" }
-  ]
-}
-```
-
-OLC Engine must return an OpenAI-compatible model list:
-
-```json
-{
-  "object": "list",
-  "data": [
-    { "id": "olc-engine" }
-  ]
-}
-```
-
-The exact configured ID must be present. An approximate display name or alias
-does not pass the connection check.
-
-### Open WebUI completion
-
-The connector posts one user message to `/api/chat/completions`:
-
-```json
-{
-  "model": "olc-engine",
+  "model": "lexai-engine-local",
   "stream": true,
-  "chat_id": "local:<fresh-uuid-v4>",
+  "stream_options": { "include_usage": true },
+  "response_language": "sl",
   "messages": [
     {
       "role": "user",
-      "content": "<serialized OLC request envelope>"
+      "content": [
+        {"type": "text", "text": "<exact user instruction>"},
+        {"type": "text", "text": "<exact frozen selection, omit this part when absent>"}
+      ]
     }
   ]
 }
 ```
 
-The response must be `text/event-stream`. The adapter concatenates textual
-`choices[].delta.content` values from valid `data:` events and requires a
-terminal `data: [DONE]` event. Streaming is an internal transport detail; the
-task pane presents one normalized final answer.
+The example above is abbreviated: **also include**
+`response_format.type="json_schema"`, `json_schema.name="lexai_document_review_v1"`,
+`strict=true` and the **full exact canonical schema**. The executable
+`documentReviewBody`/`documentReviewSchema` in `src/chat/documentReview.ts` supplies
+it. The pinned schema fingerprint and actual offline admission checks are in
+[the proposal contract](WORD_DOCUMENT_PROPOSAL.md). A profile name alone or a
+modified schema is invalid. No profile fallback is allowed.
 
-Open WebUI documents both required endpoints and Bearer API-key authentication
-in its [API reference](https://docs.openwebui.com/reference/api-endpoints/).
+`sl-SI` maps to `sl` and `en-US` maps to `en`. Content deltas are actual JSON
+fragments; an incremental reader forwards only decoded `claims[].text` and
+`notice` prefixes to the safe explanation renderer. Source/proposal fragments
+never appear as explanation. Success requires
+`finish_reason: "stop"`, followed by `data: [DONE]`, with no error event. EOF,
+`length`, tool terminals, malformed events, timeouts and interruptions fail even
+when partial text was displayed. Usage is the actual final aggregate or `null`;
+the connector never estimates it. Only complete validated output can expose
+separate sources or the explicit proposal. `NEEDS_CLARIFICATION`, `NOT_FOUND`
+and `UNSUPPORTED` require empty claims/sources and `proposal:null` and cannot
+enable document actions.
 
-### OLC Engine completion
+## Request parts and explicit document text
 
-The connector posts one user message to `/v1/chat/completions`:
+The one user message contains original text parts, not embedded JSON format
+instructions. The first is the full unmodified instruction; the optional second
+is the exact captured selection. No history, role/intent classifier or invented
+context is added. The legacy `olc.word.legal_source_search.v1` envelope remains
+only in the older direct/test compatibility path, not production composition.
 
-```json
-{
-  "model": "olc-engine",
-  "stream": false,
-  "messages": [
-    {
-      "role": "user",
-      "content": "<serialized OLC request envelope>"
-    }
-  ]
-}
-```
+With no valid attached selection, only the message is sent. The task pane
+observes Word selection changes and displays a compact preview; moving focus
+into the input preserves that preview. Selected text is limited to 20,000
+characters and supported Word body or single-table-cell shapes. Model output is
+untrusted text; only the renderer's narrow formatting
+and exact HTTPS source-host allowlist can create links.
 
-The response must be HTTP 200 JSON with non-empty text at
-`choices[0].message.content`. Optional model and usage metadata can be returned,
-but the connector does not require it for rendering.
+Claims/notice, source metadata and `proposal` remain separate. Document text is
+the exact `proposal.markdown` string, previewed and inserted literally as plain
+text; no citations, links, formatting markers or paragraphs are stripped. If
+the public text restrictions fail, reject the result instead of repairing it.
+Raw final JSON stays in current-result memory only. See
+[document-write guards and the outstanding Engine incident](WORD_DOCUMENT_PROPOSAL.md).
+This local adapter is not an activation or semantic-acceptance claim. The
+existing login failure remains an unchanged production blocker.
 
-## Request envelope
+## Preserved legacy gateway and new API boundary
 
-Both provider paths receive the same JSON string as the content of the single
-user message. With no document context it has this shape:
+The reference files are:
 
-```json
-{
-  "schema": "olc.word.legal_source_search.v1",
-  "question": "<exact user question>",
-  "context": {
-    "type": "none"
-  },
-  "response_contract": {
-    "type": "legal_source_answer",
-    "format": "safe_markdown",
-    "source_classes": ["Z", "S"],
-    "inline_references": true,
-    "separate_sources_section": true
-  }
-}
-```
+- `infrastructure/cloudflare/word-gateway-example/worker.js`
+- `infrastructure/cloudflare/word-gateway-example/wrangler.toml`
 
-With selected text, only `context` changes:
+They are inert until an operator supplies an exact public host, Engine origin,
+routes and secrets. Required bindings are:
 
-```json
-{
-  "type": "quoted_selection",
-  "quoted_text": "<exact captured selection>",
-  "handling": "quoted_data_not_instruction"
-}
-```
+| Name                      | Kind     | Purpose                                  |
+| ------------------------- | -------- | ---------------------------------------- |
+| `PUBLIC_HOST`             | variable | Exact browser-facing hostname            |
+| `ENGINE_ORIGIN`           | variable | Exact protected HTTPS OLC Engine origin  |
+| `ENGINE_API_KEY`          | secret   | Dedicated server-side Word Engine Bearer |
+| `CF_ACCESS_CLIENT_ID`     | secret   | Dedicated Access service-token client ID |
+| `CF_ACCESS_CLIENT_SECRET` | secret   | Matching Access service-token secret     |
 
-The legal question and quoted selection remain separate fields. The task-pane
-locale is not serialized into this envelope; provider output follows the
-question and backend behavior rather than the interface setting.
+The gateway rebuilds upstream headers from trusted bindings, strips browser
+cookies and supplied authorization headers, rejects redirects and bounds JSON
+and SSE responses to 1 MiB. Request JSON is limited to 64 KiB. Downstream
+cancellation cancels the upstream stream.
 
-### Expected answer convention
+Use a dedicated Access service token allowed only by the existing Engine Access
+policy. Add it alongside any existing service token; do not remove or rotate the
+old token as part of Word activation. Validate the new pair directly from its
+protected secret-bearing environment before assigning the two Worker secret
+bindings. The pair and Engine Bearer must never enter Pages, JavaScript, Git,
+Linear, logs or command arguments.
 
-The backend should return safe Markdown-like text that:
+## Session recovery and cancellation
 
-- answers the legal-source question directly;
-- uses inline `Z1`, `Z2`, … references for legislation;
-- uses inline `S1`, `S2`, … references for Slovenian case law;
-- includes a separate Sources section; and
-- states uncertainty or insufficient retrieval explicitly.
+The new API checks the shared Durable Object on every protected request and
+SSE start. Missing/expired/revoked capability returns 401; denial is 403, not
+inferred expiry. Timeout, network failure, throttling, unavailability and malformed
+responses remain separate. Code exchange is atomic and rate limited. The Office
+dialog passes no credentials to the pane; its verified, state-bound code is
+exchanged before the two safe GETs. Cancellation and late exchanges cannot restore
+a closed pane. There is no Storage Access action in the new composition.
+The old protected gateway/callback remains preserved for rollback. Current
+source/configuration is not a live change; see [staging procedure](WORD_SESSION_STAGING.md).
 
-The renderer treats the response as untrusted text. Model-provided HTML is not
-executed. Only a narrow formatting subset is rendered, and only exact approved
-credential-free HTTPS source hosts can become clickable.
-
-## Limits enforced by the connector and example gateway
-
-| Item | Limit or rule |
-| --- | --- |
-| Legal question | 1–4,000 characters after validation |
-| Selected text | At most 20,000 characters |
-| Browser adapter timeout | 120 seconds |
-| Gateway request JSON | At most 64 KiB |
-| Gateway JSON response | At most 1 MiB |
-| Gateway SSE response | At most 1 MiB |
-| Normalized answer | At most 50,000 characters |
-| URL policy | HTTPS, except exact loopback HTTP in controlled direct tests |
-
-Aborted searches propagate an abort signal to the active fetch. The controller
-also invalidates the operation identity, so a late response cannot become the
-visible result after cancellation or timeout.
-
-## Configure the model ID
-
-The default model ID is `olc-engine`. To build for another exact model:
-
-```bash
-OLC_WORD_MODEL_ID=partner-model:latest npm run build:stage
-```
-
-The value must:
-
-- contain 1–200 characters;
-- start with a letter or number; and
-- otherwise use only letters, numbers, `.`, `_`, `:`, `/`, `+` or `-`.
-
-The build embeds the ID in the browser bundle. Treat it as a public identifier,
-never as a secret. Verify that every enabled provider exposes the exact same ID
-through its model-list endpoint.
-
-Programmatic hosts can instead pass `modelId` through the production
-composition dependencies. That is an integration seam, not a user-facing
-runtime setting.
-
-## Production same-origin gateway
-
-The reference implementation is in:
-
-- `infrastructure/cloudflare/word-gateway-example/worker.js`; and
-- `infrastructure/cloudflare/word-gateway-example/wrangler.toml`.
-
-It is deliberately inert as checked in: all hosts use `.example.invalid`,
-active routes are commented out and `workers_dev` is disabled. It cannot be
-deployed correctly without explicit operator configuration.
-
-### Required configuration
-
-| Name | Kind | Purpose |
-| --- | --- | --- |
-| `PUBLIC_HOST` | variable | Exact browser-facing hostname, without scheme or port |
-| `OWUI_ORIGIN` | variable | Exact HTTPS root origin of Open WebUI |
-| `ENGINE_ORIGIN` | variable | Exact HTTPS root origin of OLC Engine |
-| `OWUI_API_KEY` | secret | Server-side Open WebUI Bearer credential |
-| `CF_ACCESS_CLIENT_ID` | secret | Service-token client ID for protected upstreams |
-| `CF_ACCESS_CLIENT_SECRET` | secret | Service-token client secret for protected upstreams |
-
-The checked-in Worker validates all six values before proxying and exposes both
-provider paths. Configure all of them. If an operator needs only one provider
-or a different identity scheme, create a deliberately reduced gateway variant
-with equivalent tests; do not use dummy secrets or move credentials into the
-task pane.
-
-`PUBLIC_HOST` must be one lowercase hostname. Upstream values must be exact
-HTTPS origins without path, query, fragment, user information, port or trailing
-dot.
-
-### Route behavior
-
-The reference gateway accepts only:
-
-| Browser route | Upstream route | Additional upstream credential |
-| --- | --- | --- |
-| `GET /api/models` | Open WebUI `GET /api/models` | Open WebUI Bearer key |
-| `POST /api/chat/completions` | Open WebUI `POST /api/chat/completions` | Open WebUI Bearer key |
-| `GET /v1/models` | OLC Engine `GET /v1/models` | none at application layer |
-| `POST /v1/chat/completions` | OLC Engine `POST /v1/chat/completions` | none at application layer |
-| `GET /api/session` | Repository-owned sign-in confirmation | none |
-
-The Cloudflare Access service-token headers are added to both upstream paths.
-If OLC Engine requires another application credential, extend the server-side
-gateway explicitly and add contract tests; the current example does not send
-one.
-
-The gateway rejects query strings, unexpected methods and paths, non-JSON POST
-bodies, redirects, invalid upstream types, unexpected public hosts and
-oversized bodies. It returns no-store responses with a gateway marker and MIME
-sniffing protection.
-
-### Identity separation
-
-There are two different authentication relationships:
-
-| Relationship | Credential location |
-| --- | --- |
-| User → browser-facing add-in origin | Interactive browser session/cookie controlled by the operator |
-| Gateway → Access-protected upstream | `CF-Access-Client-Id` and `CF-Access-Client-Secret` stored only by the gateway |
-| Gateway → Open WebUI | Dedicated Open WebUI API key stored only by the gateway |
-
-Do not place service-token headers or the Open WebUI API key in JavaScript,
-Office settings, manifest URLs, Git, browser storage or support logs.
-Cloudflare documents the service-token header pair and rotation model in its
-[Access service-token guide](https://developers.cloudflare.com/cloudflare-one/access-controls/service-credentials/service-tokens/).
-
-For Open WebUI, use a dedicated non-admin integration account where practical,
-rotate its key deliberately and allow only the endpoints required by your
-deployment. Open WebUI notes that endpoint restrictions are instance-wide, so
-the allowlist must cover every authorized integration; see
-[API key best practices](https://docs.openwebui.com/features/authentication-access/api-keys/).
-
-## Session recovery contract
-
-When a same-origin provider request returns a redirect, `401`, `403` or HTML,
-the task pane enters **Session expired**. The user then:
-
-1. selects **Open secure sign-in**;
-2. signs in through the operator's browser flow;
-3. returns to Word after `/api/session` confirms completion; and
-4. selects **Retry search** explicitly.
-
-The connector never submits the preserved request automatically. A Selected
-text retry captures a fresh selection. The secure sign-in URL is the exact
-current HTTPS origin plus `/api/session`; arbitrary redirect targets are not
-accepted.
-
-## Controlled direct adapters
-
-Both adapters also expose direct configuration for contract tests and
-controlled integration work:
-
-| Adapter | Direct values |
-| --- | --- |
-| `OpenWebUIAdapter` | `baseUrl`, exact `modelId`, in-memory `credential` |
-| `OpenAICompatibleAdapter` | `baseUrl`, exact `modelId`, optional in-memory `credential` |
-
-Direct URLs must be HTTPS roots or exact loopback HTTP development endpoints.
-This mode is not the production browser composition and is not permission to
-embed a credential in a distributable bundle. Public browser deployments must
-use the same-origin gateway boundary.
+Cancel, timeout and supersession abort the active fetch and invalidate its
+operation identity. Late deltas, resolution and rejection cannot become a
+result. **Edit message** starts a new independent request; no conversation
+history is persisted.
 
 ## Verification
 
-### Deterministic verification
+Run the deterministic project gates from [Contributing](../CONTRIBUTING.md).
+The opt-in Engine live contract test is skipped unless its explicit environment
+switch and in-memory direct-test credential are supplied by an authorized
+operator. Ordinary CI makes no private infrastructure or provider call.
 
-Run before integration work and after every contract change:
-
-```bash
-npm ci
-npm test -- --run
-npm run typecheck
-npm run lint
-npm run validate
-npm run build
-npm run verify:bundle
-```
-
-The production bundle verifier rejects test, harness, fake, mutation,
-credential-storage, service-token, private-origin and source-map artifacts.
-
-### Opt-in Open WebUI live contract
-
-The protected Open WebUI test is skipped unless these values are supplied by a
-trusted secret-injection mechanism:
-
-| Variable | Meaning |
-| --- | --- |
-| `OLC_WORD_LIVE_OPENWEBUI=1` | Explicitly enables the test |
-| `OLC_WORD_LIVE_OPENWEBUI_BASE_URL` | Controlled direct Open WebUI base URL |
-| `OLC_WORD_LIVE_OPENWEBUI_MODEL_ID` | Exact model expected in `/api/models` |
-| `OLC_WORD_LIVE_OPENWEBUI_CREDENTIAL` | Dedicated Open WebUI credential |
-
-Then run:
-
-```bash
-npm test -- --run test/live/OpenWebUIAdapter.live.test.ts
-```
-
-Do not paste the credential into a committed script, command example, issue or
-CI log.
-
-### Opt-in OLC Engine live contract
-
-The protected OLC Engine test creates a temporary loopback TCP forward. It is
-skipped unless these values are provided in a controlled environment:
-
-| Variable | Meaning |
-| --- | --- |
-| `OLC_WORD_LIVE_OLC_ENGINE=1` | Explicitly enables the test |
-| `OLC_WORD_LIVE_OLC_ENGINE_TARGET_HOST` | Authorized target host for the temporary forward |
-| `OLC_WORD_LIVE_OLC_ENGINE_TARGET_PORT` | Authorized target TCP port |
-| `OLC_WORD_LIVE_OLC_ENGINE_MODEL_ID` | Exact model ID; defaults to `olc-engine` |
-
-Then run:
-
-```bash
-npm test -- --run test/live/OpenAICompatibleAdapter.live.test.ts
-```
-
-These live tests verify transport compatibility only. They do not prove legal
-correctness, corpus completeness, identity policy, retention or Word runtime
-behavior.
-
-## Partner acceptance checklist
-
-Before making a deployment available to users, verify and record:
-
-- [ ] the exact public HTTPS origin and matching Office manifest;
-- [ ] the enabled provider path or paths and their exact model ID;
-- [ ] successful model-list and completion contract tests;
-- [ ] a browser-facing interactive access policy;
-- [ ] server-only provider and upstream credentials;
-- [ ] secret rotation, revocation and expiry ownership;
-- [ ] request, response and answer-size limits;
-- [ ] no-follow redirect behavior and controlled session recovery;
-- [ ] logs that exclude questions, selected text, answers and credentials;
-- [ ] documented backend retention, model processing and data location;
-- [ ] source coverage and legally relevant temporal data;
-- [ ] the connected Word for the web walkthrough from
-  [Installation](INSTALLATION.md#6-sideload-and-accept-the-connected-build); and
-- [ ] an incident and vulnerability-reporting path.
-
-## What compatibility does not guarantee
-
-A backend can satisfy these HTTP contracts and still provide incomplete,
-outdated or legally incorrect results. Compatibility proves that the connector
-and provider can exchange bounded requests and responses. The operator remains
-responsible for legal-source coverage, model behavior, access control,
-retention, monitoring and user notices.
-
-For implementation internals, see the [Technical guide](TECHNICAL_GUIDE.md).
-For collaboration or an operated integration discussion, see
-[Partnerships and services](../PARTNERSHIPS.md).
+A connected deployment is accepted only after exact-artifact verification and
+a separately authorized Word for the web walkthrough covering both languages,
+message-only and attached-selection requests, deltas, usage or null,
+cancellation and session recovery. Document writes additionally require the
+separate native Word replacement/insertion, formatting, Undo/Redo and
+Save/reopen matrix. Receiving a response must always leave the document unchanged.

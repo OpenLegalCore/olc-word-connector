@@ -160,7 +160,7 @@ describe("production task-pane entry initialization", () => {
     expect(document.documentElement.lang).toBe("en-US");
     expect(document.title).toBe("OpenLegalCore for Word");
     expect(document.querySelector(".olc-app")?.getAttribute("data-view-state")).toBe(
-      "backend-selection"
+      "session-expired"
     );
   });
 
@@ -206,12 +206,10 @@ describe("production task-pane entry initialization", () => {
 
     expect(firstAdapter).toBeDefined();
     expect(entry.getProductionWordAdapter()).toBe(firstAdapter);
-    expect(document.querySelectorAll('.olc-app[data-view-state="backend-selection"]')).toHaveLength(
-      1
-    );
-    expect(document.querySelectorAll('button[data-action-id^="select-"]')).toHaveLength(2);
+    expect(document.querySelectorAll(".olc-app")).toHaveLength(1);
+    expect(document.querySelectorAll('button[data-action-id^="select-"]')).toHaveLength(0);
     expect(wordRun).not.toHaveBeenCalled();
-    expect(fetch).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(fetch).not.toHaveBeenCalled());
   });
 
   it.each([
@@ -236,9 +234,9 @@ describe("production task-pane entry initialization", () => {
       expect(document.documentElement.lang).toBe("en-US");
       expect(document.title).toBe("OpenLegalCore for Word");
       expect(document.querySelector(".olc-app")?.getAttribute("data-view-state")).toBe(
-        "backend-selection"
+        "session-expired"
       );
-      expect(document.body.textContent).toContain("Choose a legal source service");
+      expect(document.body.textContent).toContain("Access required");
       expect(wordRun).not.toHaveBeenCalled();
       expect(fetch).not.toHaveBeenCalled();
     }
@@ -263,7 +261,7 @@ describe("production task-pane entry initialization", () => {
     expect(document.documentElement.lang).toBe("en-US");
     expect(document.title).toBe("OpenLegalCore for Word");
     expect(document.querySelector(".olc-app")?.getAttribute("data-view-state")).toBe(
-      "backend-selection"
+      "session-expired"
     );
     expect(document.body.textContent).not.toContain("sensitive navigator value");
     expect(wordRun).not.toHaveBeenCalled();
@@ -324,7 +322,7 @@ describe("production task-pane entry initialization", () => {
 
   it.each([
     ["unsupported host", "Excel", "unsupported"],
-    ["supported Word host", "Word", "backend-selection"],
+    ["supported Word host", "Word", "session-expired"],
   ])("renders the localized safe state for an %s", async (_label, host, state) => {
     installNavigator({ language: "en-US" } as Navigator);
     installOffice({

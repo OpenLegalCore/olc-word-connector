@@ -24,6 +24,7 @@ export interface TaskPaneFieldFixture {
   kind?: "text" | "password" | "textarea";
   readOnly?: boolean;
   placeholder?: string;
+  visuallyHiddenLabel?: boolean;
 }
 
 export interface TaskPaneChoice {
@@ -45,6 +46,19 @@ export interface TaskPaneNotice {
   role?: "alert" | "status";
 }
 
+export interface ConnectionCheckStatus {
+  phase: "idle" | "checking" | "success" | "failure";
+  checkedAt?: number;
+  code?: string;
+  disabled?: boolean;
+}
+
+export interface TaskPaneAttachment {
+  label: string;
+  preview: string;
+  removeLabel: string;
+}
+
 export interface TaskPaneFooter {
   eyebrow: string;
   message: string;
@@ -61,7 +75,19 @@ export interface TaskPaneViewModel {
   description?: string;
   fields?: readonly TaskPaneFieldFixture[];
   choiceGroup?: TaskPaneChoiceGroup;
+  attachment?: TaskPaneAttachment;
   legalAnswer?: string;
+  legalSources?: readonly import("../chat/ChatGateway").CompletionSource[];
+  legalAnswerLive?: boolean;
+  legalAnswerMeta?: string;
+  proposal?: {
+    heading: string;
+    text: string;
+    summary: string;
+    feedback: string;
+    failed?: boolean;
+    actions: readonly TaskPaneAction[];
+  };
   notice?: TaskPaneNotice;
   actions?: readonly TaskPaneAction[];
   footer: TaskPaneFooter;

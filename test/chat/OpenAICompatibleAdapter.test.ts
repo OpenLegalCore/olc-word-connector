@@ -98,12 +98,48 @@ function modelsResponse(ids: readonly string[] = [modelId]): Response {
 function completionResponse(
   content = "Completed plain text.",
   model: string | undefined = modelId
-) {
-  return jsonResponse({
-    id: "synthetic-completion-id",
-    object: "chat.completion",
-    ...(model === undefined ? {} : { model }),
-    choices: [{ index: 0, message: { role: "assistant", content }, finish_reason: "stop" }],
+): Response {
+  return sseResponse([
+    `data: ${JSON.stringify({
+      ...(model === undefined ? {} : { model }),
+      choices: [{ index: 0, delta: { role: "assistant" }, finish_reason: null }],
+    })}\n\n`,
+    `data: ${JSON.stringify({
+      ...(model === undefined ? {} : { model }),
+      choices: [{ index: 0, delta: { content }, finish_reason: null }],
+    })}\n\n`,
+    `data: ${JSON.stringify({
+      ...(model === undefined ? {} : { model }),
+      choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
+    })}\n\n`,
+    `data: ${JSON.stringify({
+      ...(model === undefined ? {} : { model }),
+      choices: [],
+      usage: { prompt_tokens: 11, completion_tokens: 7, total_tokens: 18 },
+    })}\n\n`,
+    "data: [DONE]\n\n",
+  ]);
+}
+
+function sseResponse(
+  chunks: readonly (string | Uint8Array)[],
+  options: FakeResponseOptions = {}
+): Response {
+  const encoded = chunks.map((chunk) =>
+    typeof chunk === "string" ? new TextEncoder().encode(chunk) : chunk
+  );
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const chunk of encoded) {
+        controller.enqueue(chunk);
+      }
+      controller.close();
+    },
+  });
+  return jsonResponse(undefined, {
+    ...options,
+    contentType: options.contentType ?? "text/event-stream; charset=utf-8",
+    body: body as Response["body"],
   });
 }
 
@@ -233,6 +269,7 @@ describe("OpenAICompatibleAdapter model preflight", () => {
     await expect(gateway.complete(request)).resolves.toEqual({
       text: "Same-origin result",
       model: modelId,
+      usage: { inputTokens: 11, outputTokens: 7, totalTokens: 18 },
     });
 
     expect(transport.calls.map((call) => call.input)).toEqual([
@@ -249,14 +286,12 @@ describe("OpenAICompatibleAdapter model preflight", () => {
   });
 
   it.each([
-    { contentType: "text/html" },
     { contentType: "application/json", redirected: true },
     { status: 302 },
     { status: 0, type: "opaqueredirect" as const },
     { status: 401 },
-    { status: 403 },
   ])(
-    "classifies same-origin Access HTML, opaque/manual redirect and denial as SESSION_EXPIRED %#",
+    "classifies same-origin Access HTML, opaque/manual redirect as unaccepted session %#",
     async (options) => {
       const transport = sequenceFetch(jsonResponse({ private: "not exposed" }, options));
       const gateway = new OpenAICompatibleAdapter(
@@ -265,6 +300,37 @@ describe("OpenAICompatibleAdapter model preflight", () => {
       );
 
       await expectCode(gateway.complete(request), "SESSION_EXPIRED");
+      expect(transport.calls).toHaveLength(1);
+    }
+  );
+
+  it.each(["application/json", "text/plain", "text/html"])(
+    "keeps same-origin %s 403 distinct from session expiry",
+    async (contentType) => {
+      const transport = sequenceFetch(jsonResponse({}, { status: 403, contentType }));
+      const gateway = new OpenAICompatibleAdapter(
+        { transport: "same-origin", modelId },
+        { fetch: transport.fetch }
+      );
+      await expectCode(gateway.complete(request), "ACCESS_DENIED");
+      expect(transport.calls).toHaveLength(1);
+    }
+  );
+
+  it.each([
+    [503, "SERVICE_UNAVAILABLE"],
+    [408, "TIMEOUT"],
+    [429, "RATE_LIMITED"],
+    [200, "INVALID_RESPONSE"],
+  ] as const)(
+    "does not mislabel an HTML %s response as an expired session",
+    async (status, code) => {
+      const transport = sequenceFetch(jsonResponse({}, { status, contentType: "text/html" }));
+      const gateway = new OpenAICompatibleAdapter(
+        { transport: "same-origin", modelId },
+        { fetch: transport.fetch }
+      );
+      await expectCode(gateway.checkConnection(), code);
       expect(transport.calls).toHaveLength(1);
     }
   );
@@ -446,13 +512,21 @@ describe("OpenAICompatibleAdapter model preflight", () => {
 });
 
 describe("OpenAICompatibleAdapter completion", () => {
-  it("sends one exact non-stream text-only request and returns normalized plain text", async () => {
+  it("sends the exact Engine streaming request and returns normalized text and usage", async () => {
     const transport = sequenceFetch(completionResponse());
     const gateway = adapter(transport.fetch);
+    const deltas: string[] = [];
 
-    const result = await gateway.complete(request);
+    const result = await gateway.complete(request, undefined, {
+      onTextDelta: (delta) => deltas.push(delta),
+    });
 
-    expect(result).toEqual({ text: "Completed plain text.", model: modelId });
+    expect(result).toEqual({
+      text: "Completed plain text.",
+      model: modelId,
+      usage: { inputTokens: 11, outputTokens: 7, totalTokens: 18 },
+    });
+    expect(deltas).toEqual(["Completed plain text."]);
     expect(transport.calls).toHaveLength(1);
     expect(transport.calls[0].input).toBe(`${baseUrl}/v1/chat/completions`);
     expect(transport.calls[0].init).toMatchObject({
@@ -461,14 +535,16 @@ describe("OpenAICompatibleAdapter completion", () => {
       redirect: "error",
     });
     expect(headers(transport.calls[0])).toEqual({
-      Accept: "application/json",
+      Accept: "text/event-stream",
       "Content-Type": "application/json",
     });
 
     const payload = body(transport.calls[0]);
     expect(payload).toEqual({
       model: modelId,
-      stream: false,
+      stream: true,
+      stream_options: { include_usage: true },
+      response_language: "en",
       messages: [
         {
           role: "user",
@@ -496,6 +572,15 @@ describe("OpenAICompatibleAdapter completion", () => {
     });
   });
 
+  it("freezes Slovenian response_language from the submitted UI locale", async () => {
+    const transport = sequenceFetch(completionResponse());
+    const gateway = adapter(transport.fetch);
+
+    await gateway.complete({ ...request, uiLocale: "sl-SI" });
+
+    expect(body(transport.calls[0])).toMatchObject({ response_language: "sl" });
+  });
+
   it("adds Bearer only when configured and clears it on disconnect", async () => {
     const transport = sequenceFetch(completionResponse(), completionResponse());
     const gateway = adapter(transport.fetch, { credential });
@@ -508,13 +593,13 @@ describe("OpenAICompatibleAdapter completion", () => {
     expect(headers(transport.calls[1])).not.toHaveProperty("Authorization");
   });
 
-  it("returns a result without model metadata when the backend omits it", async () => {
-    const transport = sequenceFetch(
-      jsonResponse({ choices: [{ message: { role: "assistant", content: "Text only." } }] })
-    );
+  it("uses the exact configured model when valid chunks omit model metadata", async () => {
+    const transport = sequenceFetch(completionResponse("Text only.", undefined));
 
     await expect(adapter(transport.fetch).complete(request)).resolves.toEqual({
       text: "Text only.",
+      model: modelId,
+      usage: { inputTokens: 11, outputTokens: 7, totalTokens: 18 },
     });
   });
 
@@ -528,22 +613,98 @@ describe("OpenAICompatibleAdapter completion", () => {
     expect(document.body.innerHTML).toBe("<main>unchanged</main>");
   });
 
+  it("handles split UTF-8 and SSE frames while forwarding deltas in order", async () => {
+    const encoder = new TextEncoder();
+    const payload =
+      `data: ${JSON.stringify({ model: modelId, choices: [{ delta: { content: "Živjo 🌍" }, finish_reason: null }] })}\r\n\r\n` +
+      `data: ${JSON.stringify({ model: modelId, choices: [{ delta: {}, finish_reason: "stop" }] })}\n\n` +
+      `data: ${JSON.stringify({ choices: [], usage: null })}\n\n` +
+      "data: [DONE]\n\n";
+    const bytes = encoder.encode(payload);
+    const globe = encoder.encode("🌍");
+    const globeOffset = bytes.findIndex((_byte, index) =>
+      globe.every((byte, part) => bytes[index + part] === byte)
+    );
+    const transport = sequenceFetch(
+      sseResponse([
+        bytes.slice(0, globeOffset + 1),
+        bytes.slice(globeOffset + 1, globeOffset + 3),
+        bytes.slice(globeOffset + 3),
+      ])
+    );
+    const deltas: string[] = [];
+
+    await expect(
+      adapter(transport.fetch).complete(request, undefined, {
+        onTextDelta: (delta) => deltas.push(delta),
+      })
+    ).resolves.toEqual({ text: "Živjo 🌍", model: modelId, usage: null });
+    expect(deltas).toEqual(["Živjo 🌍"]);
+  });
+
   it.each([
-    null,
-    {},
-    { choices: null },
-    { choices: [] },
-    { choices: [null] },
-    { choices: [{}] },
-    { choices: [{ message: null }] },
-    { choices: [{ message: {} }] },
-    { choices: [{ message: { content: null } }] },
-    { choices: [{ message: { content: ["multimodal"] } }] },
-  ])("rejects malformed completion schema %#", async (payload) => {
-    const transport = sequenceFetch(jsonResponse(payload));
+    [
+      "DONE without stop",
+      'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":null}]}\n\ndata: [DONE]\n\n',
+    ],
+    [
+      "stop without DONE",
+      'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":null}]}\n\ndata: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n',
+    ],
+    [
+      "length terminal",
+      'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":"length"}]}\n\ndata: [DONE]\n\n',
+    ],
+    ["structured error", 'data: {"error":{"message":"private detail"}}\n\ndata: [DONE]\n\n'],
+    [
+      "error after stop",
+      'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":null}]}\n\n' +
+        'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n' +
+        'data: {"error":{"message":"private detail"}}\n\n' +
+        "data: [DONE]\n\n",
+    ],
+    [
+      "content after stop",
+      'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":null}]}\n\n' +
+        'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n' +
+        'data: {"choices":[{"delta":{"content":"late"},"finish_reason":null}]}\n\n' +
+        "data: [DONE]\n\n",
+    ],
+    [
+      "incomplete usage",
+      'data: {"choices":[{"delta":{"content":"partial"},"finish_reason":null}]}\n\n' +
+        'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n' +
+        'data: {"choices":[],"usage":{"prompt_tokens":1,"completion_tokens":2}}\n\n' +
+        "data: [DONE]\n\n",
+    ],
+    ["malformed JSON", "data: {not-json}\n\ndata: [DONE]\n\n"],
+    [
+      "wrong model",
+      `data: ${JSON.stringify({ model: "other-model", choices: [{ delta: { content: "partial" }, finish_reason: null }] })}\n\n`,
+    ],
+  ])("rejects an invalid Engine terminal: %s", async (_name, stream) => {
+    const transport = sequenceFetch(sseResponse([stream]));
 
     await expectCode(adapter(transport.fetch).complete(request), "INVALID_RESPONSE");
     expect(transport.calls).toHaveLength(1);
+  });
+
+  it("forwards partial text but never promotes an invalid terminal to success", async () => {
+    const transport = sequenceFetch(
+      sseResponse([
+        'data: {"choices":[{"delta":{"content":"Visible partial"},"finish_reason":null}]}\n\n',
+        "data: [DONE]\n\n",
+      ])
+    );
+    const deltas: string[] = [];
+
+    await expectCode(
+      adapter(transport.fetch).complete(request, undefined, {
+        onTextDelta: (delta) => deltas.push(delta),
+      }),
+      "INVALID_RESPONSE"
+    );
+    expect(deltas).toEqual(["Visible partial"]);
   });
 
   it.each(["", "   ", "\n\t"])("rejects empty assistant text %#", async (content) => {
@@ -563,11 +724,22 @@ describe("OpenAICompatibleAdapter completion", () => {
     );
   });
 
+  it("bounds encoded SSE bytes and rejects invalid UTF-8", async () => {
+    const oversized = sequenceFetch(sseResponse(["x".repeat(65)]));
+    await expectCode(
+      adapter(oversized.fetch, { maxResponseBytes: 64 }).complete(request),
+      "INVALID_RESPONSE"
+    );
+
+    const invalidEncoding = sequenceFetch(sseResponse([new Uint8Array([0xff])]));
+    await expectCode(adapter(invalidEncoding.fetch).complete(request), "INVALID_RESPONSE");
+  });
+
   it.each([
-    { contentType: "text/event-stream" },
+    { contentType: "application/json" },
     { contentType: "text/html" },
-    { contentType: "application/json", redirected: true },
-  ])("rejects streaming, HTML or redirect completion %#", async (options) => {
+    { contentType: "text/event-stream", redirected: true },
+  ])("rejects JSON, HTML or redirect substitution %#", async (options) => {
     const transport = sequenceFetch(jsonResponse({ choices: [] }, options));
 
     await expectCode(adapter(transport.fetch).complete(request), "INVALID_RESPONSE");
@@ -613,6 +785,80 @@ describe("OpenAICompatibleAdapter completion", () => {
     expect(internalSignal?.aborted).toBe(true);
     release?.(completionResponse("late private content"));
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels the active SSE reader after a delivered partial delta", async () => {
+    let streamController: ReadableStreamDefaultController<Uint8Array> | undefined;
+    const cancel = vi.fn(async () => undefined);
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        streamController = controller;
+      },
+      cancel,
+    });
+    const fetch = vi.fn<OpenAICompatibleFetch>(
+      async () =>
+        new Response(stream, {
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+        })
+    );
+    const caller = new AbortController();
+    const deltas: string[] = [];
+    const completion = adapter(fetch).complete(request, caller.signal, {
+      onTextDelta: (delta) => deltas.push(delta),
+    });
+
+    streamController?.enqueue(
+      new TextEncoder().encode(
+        `data: ${JSON.stringify({ model: modelId, choices: [{ delta: { content: "Partial" }, finish_reason: null }] })}\n\n`
+      )
+    );
+    await vi.waitFor(() => expect(deltas).toEqual(["Partial"]));
+
+    caller.abort();
+
+    await expectCode(completion, "CANCELLED");
+    await vi.waitFor(() => expect(cancel).toHaveBeenCalledTimes(1));
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails with TIMEOUT and cancels the SSE reader after partial text", async () => {
+    vi.useFakeTimers();
+    let streamController: ReadableStreamDefaultController<Uint8Array> | undefined;
+    const cancel = vi.fn(async () => undefined);
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        streamController = controller;
+      },
+      cancel,
+    });
+    const fetch = vi.fn<OpenAICompatibleFetch>(
+      async () =>
+        new Response(stream, {
+          status: 200,
+          headers: { "Content-Type": "text/event-stream" },
+        })
+    );
+    const deltas: string[] = [];
+    const completion = adapter(fetch, { requestTimeoutMs: 25 }).complete(request, undefined, {
+      onTextDelta: (delta) => deltas.push(delta),
+    });
+    const expectation = expectCode(completion, "TIMEOUT");
+
+    streamController?.enqueue(
+      new TextEncoder().encode(
+        `data: ${JSON.stringify({ model: modelId, choices: [{ delta: { content: "Partial" }, finish_reason: null }] })}\n\n`
+      )
+    );
+    await vi.advanceTimersByTimeAsync(0);
+    expect(deltas).toEqual(["Partial"]);
+
+    await vi.advanceTimersByTimeAsync(25);
+
+    await expectation;
+    expect(cancel).toHaveBeenCalledTimes(1);
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 

@@ -8,13 +8,14 @@ const staticRequiredFiles = new Set([
   "commands.html",
   "manifest.xml",
   "taskpane.html",
+  "signin.html",
   "assets/icon-128.png",
   "assets/office/1.0.0.2/openlegalcore-mark-16.png",
   "assets/office/1.0.0.2/openlegalcore-mark-32.png",
   "assets/office/1.0.0.2/openlegalcore-mark-64.png",
   "assets/office/1.0.0.2/openlegalcore-mark-80.png",
 ]);
-const productionScript = /^(commands|polyfill|taskpane)\.[a-f0-9]{20}\.js$/;
+const productionScript = /^(commands|polyfill|taskpane|signin)\.[a-f0-9]{20}\.js$/;
 const productionLicense = /^taskpane\.[a-f0-9]{20}\.js\.LICENSE\.txt$/;
 const productionStyle = /^[a-f0-9]{20}\.css$/;
 const sourceMapReference = /sourceMappingURL\s*=/;
@@ -65,11 +66,11 @@ const forbiddenContent = [
   {
     label: "gateway server runtime marker",
     pattern:
-      /(?:private-upstream\.example\.invalid|word-gateway-example|OWUI_API_KEY|CF_ACCESS_CLIENT_ID|CF_ACCESS_CLIENT_SECRET)/i,
+      /(?:private-upstream\.example\.invalid|word-gateway-example|OWUI_API_KEY|OWUI_ORIGIN|CF_ACCESS_CLIENT_ID|CF_ACCESS_CLIENT_SECRET|WordSessionStore|createRemoteJWKSet|ACCESS_AUDIENCE)/i,
   },
   {
-    label: "document mutation primitive",
-    pattern: /\b(?:applyReplacement|insertText)\b/,
+    label: "whole-document or HTML mutation",
+    pattern: /(?:\.body\.(?:insertText|clear|delete)|\b(?:insertHtml|insertOoxml)\s*\()/,
   },
   {
     label: "Cloudflare Access service-token browser header",
@@ -102,11 +103,6 @@ const requiredProductionImports = [
     pattern: /from ["']\.\.\/app\/TaskPaneController["']/,
   },
   {
-    label: "OpenWebUIAdapter",
-    entry: "src/taskpane/ProductionTaskPaneRuntime.ts",
-    pattern: /from ["']\.\.\/chat\/OpenWebUIAdapter["']/,
-  },
-  {
     label: "OpenAICompatibleAdapter",
     entry: "src/taskpane/ProductionTaskPaneRuntime.ts",
     pattern: /from ["']\.\.\/chat\/OpenAICompatibleAdapter["']/,
@@ -137,7 +133,7 @@ function assertExpectedOutputs(files, outputDirectory) {
     throw new Error(`Forbidden production source map: ${sourceMaps.join(", ")}`);
   }
 
-  for (const name of ["commands", "polyfill", "taskpane"]) {
+  for (const name of ["commands", "polyfill", "taskpane", "signin"]) {
     const scripts = relativeFiles.filter(
       (file) => productionScript.test(file) && file.startsWith(`${name}.`)
     );
@@ -243,12 +239,11 @@ function inspectProductionEntrypoints() {
     }
   }
 
-  const productionWordAdapter = fs.readFileSync(
-    path.join(root, "src/office/OfficeWordAdapter.ts"),
-    "utf8"
-  );
-  if (/\b(?:applyReplacement|insertText)\b/.test(productionWordAdapter)) {
-    throw new Error("Production Word adapter contains a document mutation primitive");
+  for (const source of filesBelow(path.join(root, "src")).filter((file) => file.endsWith(".ts"))) {
+    if (source === path.join(root, "src/office/OfficeWordAdapter.ts")) continue;
+    if (/\.insert(?:Text|Html|Ooxml)\s*\(/.test(fs.readFileSync(source, "utf8"))) {
+      throw new Error("Word insertion outside the approved Office adapter");
+    }
   }
 }
 

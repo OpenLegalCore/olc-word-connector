@@ -18,6 +18,40 @@
     </header>
 
     <main class="gallery-page">
+      <section class="runtime-preview" aria-labelledby="runtime-preview-heading">
+        <div>
+          <p class="gallery-kicker">ACTUAL TASK-PANE RUNTIME · SYNTHETIC ENGINE</p>
+          <h2 id="runtime-preview-heading">OLC-72 visual acceptance preview</h2>
+          <p>
+            This is the production task-pane runtime at 280px with a fake Word selection and
+            provider-free streaming deltas. Type a message, press Enter or select Pošlji, and use
+            Ustavi during streaming. Proposal text and token counts are synthetic fixtures, not an
+            Engine wire-contract result.
+          </p>
+          <p>
+            <a href="?proposal=explicit">Izrecen sintetični predlog</a> ·
+            <a href="?proposal=none">Brez predloga</a> ·
+            <a href="?proposal=explicit&amp;scenario=partial-error">Napaka po delti</a>
+          </p>
+          <p>SINTETIČNI DOKUMENT — simulacija, ne dokaz Wordovega Undo/Redo:</p>
+          <pre id="synthetic-document"></pre>
+          <button id="synthetic-original">Prvotni izbor</button>
+          <button id="synthetic-cursor">Prazen kazalec</button>
+          <button id="synthetic-other">Drug enak izbor</button>
+          <button id="synthetic-drift">Spremeni prvotni odlomek</button>
+          <button id="synthetic-undo">Simulirani Undo</button>
+          <button id="synthetic-redo">Simulirani Redo</button>
+        </div>
+        <div class="gallery-stage runtime-preview-stage">
+          <div
+            id="runtime-preview-pane"
+            class="gallery-pane"
+            role="region"
+            aria-label="Actual task-pane runtime preview"
+          ></div>
+        </div>
+      </section>
+
       <section class="gallery-controls" aria-labelledby="gallery-controls-heading">
         <div>
           <p class="gallery-kicker">VIEW CONTROLS</p>

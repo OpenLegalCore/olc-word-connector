@@ -62,7 +62,8 @@ jobs:
           ".github/workflows/ci.yml"
           "src/**/*.ts"
           "src/**/*.css"
-          "src/taskpane/taskpane.html"
+          "src/taskpane/*.html"
+          "infrastructure/**/*.js"
           "test/**/*.ts"
           "test/**/*.css"
           "test/harness/harness.html"
@@ -83,6 +84,9 @@ jobs:
 
       - name: Build production
         run: npm run build
+
+      - name: Build Word session Workers locally
+        run: npm run build:word-session
 
       - name: Verify production bundle
         run: npm run verify:bundle

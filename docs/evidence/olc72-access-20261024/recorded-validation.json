@@ -1,0 +1,110 @@
+{
+  "evidence_type": "existing qualification only; no new functional run",
+  "source_alias": "V1: retained exact-head CI and local gates",
+  "code_commit": "ded891c22b735ca323bfede552e5219683d24841",
+  "ci": {
+    "id": 40059714847,
+    "url": "https://github.com/OpenLegalCore/olc-word-connector/actions/runs/40059714847",
+    "status": "completed",
+    "conclusion": "success",
+    "started_at_utc": "2026-10-24T03:47:06Z",
+    "updated_at_utc": "2026-10-24T03:48:56Z",
+    "job_windows": [
+      {
+        "started_at_utc": "2026-10-24T03:47:09Z",
+        "completed_at_utc": "2026-10-24T03:48:55Z"
+      }
+    ],
+    "successful_step_count": 19
+  },
+  "local_gates": {
+    "event_time_utc": null,
+    "retained_results_mtime_utc": "2026-10-24T03:45:09.324068+00:00",
+    "test_summary": {
+      "passed": 592,
+      "protected_live_skipped": 1,
+      "files_passed": 33,
+      "files_skipped": 1
+    },
+    "production_audit_vulnerabilities": 0,
+    "commands": [
+      {
+        "name": "test",
+        "command": "npm test -- --run",
+        "exit_code": 0
+      },
+      {
+        "name": "typecheck",
+        "command": "npm run typecheck",
+        "exit_code": 0
+      },
+      {
+        "name": "lint",
+        "command": "npm run lint",
+        "exit_code": 0
+      },
+      {
+        "name": "format",
+        "command": "npx --no-install prettier --check \".github/workflows/ci.yml\" \"src/**/*.ts\" \"src/**/*.css\" \"src/taskpane/*.html\" \"infrastructure/**/*.js\" \"test/**/*.ts\" \"test/**/*.css\" \"test/harness/harness.html\" \"scripts/**/*.js\" \"*.{js,json,mts}\"",
+        "exit_code": 0
+      },
+      {
+        "name": "audit",
+        "command": "npm audit --omit=dev --audit-level=high",
+        "exit_code": 0
+      },
+      {
+        "name": "validate",
+        "command": "npm run validate",
+        "exit_code": 0
+      },
+      {
+        "name": "validate-dev",
+        "command": "npm run validate:dev",
+        "exit_code": 0
+      },
+      {
+        "name": "validate-stage",
+        "command": "npm run validate:stage",
+        "exit_code": 0
+      },
+      {
+        "name": "validate-prod",
+        "command": "npm run validate:prod",
+        "exit_code": 0
+      },
+      {
+        "name": "build-harness",
+        "command": "npm run build:harness",
+        "exit_code": 0
+      },
+      {
+        "name": "build-word-harness",
+        "command": "npm run build:word-harness",
+        "exit_code": 0
+      },
+      {
+        "name": "build-dev",
+        "command": "npm run build:dev",
+        "exit_code": 0
+      },
+      {
+        "name": "build-stage",
+        "command": "npm run build:stage",
+        "exit_code": 0
+      },
+      {
+        "name": "build",
+        "command": "npm run build",
+        "exit_code": 0
+      },
+      {
+        "name": "verify-bundle",
+        "command": "npm run verify:bundle",
+        "exit_code": 0
+      }
+    ]
+  },
+  "qualification_scope": "deterministic/local + repository CI; not Word Web or authenticated Access acceptance",
+  "new_functional_checks_in_sync": false
+}

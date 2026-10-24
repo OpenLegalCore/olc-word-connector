@@ -1,5 +1,7 @@
 /* global Document, DocumentFragment, HTMLElement, URL */
 
+import type { CompletionSource } from "../chat/ChatGateway";
+
 export interface LegalAnswerParts {
   readonly answer: string;
   readonly sources: string;
@@ -253,9 +255,11 @@ function renderBlocks(
 export function createSafeLegalAnswer(
   document: Document,
   text: string,
-  labels: LegalAnswerLabels
+  labels: LegalAnswerLabels,
+  structuredSources?: readonly CompletionSource[]
 ): HTMLElement {
-  const parts = splitLegalAnswer(text);
+  const parts =
+    structuredSources === undefined ? splitLegalAnswer(text) : { answer: text, sources: "" };
   const references = extractReferenceDefinitions(parts.sources);
   const result = document.createElement("section");
   result.className = "olc-legal-result";
@@ -269,7 +273,19 @@ export function createSafeLegalAnswer(
   sources.className = "olc-legal-sources";
   const heading = document.createElement("h2");
   heading.textContent = labels.sourcesHeading;
-  sources.append(heading, renderBlocks(document, references.sources, references.urls));
+  sources.append(heading);
+  if (structuredSources !== undefined) {
+    const list = document.createElement("ul");
+    for (const source of structuredSources) {
+      const item = document.createElement("li");
+      const label = `[${source.label}] ${source.title} — ${source.locator}`;
+      const href = safeLegalSourceUrl(source.url);
+      if (href) appendLink(document, item, label, href);
+      else item.textContent = label;
+      list.append(item);
+    }
+    sources.append(list);
+  } else sources.append(renderBlocks(document, references.sources, references.urls));
   result.append(answer, sources);
   return result;
 }

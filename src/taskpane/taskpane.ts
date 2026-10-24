@@ -13,8 +13,7 @@ import {
 } from "./ProductionTaskPaneRuntime";
 import { applyDocumentLocale, messagesFor, resolveUiLocale, type UiLocale } from "./i18n";
 import { TaskPaneView } from "./TaskPaneView";
-
-declare const __OLC_WORD_MODEL_ID__: string;
+import { OfficeSignInDialog } from "./OfficeSignInDialog";
 
 let productionWordAdapter: WordAdapter | undefined;
 let productionTaskPaneRuntime: ProductionTaskPaneRuntime | undefined;
@@ -47,10 +46,6 @@ function navigatorLanguage(): string | undefined {
   } catch {
     return undefined;
   }
-}
-
-function configuredModelId(): string | undefined {
-  return typeof __OLC_WORD_MODEL_ID__ === "string" ? __OLC_WORD_MODEL_ID__ : undefined;
 }
 
 function officeDisplayLanguage(): string | undefined {
@@ -110,7 +105,7 @@ function handleOfficeReady(info: { host: Office.HostType; platform: Office.Platf
       productionWordAdapter,
       environment,
       view,
-      { initialLocale: locale, modelId: configuredModelId() }
+      { initialLocale: locale, signIn: new OfficeSignInDialog(location.origin, Office.context.ui) }
     );
     productionTaskPaneRuntime.start();
     officeReadyHandled = true;

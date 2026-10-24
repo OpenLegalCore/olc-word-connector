@@ -28,6 +28,7 @@ export type LiveAssertionIdentifier =
   | "COMPLETION_REQUEST"
   | "RESULT_NON_EMPTY"
   | "RESULT_MODEL_EXACT"
+  | "RESULT_DELTAS_EXACT"
   | "FORWARD_CLOSED";
 
 interface MutableRequestEvidence {

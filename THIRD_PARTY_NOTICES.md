@@ -111,6 +111,15 @@ Source: [regenerator-runtime 0.14.1 license](https://github.com/facebook/regener
 
 ## Build and development dependencies
 
+### Separate OLC Engine service
+
+OLC Engine is not vendored or bundled. Its proprietary implementation and Python
+reference adapter are not redistributed by this Word change. The independently
+implemented Word client follows the pinned documented document-review interface;
+[protocol provenance](docs/UPSTREAM_SOURCES.md#engine-protocol-compatibility-olc-72)
+records its exact source references and the license distinction. This is not an
+Apache-2.0 license grant for Engine.
+
 The lockfile contains development and build tools under their own licenses.
 They are used to generate and verify the project but are not presented here as
 production browser components. The scaffold generator is recorded separately
@@ -119,3 +128,36 @@ in [Upstream sources](docs/UPSTREAM_SOURCES.md).
 Anyone redistributing a different source tree, bundle or dependency set is
 responsible for identifying its actual contents and preserving all notices
 required by those artifacts.
+
+## jose 6.2.13 — server-only Word authorization Worker
+
+Pinned npm dependency, MIT; bundled only into the authorization Worker, never
+into Pages. Upstream commit `316b7f2cb41b8377515d9cc2e81e03f8e50ee935`
+(tag `v6.2.13`). No source was manually copied into the connector. The generated
+Worker package includes `JOSE-LICENSE.txt`.
+
+```text
+The MIT License (MIT)
+
+Copyright (c) 2018 Filip Skokan
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+Source: [jose pinned license](https://github.com/panva/jose/blob/316b7f2cb41b8377515d9cc2e81e03f8e50ee935/LICENSE.md).

@@ -21,7 +21,6 @@ import webpackConfig = require("../../webpack.config.js");
 const productionBundleVerifier = require("../../scripts/verify-production-bundle.js");
 
 const resolveBuildTarget = webpackConfig.resolveBuildTarget;
-const resolveWordModelId = webpackConfig.resolveWordModelId;
 const manifestVersion = "1.0.0.3";
 const officeAssetVersion = "1.0.0.2";
 const iconOutputDirectory = `assets/office/${officeAssetVersion}`;
@@ -200,38 +199,6 @@ describe("explicit fail-closed webpack targets", () => {
       expect(config.devtool).toBe(false);
     }
   });
-
-  it("uses a public default model ID and validates build-time overrides", () => {
-    expect(resolveWordModelId(undefined)).toBe("olc-engine");
-    expect(resolveWordModelId("partner-model:latest")).toBe("partner-model:latest");
-    for (const invalid of ["", " leading", "trailing ", "line\nbreak", "model?id=1"]) {
-      expect(() => resolveWordModelId(invalid)).toThrow(/OLC_WORD_MODEL_ID/);
-    }
-  });
-
-  it("embeds the selected non-secret model ID in deployable bundles", async () => {
-    const previousModelId = process.env.OLC_WORD_MODEL_ID;
-    try {
-      process.env.OLC_WORD_MODEL_ID = "partner-model:latest";
-      const config = await webpackConfig(
-        { target: "staging", WEBPACK_BUILD: true },
-        { mode: "production" }
-      );
-      const definePlugin = config.plugins.find(
-        (plugin: { constructor: { name: string } }) => plugin.constructor.name === "DefinePlugin"
-      ) as { definitions?: Record<string, string> } | undefined;
-
-      expect(definePlugin?.definitions?.__OLC_WORD_MODEL_ID__).toBe(
-        JSON.stringify("partner-model:latest")
-      );
-    } finally {
-      if (previousModelId === undefined) {
-        delete process.env.OLC_WORD_MODEL_ID;
-      } else {
-        process.env.OLC_WORD_MODEL_ID = previousModelId;
-      }
-    }
-  });
 });
 
 describe("explicit Office manifests", () => {
@@ -401,12 +368,13 @@ describe("isolated hosted outputs", () => {
     for (const target of ["production", "staging"] as const) {
       const outputPath = outputPaths.get(target)!;
       const files = readdirSync(outputPath);
-      expect(files.filter((file) => file.endsWith(".js"))).toHaveLength(3);
+      expect(files.filter((file) => file.endsWith(".js"))).toHaveLength(4);
       expect(files.filter((file) => file.endsWith(".js"))).toEqual(
         expect.arrayContaining([
           expect.stringMatching(/^commands\.[a-f0-9]{20}\.js$/),
           expect.stringMatching(/^polyfill\.[a-f0-9]{20}\.js$/),
           expect.stringMatching(/^taskpane\.[a-f0-9]{20}\.js$/),
+          expect.stringMatching(/^signin\.[a-f0-9]{20}\.js$/),
         ])
       );
       expect(files.filter((file) => file.endsWith(".css"))).toEqual([
@@ -446,9 +414,9 @@ describe("isolated hosted outputs", () => {
 
   it("preserves source-map diagnostics for development and both harnesses", () => {
     const expectedMaps = {
-      development: ["commands.js.map", "polyfill.js.map", "taskpane.js.map"],
+      development: ["commands.js.map", "polyfill.js.map", "signin.js.map", "taskpane.js.map"],
       harness: ["harness.js.map"],
-      "word-harness": ["commands.js.map", "polyfill.js.map", "taskpane.js.map"],
+      "word-harness": ["commands.js.map", "polyfill.js.map", "signin.js.map", "taskpane.js.map"],
     } as const;
 
     for (const [target, maps] of Object.entries(expectedMaps)) {
@@ -490,9 +458,9 @@ describe("isolated hosted outputs", () => {
     ["server origin", "private-upstream.example.invalid"],
     ["gateway module", "word-gateway-example"],
     ["server secret", "CF_ACCESS_CLIENT_SECRET"],
-    ["mutation method", "applyReplacement"],
-    ["Word mutation API", "insertText"],
-  ])("rejects a server-only or mutation %s from the Word bundle", (label, marker) => {
+    ["whole-document mutation", ".body.insertText("],
+    ["HTML mutation", "insertHtml("],
+  ])("rejects a server-only or unbounded mutation %s from the Word bundle", (label, marker) => {
     withProductionCopy(`bundle-boundary-${label.replace(/ /g, "-")}`, (outputPath) => {
       const script = filesBelow(outputPath).find((file) =>
         /taskpane\.[a-f0-9]{20}\.js$/.test(file)
@@ -629,6 +597,7 @@ describe("Cloudflare Pages static policy", () => {
     expect(frameAncestors?.split(/\s+/)).toEqual([
       "'self'",
       "https://word.cloud.microsoft",
+      "https://inclient.store.office.com",
       "https://*.officeapps.live.com",
     ]);
     for (const forbiddenAncestor of [

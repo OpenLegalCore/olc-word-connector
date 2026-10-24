@@ -5,10 +5,8 @@ source code. The repository provides a client and a generic gateway example;
 it does not by itself operate a hosted service, legal database or identity
 system.
 
-The connector can use an operator-configured
-[Open WebUI](https://openlegalcore.org/compatibility/) or
-[OLC Engine](https://openlegalcore.org/components/olc-engine/)
-backend. Its current legal-source scope is Slovenian
+The connector uses an operator-configured
+[OLC Engine](https://openlegalcore.org/components/olc-engine/) backend. Its current legal-source scope is Slovenian
 [legislation](https://pisrs.si/) and
 [case law](https://www.sodnapraksa.si/), as supplied by that backend.
 
@@ -21,23 +19,23 @@ choices. Users should obtain that operator's privacy information before
 submitting document content.
 
 This repository cannot make universal claims about an independently operated
-deployment, Microsoft 365 or Office.js, Open WebUI, OLC Engine, model provider
+deployment, Microsoft 365 or Office.js, OLC Engine, model provider
 or legal-source service.
 
 ## Data flow by user action
 
-| Action | Word content read | Data sent or changed |
-| --- | --- | --- |
-| Open the task pane or change provider | None | The connector may request the selected provider's model list; no document content is included |
-| Search with **No document context** | None | The legal question is sent to the explicitly selected backend |
-| Search with **Selected text** | Exact current selection, captured only when the user starts the search | The legal question and quoted selection are serialized as distinct fields in one structured prompt envelope and sent to the explicitly selected backend |
-| **Copy answer** | None | The displayed answer is written to the system clipboard when permissions allow; Word is not changed |
-| **Refine question** or **New search** | None | Task-pane state changes locally |
-| Open a legal-source link | None | The browser visits the approved PISRS or sodnapraksa host |
+| Action                                | Word content read                                                      | Data sent or changed                                                                                                               |
+| ------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Open the task pane or connect         | None                                                                   | The connector may request OLC Engine's model list; no document content is included                                                 |
+| Search with **No document context**   | None                                                                   | The legal question is sent to OLC Engine                                                                                           |
+| Search with **Selected text**         | Exact current selection, captured only when the user starts the search | The legal question and quoted selection are serialized as distinct fields in one structured prompt envelope and sent to OLC Engine |
+| **Copy answer**                       | None                                                                   | The displayed answer is written to the system clipboard when permissions allow; Word is not changed                                |
+| **Refine question** or **New search** | None                                                                   | Task-pane state changes locally                                                                                                    |
+| Open a legal-source link              | None                                                                   | The browser visits the approved PISRS or sodnapraksa host                                                                          |
 
 The connector does not automatically read the document name, file path,
 metadata, surrounding paragraphs or whole document. It never silently changes
-from one context mode or provider to another.
+from one context mode to another.
 
 ## Selected-text boundary
 
@@ -53,10 +51,7 @@ deployment's processing and retention controls.
 
 ## Transport and credentials
 
-Open WebUI and direct OLC Engine are separate, explicitly selected transports.
-There is no automatic fallback or implicit credential sharing between them.
-
-Connected browser builds use relative same-origin `/api/*` or `/v1/*` requests
+Connected browser builds use relative same-origin `/v1/*` requests
 with browser-session credentials. Provider API keys and private-origin
 credentials belong in the operator-controlled gateway, not in frontend source,
 bundles, manifests, URLs, browser storage, Office settings or logs.
@@ -69,7 +64,7 @@ credential-delivery mechanism.
 
 The maintained connector source contains no analytics or telemetry integration
 and does not persist the legal question, selected text, model response or
-provider credential. It does not place those values in `localStorage`,
+Engine credential. It does not place those values in `localStorage`,
 `sessionStorage`, IndexedDB, cookies, URLs, source maps, the Word document or
 Office settings.
 
@@ -85,7 +80,13 @@ logging or immediate deletion throughout that wider system.
 
 ## Document and response safety
 
-The current beta search workflow does not mutate the Word document. Answers
+The current basic Engine answer flow does not mutate the Word document. The
+local OLC-72 proposal candidate retains a request-bound selected range and its
+OOXML only in memory to validate an explicitly requested replacement; it does
+not transmit the OOXML or capture the whole document. A separate proposal is
+written only on a user click after success. See
+[proposal safety and pending qualification](docs/WORD_DOCUMENT_PROPOSAL.md).
+Answers
 are rendered as untrusted text in the task pane. Cancellation, timeout,
 session expiry, validation failure, backend error and late responses leave the
 document unchanged.
