@@ -1,6 +1,8 @@
 # OLC-72 cookie-independent Word session
 
-Status: **IN REVIEW — implemented locally; activation and actual Word acceptance pending**.
+Status: **IN REVIEW — implemented and published; staging activation partial,
+actual Word acceptance pending**. The [execution record](evidence/olc72-word-session-activation-20261024/README.md)
+distinguishes the newly provisioned unrouted Workers from the unchanged active frontend.
 The owner approved this architecture after the evidence-only checkpoint
 `d419b477c527f5437e5a32429c7b7f19319f0a20`. The cause of the owner's individual
 Access required incident remains **unproven**. Removing the iframe-cookie

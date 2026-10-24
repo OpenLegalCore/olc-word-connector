@@ -52,8 +52,10 @@ The current draft implements a [cookie-independent Word session](docs/WORD_SCOPE
 explicit Office dialog login, verified human Access JWT, PKCE and single-use
 codes in strongly consistent server storage, then a memory-only short-lived
 Word capability on dedicated same-origin API routes. Storage Access is no longer
-a prerequisite. This architecture is locally implemented; staging activation and
-actual Word reopen/expiry acceptance are pending. It does not establish the
+a prerequisite. A [staging activation attempt](docs/evidence/olc72-word-session-activation-20261024/README.md)
+has provisioned new unrouted server resources; the previous frontend remains
+active pending Access authorization and live boundary checks. Actual Word
+reopen/expiry acceptance is pending. This does not establish the
 cause or resolution of the owner's individual incident. See the
 [prepared staging/rollback sequence](docs/WORD_SESSION_STAGING.md).
 

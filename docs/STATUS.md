@@ -13,7 +13,10 @@ rate limits use SQLite Durable Object transactions. A separate API Worker checks
 session scope before protected operations and again after completion-body
 admission, immediately before SSE/Engine access. Cleanup is transactional too.
 Engine bearer and Access service credentials remain server-side. No new
-credentials, live Workers, route or Access-policy changes are performed here.
+client credentials are created by this architecture. The owner-authorized
+staging attempt has provisioned two new **unrouted** Workers and the SQLite
+namespace; existing resources and frontend remain unchanged. See the
+[sanitized execution record](evidence/olc72-word-session-activation-20261024/README.md).
 
 The accepted form, colors, typography, automatic removable selection, SL/EN,
 Send/Stop, Engine document-review profile, strict stop → DONE, actual usage/null
@@ -33,8 +36,10 @@ automatic completion, silent-login promise or provider fallback is added.
 | Actual Word with the new session architecture | **NOT_RUN**; no connected supported Word surface available |
 | Existing functional/visual owner evidence | Preserved as historical evidence; no new completion or visual acceptance claimed |
 | Last observed staging source | `ded891c22b735ca323bfede552e5219683d24841`, read-only confirmed 2026-10-24; unchanged by this task |
-| New architecture delivery | **NOT DEPLOYED**; exact package and activation/rollback prepared |
-| Engine content/runtime and native Word writes | Separate outstanding qualification; no new provider/Engine call |
+| New architecture delivery | **PARTIAL / BLOCKED**: new unrouted Workers/store provisioned; no new route, Access destination or Pages switch |
+| Original server credential availability | Confirmed privately and provisioned only to the new API Worker; no replacement or export of deployed secrets |
+| Provider-free protected Engine discovery | HTTP 200, expected model; no completion. Python HTTP client separately encounters Cloudflare 1010, not evidence of an invalid bearer |
+| Engine content/runtime and native Word writes | Separate outstanding qualification; no completion or document write |
 | Word for Mac | Backlog |
 
 `npm ci` completed with the locked dependency tree; no `--ignore-scripts` command
@@ -52,5 +57,9 @@ See [architecture and security](WORD_SCOPED_SESSION.md),
 [new sanitized evidence](evidence/olc72-word-session-20261024/README.md).
 The [previous evidence synchronization](OLC72_SYNC_REPORT_20261024.md) and
 [historical access diagnostics](WORD_WEB_ACCESS_RECOVERY.md) are preserved.
-Next: review the candidate and separately authorize the narrow new-resource/
-Access-destination activation, then qualify the real Word dialog and idle recovery.
+Next: complete the narrowly scoped Access OAuth authorization required by the
+approved destination append, then continue protection/routes/real-login checks
+before any Pages switch. The prior read-only connection returned Insufficient
+scope; automatic approval review blocked adding its write scope until explicit
+scope consent. No infrastructure workaround or bypass was used. Actual Word
+dialog, reopen and idle recovery remain NOT_RUN.
