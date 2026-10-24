@@ -57,9 +57,13 @@ See [architecture and security](WORD_SCOPED_SESSION.md),
 [new sanitized evidence](evidence/olc72-word-session-20261024/README.md).
 The [previous evidence synchronization](OLC72_SYNC_REPORT_20261024.md) and
 [historical access diagnostics](WORD_WEB_ACCESS_RECOVERY.md) are preserved.
-Next: complete the narrowly scoped Access OAuth authorization required by the
-approved destination append, then continue protection/routes/real-login checks
-before any Pages switch. The prior read-only connection returned Insufficient
-scope; automatic approval review blocked adding its write scope until explicit
-scope consent. No infrastructure workaround or bypass was used. Actual Word
+The owner explicitly approved `access.write` for only the auth-destination
+append/rollback. Official DCR login completed successfully with that sole write
+scope and the existing read scopes. The already-loaded MCP tool still returns
+`Insufficient scope` for the preserving PUT; a subsequent exact read confirms
+no destination/policy change. The installed CLI supports app-server MCP reload,
+but no reachable control listener exists for the running stdio app-server.
+Next: reconnect the local Codex client so it can adopt the completed grant, then
+continue protection/routes/real-login checks before any Pages switch. No new
+scope consent, credential or infrastructure workaround is required. Actual Word
 dialog, reopen and idle recovery remain NOT_RUN.
