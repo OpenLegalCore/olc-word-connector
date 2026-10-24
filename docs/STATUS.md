@@ -12,10 +12,12 @@ and opaque Word sessions (max 15m). Code consumption, expiry, revocation and
 rate limits use SQLite Durable Object transactions. A separate API Worker checks
 session scope before protected operations and again after completion-body
 admission, immediately before SSE/Engine access. Cleanup is transactional too.
-Engine bearer and Access service credentials remain server-side. No new
-client credentials are created by this architecture. The owner-authorized
-staging attempt has provisioned two new **unrouted** Workers and the SQLite
-namespace; existing resources and frontend remain unchanged. See the
+Engine bearer and Access service credentials remain server-side and reuse the
+originals; no new Engine key or Access service-token pair was created. Word
+capabilities remain transient. The owner-authorized
+staging activation reused the two provisioned Workers and SQLite namespace,
+added the narrow routes/auth destination and delivered the approved frontend.
+Existing policies, legacy gateway/routes and DNS remain unchanged. See the
 [sanitized execution record](evidence/olc72-word-session-activation-20261024/README.md).
 
 The accepted form, colors, typography, automatic removable selection, SL/EN,
@@ -35,10 +37,13 @@ automatic completion, silent-login promise or provider fallback is added.
 | New pane | New explicit login; prior memory session/draft not persisted |
 | Actual Word with the new session architecture | **NOT_RUN**; no connected supported Word surface available |
 | Existing functional/visual owner evidence | Preserved as historical evidence; no new completion or visual acceptance claimed |
-| Last observed staging source | `ded891c22b735ca323bfede552e5219683d24841`, read-only confirmed 2026-10-24; unchanged by this task |
-| New architecture delivery | **PARTIAL / BLOCKED**: new unrouted Workers/store provisioned; no new route, Access destination or Pages switch |
+| Active staging source | `aa5d369f3e99067e8059a50fdd99f22535ca9810`; previous `ded891c22b735ca323bfede552e5219683d24841` retained for rollback |
+| New architecture delivery | **STAGING TECHNICAL PASS**: existing new Workers/store, auth-only Access destination append, two narrow routes and prepared Pages delivery verified |
 | Original server credential availability | Confirmed privately and provisioned only to the new API Worker; no replacement or export of deployed secrets |
-| Provider-free protected Engine discovery | HTTP 200, expected model; no completion. Python HTTP client separately encounters Cloudflare 1010, not evidence of an invalid bearer |
+| Real human Access / PKCE / replay | PASS using official Access client and live endpoints; verified code issued/exchanged, replay rejected; distinct from Office dialog acceptance |
+| Cookie-free Word API | Missing token: marked JSON 401; valid session/models: 200; revoked session/models: 401. Test session revoked |
+| Published files / document headers | 45/45 HTTP 200 and byte-equal; 9/9 HTML CSP checks match, no X-Frame-Options. One unchanged cached PNG retains an older CSP header; no purge performed |
+| Active frontend boundary | Approved JS identity, `/word-api` composition and absence of Storage Access calls verified |
 | Engine content/runtime and native Word writes | Separate outstanding qualification; no completion or document write |
 | Word for Mac | Backlog |
 
@@ -57,13 +62,14 @@ See [architecture and security](WORD_SCOPED_SESSION.md),
 [new sanitized evidence](evidence/olc72-word-session-20261024/README.md).
 The [previous evidence synchronization](OLC72_SYNC_REPORT_20261024.md) and
 [historical access diagnostics](WORD_WEB_ACCESS_RECOVERY.md) are preserved.
-The owner explicitly approved `access.write` for only the auth-destination
-append/rollback. Official DCR login completed successfully with that sole write
-scope and the existing read scopes. The already-loaded MCP tool still returns
-`Insufficient scope` for the preserving PUT; a subsequent exact read confirms
-no destination/policy change. The installed CLI supports app-server MCP reload,
-but no reachable control listener exists for the running stdio app-server.
-Next: reconnect the local Codex client so it can adopt the completed grant, then
-continue protection/routes/real-login checks before any Pages switch. No new
-scope consent, credential or infrastructure workaround is required. Actual Word
-dialog, reopen and idle recovery remain NOT_RUN.
+After the owner reopened Codex, the scoped preserving Access PUT succeeded;
+readback changed only destinations and update time. No OAuth flow was repeated.
+This establishes effective write access after reconnection; it does not prove
+the internal cause of the preceding transport failures. The API Worker is not
+a human Access destination. Both new workers.dev/preview surfaces stay disabled.
+
+Next: actual Word Web dialog, usable form, open-pane recovery after known
+expiry/revocation with draft/locale/removed attachment retention, canceled dialog
+and new-pane login. No connected Word browser tab or Document Control session is
+available, so those cases remain NOT_RUN. No new completion or document write
+is needed for this access acceptance; the original incident is not declared fixed.

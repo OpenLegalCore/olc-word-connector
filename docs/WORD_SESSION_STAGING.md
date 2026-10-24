@@ -1,5 +1,12 @@
 # OLC-72 Word session staging preparation
 
+Execution update 2026-10-24: the owner-authorized staging activation for
+`aa5d369f3e99067e8059a50fdd99f22535ca9810` has passed live human Access/PKCE,
+session/models/revocation and artifact delivery checks. Actual Word remains
+NOT_RUN. See the [sanitized execution evidence](evidence/olc72-word-session-activation-20261024/README.md).
+The procedure below remains the reviewed operator sequence, not general
+authorization for future mutations.
+
 **Prepared procedure, not activation authorization.** This change is not Pages-only.
 It needs two new Workers, a SQLite Durable Object namespace and two narrow routes,
 plus adding the authorization Worker destination to the existing human Access

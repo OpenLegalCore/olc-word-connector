@@ -1,0 +1,100 @@
+{
+  "startedAt": "2026-10-24T15:31:16.077220+00:00",
+  "identity": "REAL_HUMAN_ACCESS_VIA_OFFICIAL_CLOUDFLARED",
+  "wordHost": "NOT_RUN",
+  "cookiesSentToWordApi": false,
+  "providerCompletions": 0,
+  "documentWrites": 0,
+  "checks": [
+    {
+      "name": "verified_human_authorize",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "codeIssued": true
+    },
+    {
+      "name": "pkce_exchange_without_cookies",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "name": "code_replay_rejected",
+      "status": 401,
+      "expected": 401,
+      "pass": true,
+      "errorCode": "INVALID_GRANT"
+    },
+    {
+      "name": "valid_session_without_cookies",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "scope": "word:models word:complete"
+    },
+    {
+      "name": "valid_models_without_cookies",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "modelIds": [
+        "lexai-engine-local"
+      ]
+    },
+    {
+      "name": "revoke_test_word_session",
+      "status": 200,
+      "expected": 200,
+      "pass": true
+    },
+    {
+      "name": "revoked_session_rejected",
+      "status": 401,
+      "expected": 401,
+      "pass": true,
+      "errorCode": "SESSION_EXPIRED"
+    },
+    {
+      "name": "revoked_models_rejected",
+      "status": 401,
+      "expected": 401,
+      "pass": true,
+      "errorCode": "SESSION_EXPIRED"
+    }
+  ],
+  "result": "PASS",
+  "finishedAt": "2026-10-24T15:31:17.638213+00:00",
+  "source": "aa5d369f3e99067e8059a50fdd99f22535ca9810",
+  "sourceTree": "b64d715a110e5c995cb6e9dba2dc8a6b17625833",
+  "defaultCurlConfigPresent": false,
+  "anonymousChecks": [
+    {
+      "path": "/word-api/session",
+      "status": 401,
+      "contentType": "application/json",
+      "gatewayMarker": "1",
+      "cacheControl": "no-store",
+      "errorCode": "SESSION_EXPIRED",
+      "curlExit": 0
+    },
+    {
+      "path": "/word-api/v1/models",
+      "status": 401,
+      "contentType": "application/json",
+      "gatewayMarker": "1",
+      "cacheControl": "no-store",
+      "errorCode": "SESSION_EXPIRED",
+      "curlExit": 0
+    },
+    {
+      "path": "/word-auth/authorize",
+      "status": 302,
+      "contentType": "text/html; charset=UTF-8",
+      "gatewayMarker": null,
+      "cacheControl": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+      "errorCode": null,
+      "curlExit": 0
+    }
+  ]
+}

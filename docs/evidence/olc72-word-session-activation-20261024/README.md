@@ -1,10 +1,15 @@
 # Word-session staging activation — 2026-10-24
 
-**PARTIAL / BLOCKED. This is an execution record, not Word acceptance.**
+**STAGING TECHNICAL ACTIVATION: PASS. ACTUAL WORD: NOT_RUN.**
 Approved source: `aa5d369f3e99067e8059a50fdd99f22535ca9810`.
 Tree: `b64d715a110e5c995cb6e9dba2dc8a6b17625833`.
 [Exact-source CI](https://github.com/OpenLegalCore/olc-word-connector/actions/runs/40100297920)
 was freshly read as completed/success. No qualifications were rerun.
+
+The approved frontend is delivered. Real human Access login, live PKCE exchange,
+replay rejection, cookie-free session/models and revocation pass. Existing
+policies, legacy gateway/routes and DNS are preserved; rollback is retained.
+The chronological earlier blocks below remain historical evidence.
 
 ## Initial attempt
 
@@ -75,9 +80,66 @@ listener. No service was started/restarted and no private authentication storage
 was extracted. Reopening the local Codex application is the remaining reconnect
 step; another scope approval or OAuth login is not requested.
 
-No additional infrastructure mutation occurred in this continuation. New auth
-destination/routes and Pages delivery remain **NOT_PERFORMED**. The retained
-rollback remains usable and was not needed.
+No additional infrastructure mutation occurred at that checkpoint. New auth
+destination/routes and Pages delivery were then **NOT_PERFORMED**. The retained
+rollback remained usable and was not needed.
+
+## Completion after reopening Codex
+
+No MCP OAuth login or consent was repeated. Fresh exact-resource reads confirmed
+the same provisioned Worker versions, namespace and binding names. The existing
+connection successfully executed the complete preserving Access PUT at 15:25 UTC.
+Readback changed only destinations and update time; policy contents/timestamps,
+audience, session and cookie settings stayed identical. Only the auth Worker was
+appended; the API Worker is not a human Access destination. This proves effective
+write access after reopening, not the internal cause of the earlier failures.
+
+Only the two approved narrow auth/API routes were attached, using existing
+authorized Wrangler access. No Worker was recreated, version redeployed or
+credential reprovisioned. Both workers.dev/preview surfaces remain disabled.
+The old protected routes, gateway version and policy are unchanged.
+
+[Live boundary evidence](live-boundary.json): anonymous session/models return
+marked JSON 401 without cookies. Anonymous auth redirects to the existing Access
+issuer. The official Access CLI then completed a **real human account-member
+login**, including the real browser approval screen. No identity was mocked and
+no provider completion was made. Its protected client cache was consumed only in
+the operator process; JWT, PKCE verifier/code and Word capability were never
+printed, hashed for diagnostics, placed in process arguments or published.
+The capability was held in memory and revoked at the end.
+
+The live auth Worker issued a code after verified human identity; PKCE exchange
+returned 200. Replaying that code returned 401/INVALID_GRANT. With the valid Word
+capability, cookie-free session and models GETs returned 200 and the expected
+`lexai-engine-local` model. Revocation returned 200; subsequent session/models
+GETs returned 401/SESSION_EXPIRED. All eight live checks passed. This is a real
+Access/server-protocol qualification, **not an Office callback or Word PASS**.
+
+Only after those checks, the prepared Pages bytes were published at 15:32 UTC,
+with source pinned to the approved implementation rather than a later docs head.
+[Delivery evidence](delivery-verification.json): all 45 comparisons of 15 public
+files across immutable, canonical and custom hosting are HTTP 200/byte-equal.
+The manifest and prepared headers retain their approved checksums; CSS/icons are
+unchanged. The active JavaScript matches the artifact, contains the new API
+boundary and no Storage Access calls. All nine HTML CSP checks match, and no
+X-Frame-Options header is present.
+
+One custom-host PNG response has an older CSP header in an existing cache entry
+(HIT, observed age over 101,000 seconds); its bytes/ETag match. The immutable
+new and rollback image headers include the approved ancestor list. The final
+taskpane/signin HTML responses, including their redirect chains, were separately
+confirmed to include the approved Office ancestor. The initial strict all-file
+header comparison is retained privately: 44/45 headers matched, **45/45 bytes
+matched**. No cache purge or header/rule change was performed. This observation
+does not represent an observed session/API failure or a new Word acceptance.
+
+Final control-plane reads confirm the new canonical source, unchanged legacy
+gateway/policies/routes and DNS, disabled automatic production/preview builds,
+and the preserved successful prior Pages rollback. No rollback was needed.
+The official Pages rollback endpoint needs write permission beyond this MCP
+grant; the reviewed fallback remains re-upload of the verified prior static
+bytes/headers with existing authorized Wrangler access. Resource IDs and exact
+operator commands remain in the protected package. No new permission was requested.
 
 ## Evidence limits and next gate
 
@@ -88,18 +150,18 @@ reopen, known expiry/revocation recovery, dialog cancellation and draft/locale/
 removed-selection retention are **NOT_RUN** for this architecture.
 
 Real human login, PKCE exchange/replay and live Word-capability session/models/
-revocation checks are also **NOT_RUN**, because the new auth/API routes are not
-attached. Synthetic qualification is retained separately and is not substituted.
-There was no completion, Send click, document write, merge, policy modification,
-DNS change or modification of the original user checkout.
+revocation are PASS as recorded above. Synthetic qualification was not repeated
+as a substitute for Word. There was no completion, Send click, document write,
+merge, policy modification, DNS change or modification of the original user checkout.
 
-After the local MCP connection adopts the already completed OAuth grant, continue the
-[reviewed activation sequence](../../WORD_SESSION_STAGING.md): append only the
-auth destination with a complete preserving payload, verify exact readback,
-attach the two narrow routes, and qualify the new live boundary with real human
-login before publishing the prepared frontend. Any frontend failure requires
-the retained Pages-first rollback. Do not delete the new namespace or rotate
-credentials to work around this block.
+The [reviewed activation sequence](../../WORD_SESSION_STAGING.md) is technically
+executed. Remaining access acceptance needs a supported connection to the actual
+Word browser/document surface: usable form and native dialog, open-pane recovery
+after known expiry/revocation with retained multiline draft/locale/removed
+attachment, and separate close/reopen login. A new pane destroys memory state;
+no persistent draft or silent-login claim is made. Do not click Send or write the
+document for this acceptance. Any subsequent session/API failure requires the
+retained Pages-first rollback. Do not delete the namespace or rotate credentials.
 
 Private source locations, full control-plane snapshots, operational resource IDs,
 receipts and proposed Access payload remain in the protected operator package.
