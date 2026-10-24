@@ -229,7 +229,7 @@ describe("production Engine-only task-pane runtime", () => {
         root().querySelector<HTMLButtonElement>('[data-action-id="retry-search"]')?.disabled
       ).toBe(false)
     );
-    expect(state.olcEngine.connectionChecks).toBe(2);
+    expect(state.olcEngine.connectionChecks).toBe(3);
     state.olcEngine.connectionError = undefined;
     click("retry-search");
     await waitForReady();
@@ -374,7 +374,9 @@ describe("production Engine-only task-pane runtime", () => {
         text: "Different selection",
       });
       click("open-secure-sign-in");
-      await vi.waitFor(() => expect(root().textContent).toContain("Prijavna stran je dosežena"));
+      await vi.waitFor(() =>
+        expect(root().textContent).toContain("Dostop iz Word podokna je še zavrnjen")
+      );
       state.olcEngine.connectionError = undefined;
       click("retry-search");
       await waitForReady();
@@ -478,9 +480,7 @@ describe("production Engine-only task-pane runtime", () => {
     click("send");
     await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
     click("open-secure-sign-in");
-    await vi.waitFor(() =>
-      expect(root().textContent).toContain("Prijavno okno je zaprto ali prekinjeno")
-    );
+    await vi.waitFor(() => expect(root().textContent).toContain("Prijava ni bila dokončana"));
     expect(state.olcEngine.connectionChecks).toBe(1);
     expect(state.olcEngine.requests).toHaveLength(1);
     click("retry-search");
@@ -543,27 +543,24 @@ describe("production Engine-only task-pane runtime", () => {
       state.olcEngine.completionError = new ChatGatewayError("SESSION_EXPIRED");
       click("send");
       await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
-      click("open-secure-sign-in");
-      await vi.waitFor(() => expect(root().textContent).toContain("Prijavna stran je dosežena"));
-      expect(state.olcEngine.connectionChecks).toBe(1);
       state.olcEngine.connectionError = new ChatGatewayError("SESSION_EXPIRED");
-      click("retry-search");
+      click("open-secure-sign-in");
       await vi.waitFor(() =>
         expect(root().textContent).toContain("Dostop iz Word podokna je še zavrnjen")
       );
-      click("allow-pane-cookies");
-      expect(request).toHaveBeenCalledTimes(permission === "unsupported" ? 0 : 1);
-      await vi.waitFor(() =>
-        expect(root().textContent).toContain(
-          permission === "granted"
-            ? "Dostop do piškotkov aplikacije je dovoljen"
-            : "Dostop do piškotkov aplikacije ni na voljo"
-        )
-      );
       expect(state.olcEngine.connectionChecks).toBe(2);
-      expect(state.olcEngine.requests).toHaveLength(1);
       state.olcEngine.connectionError = undefined;
-      click("retry-search");
+      if (permission !== "unsupported") click("allow-pane-cookies");
+      else expect(root().querySelector('[data-action-id="allow-pane-cookies"]')).toBeNull();
+      expect(request).toHaveBeenCalledTimes(permission === "unsupported" ? 0 : 1);
+      if (permission === "granted") await waitForReady();
+      else if (permission === "denied")
+        await vi.waitFor(() =>
+          expect(root().textContent).toContain("Dostop do piškotkov aplikacije ni na voljo")
+        );
+      expect(state.olcEngine.connectionChecks).toBe(permission === "granted" ? 3 : 2);
+      expect(state.olcEngine.requests).toHaveLength(1);
+      if (permission !== "granted") click("retry-search");
       await waitForReady();
       expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
         "Ohranjen sintetični vnos.\nDruga vrstica."
@@ -574,6 +571,38 @@ describe("production Engine-only task-pane runtime", () => {
       expect(state.word.applyCalls).toHaveLength(0);
     }
   );
+
+  it("can restore pane cookies before reopening sign-in, keeping the draft and removed attachment", async () => {
+    let allowed = false;
+    const request = vi.fn(async () => {
+      allowed = true;
+    });
+    Object.defineProperty(document, "requestStorageAccess", { configurable: true, value: request });
+    Object.defineProperty(document, "hasStorageAccess", {
+      configurable: true,
+      value: async () => allowed,
+    });
+    const state = setup({ openSignIn: vi.fn(async () => "completed" as const) });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    setQuestion("Retained\nMultiline draft");
+    click("remove-selection");
+    state.olcEngine.connectionError = new ChatGatewayError("SESSION_EXPIRED");
+    click("toggle-settings");
+    click("check-connection");
+    await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+    expect(root().querySelector('[data-action-id="allow-pane-cookies"]')).not.toBeNull();
+    state.olcEngine.connectionError = undefined;
+    click("allow-pane-cookies");
+    expect(request).toHaveBeenCalledTimes(1);
+    await waitForReady();
+    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+      "Retained\nMultiline draft"
+    );
+    expect(root().querySelector(".olc-selection-attachment")).toBeNull();
+    expect(state.olcEngine.requests).toHaveLength(0);
+    expect(state.word.applyCalls).toHaveLength(0);
+  });
 
   it("ignores a late dialog completion after runtime disposal without a connection or submission", async () => {
     let finish!: (value: "completed") => void;

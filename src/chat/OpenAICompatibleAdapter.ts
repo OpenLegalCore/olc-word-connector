@@ -338,12 +338,20 @@ export class OpenAICompatibleAdapter implements ChatGateway {
   private requireSuccessfulResponse(response: Response, expectedType: string): void {
     const responseType = mediaType(response);
     if (
+      response.status === 403 ||
+      response.status === 408 ||
+      response.status === 429 ||
+      response.status >= 500
+    ) {
+      this.cancelResponseBody(response);
+      throw statusError(response.status);
+    }
+    if (
       this.requestCredentials === "same-origin" &&
       (response.type === "opaqueredirect" ||
         (response.status >= 300 && response.status < 400) ||
         response.redirected ||
-        response.status === 401 ||
-        responseType === "text/html")
+        response.status === 401)
     ) {
       this.cancelResponseBody(response);
       throw new ChatGatewayError("SESSION_EXPIRED");

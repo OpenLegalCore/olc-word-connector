@@ -1,10 +1,122 @@
 # OLC-72 Word Web access recovery — reviewed plan
 
-Status: IN REVIEW, settings-check follow-up based on `c062b372`, 2026-10-24.
+Status: IN REVIEW, access-lifecycle fix based on delivered `a756274`, 2026-10-24.
 The sections below preserve earlier diagnostic evidence; their former connection
 and pending-delivery statements are historical, not today's activation state.
 
-## Current follow-up: Settings connection check
+## Current fix: cookie-grant lifecycle and precise failures
+
+Owner reports **Access required** after reopening the delivered pane. Selecting
+Open secure sign-in produces Office's **Allow / Ignore** prompt. The prompt is
+expected with `promptBeforeOpen: true`; it is permission to open the dialog,
+not an Access-policy denial or proof of a cookie failure. It remains enabled.
+
+The current local fix restores an existing `storage-access` permission before
+the two connection GETs. A new iframe can have permission `granted` while
+`hasStorageAccess()` is false. Only in that case is `requestStorageAccess()`
+called silently; prompt/denied/unsupported permission states never trigger a new
+permission request automatically. The probe is bounded and disposal suppresses
+late activity. No cookie values are read. A grant is not authentication.
+
+The existing **Allow app cookies in this pane** action is now available at the
+first access challenge when the API is supported, without requiring another
+sign-in dialog first. An explicit grant or a bound dialog landing triggers only
+the provider-free `/api/session` → `/v1/models` verification. An unsuccessful
+session landing stops before models. No completion, automatic question retry,
+Word write or new diagnostic button is introduced. The latest draft, locale and
+attached/removed selection are preserved during recovery. Nothing persists after
+the pane process is destroyed; this change does not add draft storage.
+
+HTTP status has precedence over HTML content: `403` is denial, `5xx` is service
+unavailability, `408` is timeout and `429` is throttling. Transport rejection is
+network failure. A manual/opaque redirect or `401` requires access but does not
+prove expiry; an unmarked `200` HTML response is invalid, not assumed login.
+The legacy `SESSION_EXPIRED` internal code remains for the access challenge only.
+Office Ignore (12009) is a declined dialog; it never becomes authenticated or a
+policy denial. The accepted ready-form HTML/CSS, Engine and Word operations are
+unchanged, as are the Worker example and its protected callback.
+
+### Evidence and limits
+
+- Fresh bounded control-plane reads confirm the delivered Pages source a756274,
+  the existing callback-capable Worker version, and Worker-destination Access on
+  both custom API prefixes. The human-member policy remains in place; application
+  session is 6h, HttpOnly is true, binding-cookie false and eager redirect true.
+  SameSite and cookie Path are absent from the API projection; absence does not
+  establish the cookie attributes actually issued to the owner's browser.
+- Downloaded production assets match the approved delivery. No rule, session
+  duration, credential, route or deployment is changed by this fix.
+- In isolated Firefox 157, a local HTTPS server issues an invented Secure,
+  HttpOnly, SameSite=None cookie in a separate first-party window. The cross-site
+  iframe's GET remains 401 after that window closes, becomes 200 after a clicked
+  Storage Access grant, returns to 401 after iframe reload despite permission
+  still `granted`, and becomes 200 after reactivating that existing grant. These
+  are real browser-cookie and local-network observations with synthetic identity,
+  not a real Access login or a Word PASS.
+- Isolated Chromium 153 sent the same test cookie without a Storage Access
+  grant. Its result does not reproduce the owner's failure or prove that the
+  actual Word/browser cookie policy permits access. In particular,
+  `hasStorageAccess()` alone is not an authentication or reachability test.
+- Deterministic regressions cover denial/HTML errors, transport failures, timeout,
+  new iframe grant restoration, unavailable/denied permissions, Ignore/close,
+  stale callbacks, retained input/locale/attachment and no automatic completion.
+- The actual newly built production task-pane HTML/CSS/bundles were executed in
+  a cross-site iframe in isolated Firefox with a local HTTPS cookie service and
+  synthetic Office. A clicked grant restored the form; synthetic expiry stopped
+  before models; subsequent recovery retained a multiline draft, EN locale and
+  removed attachment; reopening restored the existing grant and form without a
+  new dialog. Only GETs were observed. This remains synthetic Word evidence.
+  With storage access forbidden by the test iframe sandbox, the same production
+  runtime stays at Access required with an unavailable-cookie notice; it does
+  not report success or issue another model/completion request.
+
+The exact owner-session cause remains unproven: no connected Word session or
+authorized owner browser profile is available. The missing grant activation is
+a reproduced application defect and compatible explanation, not an assertion
+about the owner's cookies. A standalone dialog cannot make cookie-only Access
+reliable in every Word iframe. It is usable only where the host permits cookies
+or Storage Access (including its sandbox and Permissions Policy). The application
+cannot change those parent-frame constraints. No real Word PASS is claimed.
+
+### Recommended production architecture if the host blocks cookie access
+
+Recommend one Word-scoped application-session flow, independent of third-party
+cookies, rather than another session-duration change or more diagnostics:
+
+1. Retain Access-protected top-level Word authorization on a dedicated auth
+   Worker. Server-validate the Access assertion's signature, issuer, audience,
+   expiry and intended identity; retain the current human policy.
+2. Bind the Office dialog to a per-attempt nonce and PKCE challenge. Return a
+   single-use, short-lived authorization code via exact-origin Office messaging,
+   never an Access/Engine credential. Exchange the code with its verifier for a
+   short-lived Word-API capability held only in pane memory. Enforce atomic
+   single-use exchange, bounded pending authorizations and expiry/revocation.
+3. Every Word API request must validate that scoped capability server-side before
+   any upstream read or completion. Deny by default, including models; enforce
+   exact host/origin, audience and expiry. No unauthenticated completion, broad
+   Access bypass, long-lived browser secret or conversation storage.
+4. This requires a separately reviewed gateway/auth-Worker split: the current
+   Worker-level Access edge rejects requests before application code and cannot
+   be bypassed by adding a browser Authorization header. Keep its protection
+   until the replacement fail-closed application boundary and exact route plan
+   are approved and tested. Engine-origin Access and server credentials remain.
+5. Prepare an inactive version and guarded transition. Preserve the existing
+   Worker/Pages pair and Access destination/policy snapshot; rollback returns
+   Pages, then gateway and its previous Access targeting together. Never leave
+   custom API routes pointed at an unauthenticated gateway during transition.
+
+This is a concrete architecture recommendation, not an implemented token broker
+or permission to alter Access. It needs separate owner approval for the auth
+contract, bounded authorization storage, route/Access changes and deployment.
+The current patch is Pages-only and can be reverted to the retained a756274
+frontend without a Worker or Access change. The activation packet records exact
+immutable deployment IDs and the supported old-byte re-upload rollback.
+
+Primary rationale: [Microsoft's Office cookie guidance](https://learn.microsoft.com/en-us/office/dev/add-ins/develop/itp-and-third-party-cookies),
+[Storage Access permission lifecycle](https://developer.mozilla.org/en-US/docs/Web/API/Document/requestStorageAccess),
+and [Cloudflare's authorization-cookie requirements](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/).
+
+## Delivered baseline: Settings connection check
 
 The candidate adds **Nastavitve → Preveri povezavo / Settings → Check connection**
 to the actual task pane. It uses the existing provider-free `/api/session` probe,
@@ -26,7 +138,8 @@ Owner has confirmed draft retention after approximately 30 minutes in the previo
 staging candidate. That proves retention for that observation only. Fresh GETs
 from the actual Word pane, actual callback/cookie recovery and preservation through
 that recovery remain **NOT VERIFIED**. Local synthetic tests are not Word PASS.
-This new settings change is not deployed; see [status](STATUS.md).
+The a756274 settings change was delivered; this lifecycle successor is not deployed.
+See [status](STATUS.md).
 
 ## Historical diagnosis and callback preparation
 

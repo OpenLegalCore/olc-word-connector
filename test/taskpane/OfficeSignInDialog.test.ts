@@ -136,6 +136,12 @@ describe("Office sign-in lifecycle", () => {
     await expect(result).resolves.toBe("failed");
     expect(close).toHaveBeenCalledTimes(1);
   });
+  it("treats Office Ignore as a declined dialog, not a denied Access policy or success", async () => {
+    const result = new OfficeSignInDialog(origin, ui, () => nonce).open();
+    callback({ status: "failed", error: { code: 12009 } });
+    await expect(result).resolves.toBe("closed");
+    expect(messageChild).not.toHaveBeenCalled();
+  });
   it("opens only same-origin HTTPS in a top-level Office dialog and accepts a bound landing message", async () => {
     const signIn = new OfficeSignInDialog(origin, ui, () => nonce);
     const result = signIn.open();

@@ -131,28 +131,28 @@ export const enUSMessages = {
     eyebrow: "PROTECTED SESSION",
     heading: "Access required",
     description:
-      "Protected access was not accepted. Sign in and check the connection. Your message is retained; the document has not been changed.",
+      "This pane could not use protected access. If you already signed in, allow app cookies here first; otherwise open secure sign-in. Your message is retained and will not be sent automatically.",
     signInOpenedTitle: "Secure sign-in opened",
     signInOpenedMessage:
-      "Complete sign-in in the Office dialog, then check the connection from this pane. Your message is retained.",
+      "Office may ask Allow / Ignore before opening the window. Allow opens secure sign-in; Ignore leaves access unchanged. After return, only the connection is checked, never your message.",
     signInFailedTitle: "Secure sign-in could not open",
     signInFailedMessage:
       "Office sign-in could not open or return. Check popup permission and Office dialog support. Your message is retained.",
     retrySearch: "Check connection",
     openSecureSignIn: "Open secure sign-in",
     completedTitle: "Sign-in landing reached",
-    closedTitle: "Sign-in dialog closed or disconnected",
+    closedTitle: "Sign-in was not completed",
     closedMessage:
-      "Access has not been verified. Keep your message and check the connection explicitly, or open sign-in again.",
+      "The window was declined, closed or disconnected. This is not an access-policy denial. Your message is retained; you can restore app cookie access or open sign-in when ready.",
     completedMessage:
-      "Now check the connection in Word. Reaching the dialog landing does not prove that this pane can use the session.",
+      "Checking access from this pane. Reaching the dialog landing alone does not prove that this pane can use the session. Your message will not be sent.",
     paneRejectedTitle: "Word pane access still rejected",
     paneRejectedMessage:
       "The dialog returned, but this pane still needs access. App cookies may be blocked or policy may require sign-in. You can request cookie access for this app; if Word blocks it, ask the operator for the documented narrow browser exception. Your message is retained.",
     allowPaneCookies: "Allow app cookies in this pane",
     cookieGrantedTitle: "App cookie access allowed",
     cookieGrantedMessage:
-      "Check the connection explicitly. Cookie permission alone does not establish a valid session; nothing was sent.",
+      "Checking the protected connection. Cookie permission alone does not establish a valid session; your message will not be sent.",
     cookieFailedTitle: "App cookie access unavailable",
     cookieFailedMessage:
       "Word, the browser, or your choice did not allow access. Keep your draft and ask the operator to check the app cookie settings and a narrow app/team-domain exception. Do not disable browser privacy globally.",
@@ -160,6 +160,20 @@ export const enUSMessages = {
     footerMessage: "UNCHANGED",
   },
   connectionError: {
+    deniedHeading: "Access denied",
+    descriptionFor: (code: string): string => {
+      if (code === "ACCESS_DENIED")
+        return "The protected request was denied (403). This is not proof of an expired session. Your message is retained; the operator must check authorization.";
+      if (code === "NETWORK_ERROR")
+        return "The request could not reach the service. Check the network; signing in may not resolve this. Your message is retained.";
+      if (code === "SERVICE_UNAVAILABLE")
+        return "The server returned an unavailable-service response. Try the connection later; your message is retained.";
+      if (code === "TIMEOUT")
+        return "The connection check timed out. Your message is retained; nothing was submitted.";
+      if (code === "INVALID_RESPONSE")
+        return "The service returned an unexpected response. It was not accepted as a session or answer. Your message is retained.";
+      return "The connection check failed. Your message is retained; retry only when ready.";
+    },
     statusLabel: (provider: string): string => `${provider} is unavailable`,
     eyebrow: "SERVICE CONNECTION",
     heading: "Connection check failed",

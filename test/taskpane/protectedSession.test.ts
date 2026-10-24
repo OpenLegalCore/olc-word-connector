@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   checkProtectedSession,
   requestPaneCookieAccess,
+  restorePaneCookieAccess,
 } from "../../src/taskpane/protectedSession";
 
 afterEach(() => vi.useRealTimers());
@@ -46,7 +47,12 @@ describe("pane access boundary", () => {
     [302, {}, "SESSION_EXPIRED"],
     [401, {}, "SESSION_EXPIRED"],
     [403, { "Content-Type": "text/plain" }, "ACCESS_DENIED"],
-    [200, { "Content-Type": "text/html" }, "SESSION_EXPIRED"],
+    [403, { "Content-Type": "text/html" }, "ACCESS_DENIED"],
+    [503, { "Content-Type": "text/html" }, "SERVICE_UNAVAILABLE"],
+    [502, {}, "SERVICE_UNAVAILABLE"],
+    [408, { "Content-Type": "text/html" }, "TIMEOUT"],
+    [429, {}, "RATE_LIMITED"],
+    [200, { "Content-Type": "text/html" }, "INVALID_RESPONSE"],
     [200, { "Content-Type": "application/json", "X-OLC-Word-Gateway": "1" }, "INVALID_RESPONSE"],
   ])(
     "fails closed on %s without treating cookie permission as authentication",
@@ -93,5 +99,59 @@ describe("pane access boundary", () => {
     await expect(requestPaneCookieAccess({} as Document)).resolves.toBe(false);
     has.mockResolvedValueOnce(false);
     await expect(requestPaneCookieAccess(document)).resolves.toBe(false);
+  });
+  it.each(["granted", "prompt", "denied", "unsupported"])(
+    "restores only a previously granted permission (%s), without a login or new permission prompt",
+    async (permission) => {
+      let active = false;
+      const request = vi.fn(async () => {
+        active = true;
+      });
+      const query = vi.fn(async () => ({ state: permission }));
+      if (permission === "unsupported") query.mockRejectedValueOnce(new Error("unsupported"));
+      const doc = {
+        hasStorageAccess: async () => active,
+        requestStorageAccess: request,
+        defaultView: { navigator: { permissions: { query } } },
+      } as unknown as Document;
+      await expect(restorePaneCookieAccess(doc)).resolves.toBe(permission === "granted");
+      expect(request).toHaveBeenCalledTimes(permission === "granted" ? 1 : 0);
+      if (permission === "granted") {
+        await expect(restorePaneCookieAccess(doc)).resolves.toBe(true);
+        expect(query).toHaveBeenCalledTimes(1);
+      }
+    }
+  );
+  it("bounds a stalled permission query and ignores its grant after timeout or disposal", async () => {
+    vi.useFakeTimers();
+    let finish!: (value: { state: string }) => void;
+    const request = vi.fn(async () => undefined);
+    const doc = {
+      hasStorageAccess: async () => false,
+      requestStorageAccess: request,
+      defaultView: {
+        navigator: {
+          permissions: {
+            query: () =>
+              new Promise((resolve) => {
+                finish = resolve;
+              }),
+          },
+        },
+      },
+    } as unknown as Document;
+    const pending = restorePaneCookieAccess(doc);
+    await vi.advanceTimersByTimeAsync(2_000);
+    await expect(pending).resolves.toBe(false);
+    finish({ state: "granted" });
+    await Promise.resolve();
+    expect(request).not.toHaveBeenCalled();
+    const abort = new AbortController();
+    const cancelled = restorePaneCookieAccess(doc, abort.signal);
+    await vi.advanceTimersByTimeAsync(0);
+    abort.abort();
+    finish({ state: "granted" });
+    await expect(cancelled).resolves.toBe(false);
+    expect(request).not.toHaveBeenCalled();
   });
 });

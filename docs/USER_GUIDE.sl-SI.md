@@ -260,25 +260,31 @@ oddata samodejno. Novi kontrolnik še potrebuje sprejem v dejanskem Wordu.
 Če zaščitena zahteva potrebuje prijavo, komponenta prikaže **Potreben je dostop**,
 namesto da bi preusmeritev ali prijavno stran prikazala kot odgovor. Potek seje
 je samo eden od možnih vzrokov; enako se lahko pokažejo blokirani piškotki ali
-prijavna preusmeritev. Zavrnjeni dostop z navadnim/JSON odzivom je prikazan ločeno.
+prijavna preusmeritev. Zavrnjeni dostop `403`, nedosegljiv strežnik in omrežna
+napaka so prikazani ločeno, tudi če strežnik vrne HTML stran.
 Če se težava ponavlja, uporabite [načrt diagnostike](WORD_WEB_ACCESS_RECOVERY.md),
 ne ponavljajte oddaje sporočila.
 
-1. Izberite **Odpri varno prijavo**.
-2. V pogovornem oknu Office dokončajte prijavo upravljavca. Preklic ohrani vaš vnos.
+1. Če ste že prijavljeni, najprej uporabite obstoječe dejanje **Dovoli piškotke
+   aplikacije v podoknu**, kadar je na voljo. To ne odpre novega prijavnega okna.
+2. Sicer izberite **Odpri varno prijavo**. Office lahko pred odprtjem vpraša
+   **Allow / Ignore**. Ignore odkloni okno, ne pomeni zavrnitve pravilnika.
+   V oknu dokončajte prijavo upravljavca. Preklic ohrani vaš vnos.
 3. Povratna stran zapre okno ob sprejetem vezanem sporočilu. To še ne dokazuje,
    da Word podokno lahko uporablja sejo.
 4. Vrnite se v Word.
-5. Izrecno izberite **Preveri povezavo**, preglejte obrazec in nato **Pošlji**.
+5. Po vrnitvi ali dovoljenju za piškotke komponenta preveri samo zaščiteno
+   povezavo. Preglejte obnovljeni obrazec in šele sami izberite **Pošlji**.
+   Obstoječi **Preveri povezavo** lahko uporabite znova brez oddaje sporočila.
 
 Komponenta zahteve nikoli ne ponovi samodejno in nima nadomestnega ponudnika.
 Obnova prijave ne pošlje prejšnjega sporočila. Pred izrecno izbiro **Pošlji**
 preglejte trenutno sporočilo in priponko izbora.
 
-Če se prijavno okno vrne, podokno pa še potrebuje dostop, **Dovoli piškotke
-aplikacije v podoknu** prek Storage Access API zahteva samo dostop do piškotkov
-aplikacije. Po dovoljenju sami izberite **Preveri povezavo**; dovoljenje še ni
-prijava. Ob nepodprtem ali zavrnjenem dostopu ohranite vnos in z upravljavcem
+**Dovoli piškotke aplikacije v podoknu** prek Storage Access API zahteva samo
+dostop do piškotkov aplikacije. Novo odprto podokno že podeljeno dovoljenje znova
+aktivira brez zahteve za novo dovoljenje. Dostop potrdijo šele uspešni GET-i;
+dovoljenje samo še ni prijava. Ob nepodprtem ali zavrnjenem dostopu ohranite vnos in z upravljavcem
 preverite ozko izjemo za domeni aplikacije in Access ekipe. Ne izklapljajte
 zasebnosti brskalnika v celoti. Lokalni kandidat še potrebuje pravi Word Web sprejem.
 

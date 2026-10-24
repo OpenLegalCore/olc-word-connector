@@ -209,7 +209,7 @@ describe("production task-pane entry initialization", () => {
     expect(document.querySelectorAll(".olc-app")).toHaveLength(1);
     expect(document.querySelectorAll('button[data-action-id^="select-"]')).toHaveLength(0);
     expect(wordRun).not.toHaveBeenCalled();
-    expect(fetch).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
   });
 
   it.each([

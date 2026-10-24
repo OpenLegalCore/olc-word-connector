@@ -72,15 +72,17 @@ The current task pane supports `en-US` and `sl-SI`. Locale is resolved from
 Office, then the browser, then English, and is not persisted. It controls
 connector UI and `response_language`; it does not rewrite the question.
 
-The browser sends only same-origin credentials. Redirects, HTML and `401`
-become the legacy `SESSION_EXPIRED` code, displayed as **Access required**;
-these signals do not prove session expiry. Non-HTML `403` is `ACCESS_DENIED`.
-Sign-in uses a same-origin Office Dialog bootstrap and `/api/session`, followed
-by explicit pane-context checks of both `/api/session` and `/v1/models`.
-Only an explicit user click can request app cookie permission through Storage
-Access API; neither a dialog message nor a cookie grant submits a question or
-proves a valid session. The new landing callback is a local Worker-example
-change, requiring a matched future delivery and production Word Web qualification; see the
+The browser sends only same-origin credentials. Redirects and `401` become the
+legacy `SESSION_EXPIRED` access-challenge code; they do not prove expiry. Every
+`403`, including HTML, is `ACCESS_DENIED`; `5xx`, timeout and network failure
+remain separate. Unmarked `200` HTML is invalid. Sign-in uses the same-origin
+Office Dialog bootstrap and protected `/api/session` callback already delivered.
+Only an explicit click requests a NEW Storage Access grant; a new iframe can
+silently reactivate an existing `granted` permission before the safe connection
+GETs. The existing cookie action no longer requires another dialog first.
+Dialog completion or an explicit cookie grant verifies the pane with the two
+safe GETs only, never a completion. The Office Allow/Ignore prompt is retained.
+Cookie-only access still depends on Word's parent sandbox/browser policy; see the
 [access recovery evidence and plan](WORD_WEB_ACCESS_RECOVERY.md).
 
 The settings connection check reuses the same protected-session probe and gateway

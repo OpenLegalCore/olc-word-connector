@@ -1,4 +1,4 @@
-/* global AbortController, AbortSignal, Document, RequestInit, Response, clearTimeout, setTimeout */
+/* global AbortController, AbortSignal, Document, PermissionName, RequestInit, Response, clearTimeout, setTimeout */
 
 import { ChatGatewayError } from "../chat/ChatGatewayError";
 
@@ -43,15 +43,18 @@ export async function checkProtectedSession(fetch: Fetch, signal?: AbortSignal):
       (response.headers.get("Content-Type") ?? "").split(";", 1)[0].trim().toLowerCase() ===
       "text/html";
     const marker = response.headers.get("X-OLC-Word-Gateway") === "1";
+    // Error pages are often HTML too. Their status takes precedence over login UI.
+    if (response.status === 403) throw new ChatGatewayError("ACCESS_DENIED");
+    if (response.status === 408) throw new ChatGatewayError("TIMEOUT");
+    if (response.status === 429) throw new ChatGatewayError("RATE_LIMITED");
+    if (response.status >= 500) throw new ChatGatewayError("SERVICE_UNAVAILABLE");
     if (
       response.type === "opaqueredirect" ||
       response.redirected ||
       (response.status >= 300 && response.status < 400) ||
-      response.status === 401 ||
-      (html && !marker)
+      response.status === 401
     )
       throw new ChatGatewayError("SESSION_EXPIRED");
-    if (response.status === 403) throw new ChatGatewayError("ACCESS_DENIED");
     if (response.status !== 200 || !html || !marker) throw new ChatGatewayError("INVALID_RESPONSE");
   } catch (error) {
     if (abort.signal.aborted) throw new ChatGatewayError(timeout ? "TIMEOUT" : "CANCELLED");
@@ -80,5 +83,47 @@ export async function requestPaneCookieAccess(document: Document): Promise<boole
     return typeof document.hasStorageAccess === "function" && (await document.hasStorageAccess());
   } catch {
     return false;
+  }
+}
+
+/** Restore an EXISTING grant in a new iframe; never prompt or infer authentication. */
+export async function restorePaneCookieAccess(
+  document: Document,
+  signal?: AbortSignal
+): Promise<boolean> {
+  if (!canRequestPaneCookieAccess(document) || signal?.aborted) return false;
+  let expired = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const active = (): boolean => !expired && !signal?.aborted;
+  const restore = async (): Promise<boolean> => {
+    try {
+      if (typeof document.hasStorageAccess !== "function") return false;
+      if (await document.hasStorageAccess()) return active();
+      if (!active()) return false;
+      const permissions = document.defaultView?.navigator.permissions;
+      if (!permissions) return false;
+      const permission = await permissions.query({ name: "storage-access" as PermissionName });
+      if (!active() || permission.state !== "granted") return false;
+      await document.requestStorageAccess();
+      if (!active()) return false;
+      const granted = await document.hasStorageAccess();
+      return active() && granted;
+    } catch {
+      return false;
+    }
+  };
+  try {
+    return await Promise.race([
+      restore(),
+      new Promise<false>((resolve) => {
+        timer = setTimeout(() => {
+          expired = true;
+          resolve(false);
+        }, 2_000);
+      }),
+    ]);
+  } finally {
+    expired = true;
+    clearTimeout(timer);
   }
 }

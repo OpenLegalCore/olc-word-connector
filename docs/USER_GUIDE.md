@@ -259,24 +259,31 @@ submitted after a check or sign-in. The new control still requires Word acceptan
 If a protected browser request needs sign-in, the connector shows **Access
 required** instead of rendering a redirect or login page as an answer. Expiry
 is one possible cause; blocked cookies or login redirects can look similar.
-A plain/JSON access denial is reported separately. If recovery repeats, use
+A `403` access denial, server unavailability and network failure are reported
+separately, even if the error page is HTML. If recovery repeats, use
 the [Word Web diagnosis](WORD_WEB_ACCESS_RECOVERY.md), rather than repeating Send.
 
-1. Select **Open secure sign-in**.
-2. Complete the operator's sign-in in the Office dialog. Canceling it retains your message.
+1. If already signed in, try the existing **Allow app cookies in this pane**
+   action first, when available. It does not open another login window.
+2. Otherwise select **Open secure sign-in**. Office may ask **Allow / Ignore**
+   before opening the window. Ignore cancels the window; it is not policy denial.
+   Complete the operator's sign-in in the dialog. Canceling retains your message.
 3. The return page closes the dialog when its bound message is accepted. That
    event alone does not prove that Word can use the session.
 4. Return to Word.
-5. Select **Check connection** explicitly, review the form, then select **Send**.
+5. The connector checks only the protected connection after return or a cookie
+   grant. Review the restored form before explicitly selecting **Send**. You can
+   use the existing **Check connection** again without submitting anything.
 
 The connector never retries automatically and has no fallback provider. Sign-in
 recovery does not send the previous message. Review the current message and
 selection attachment before explicitly selecting **Send**.
 
-If the dialog returns but the pane still needs access, **Allow app cookies in
-this pane** requests only app cookie access through the browser's Storage
-Access API. After a grant, select **Check connection** yourself. A grant is not
-authentication. If unavailable or denied, keep the draft and follow the
+**Allow app cookies in this pane** requests only app cookie access through the
+browser's Storage Access API. On a reopened pane, an existing grant is reactivated
+without requesting new permission. Only successful connection GETs establish
+current access; a cookie grant is not authentication. If unavailable or denied,
+keep the draft and follow the
 operator's narrow app/team-domain cookie exception procedure; do not disable
 privacy globally. This local candidate still needs actual Word Web qualification.
 

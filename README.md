@@ -42,11 +42,18 @@ design is preserved; native Word Web write qualification and
 [production access recovery](docs/WORD_WEB_ACCESS_RECOVERY.md) remain open.
 Word for Mac is backlog. This candidate is not a released editing capability.
 
-The draft also adds **Settings → Check connection**: fresh protected-session and
+The draft includes **Settings → Check connection**: fresh protected-session and
 model-discovery GETs without reloading the pane or sending a message. The draft,
 language and selection attachment survive the check and explicit sign-in recovery.
 See [current qualification status](docs/STATUS.md); retained input alone does not
 establish that access or authentication recovery works in Word.
+
+The current access-lifecycle follow-up reactivates previously granted app-cookie
+permission on a new pane, offers the existing cookie-access action before another
+dialog, and verifies only safe GETs after recovery. HTML denial/server failures
+are distinguished from login challenges. A controlled browser reproduces the
+grant lifecycle; actual Word reopen/expiry recovery remains unverified. No
+cookie-independent application session or Access-policy change is implemented.
 
 |                         |                                                                         |
 | ----------------------- | ----------------------------------------------------------------------- |

@@ -26,6 +26,7 @@ import {
   checkProtectedSession,
   canRequestPaneCookieAccess,
   requestPaneCookieAccess,
+  restorePaneCookieAccess,
 } from "./protectedSession";
 
 export const OLC_ENGINE_MODEL_ID = "lexai-engine-local";
@@ -342,9 +343,9 @@ function sessionExpiredModel(
   messages: MessageCatalog,
   backend: RuntimeBackend,
   environment: TaskPaneEnvironment | undefined,
-  signInFeedback: SignInFeedback
+  signInFeedback: SignInFeedback,
+  paneCookieAccessAvailable = false
 ): TaskPaneViewModel {
-  const opened = signInFeedback !== "idle" && signInFeedback !== "failed";
   const notices = {
     closed: [messages.session.closedTitle, messages.session.closedMessage],
     completed: [messages.session.completedTitle, messages.session.completedMessage],
@@ -382,31 +383,23 @@ function sessionExpiredModel(
               role: "alert",
             }
           : undefined,
-    actions: opened
-      ? [
-          { id: "retry-search", label: messages.session.retrySearch, variant: "primary" },
-          {
-            id: "open-secure-sign-in",
-            label: messages.session.openSecureSignIn,
-            variant: "quiet",
-          },
-          ...(signInFeedback === "pane-rejected" || signInFeedback === "cookie-failed"
-            ? [
-                {
-                  id: "allow-pane-cookies",
-                  label: messages.session.allowPaneCookies,
-                  variant: "secondary" as const,
-                },
-              ]
-            : []),
-        ]
-      : [
-          {
-            id: "open-secure-sign-in",
-            label: messages.session.openSecureSignIn,
-            variant: "primary",
-          },
-        ],
+    actions: [
+      { id: "retry-search", label: messages.session.retrySearch, variant: "primary" },
+      {
+        id: "open-secure-sign-in",
+        label: messages.session.openSecureSignIn,
+        variant: "quiet",
+      },
+      ...(paneCookieAccessAvailable
+        ? [
+            {
+              id: "allow-pane-cookies",
+              label: messages.session.allowPaneCookies,
+              variant: "secondary" as const,
+            },
+          ]
+        : []),
+    ],
     footer: { eyebrow: messages.session.footerEyebrow, message: messages.session.footerMessage },
   };
 }
@@ -556,7 +549,13 @@ export class ProductionTaskPaneRuntime {
     if (this.connectionRecoveryFromSettings) {
       if (this.connectionCheck.code === "SESSION_EXPIRED") {
         this.renderView((messages) =>
-          sessionExpiredModel(messages, this.selectedBackend, this.environment, this.signInFeedback)
+          sessionExpiredModel(
+            messages,
+            this.selectedBackend,
+            this.environment,
+            this.signInFeedback,
+            canRequestPaneCookieAccess(this.root.ownerDocument)
+          )
         );
       }
       return;
@@ -566,8 +565,15 @@ export class ProductionTaskPaneRuntime {
     }
     if (state.kind === "error" && state.error.code === "SESSION_EXPIRED") {
       this.resetCopyFeedback();
+      if (this.connectionCheck.phase === "success") this.connectionCheck = { phase: "idle" };
       this.renderView((messages) =>
-        sessionExpiredModel(messages, this.selectedBackend, this.environment, this.signInFeedback)
+        sessionExpiredModel(
+          messages,
+          this.selectedBackend,
+          this.environment,
+          this.signInFeedback,
+          canRequestPaneCookieAccess(this.root.ownerDocument)
+        )
       );
       return;
     }
@@ -783,6 +789,8 @@ export class ProductionTaskPaneRuntime {
     if (preserveWorkspace) this.updateConnectionControls();
     else this.renderView((messages) => connectingModel(messages, backend, this.environment));
     try {
+      await restorePaneCookieAccess(this.root.ownerDocument, abort.signal);
+      if (connectionId !== this.connectionId || this.disposed || abort.signal.aborted) return;
       await this.checkSession?.(abort.signal);
       if (connectionId !== this.connectionId || this.disposed) return;
       await this.gateway().checkConnection(abort.signal);
@@ -816,20 +824,32 @@ export class ProductionTaskPaneRuntime {
       if (code === "SESSION_EXPIRED") {
         this.signInFeedback = this.signInLandingReached ? "pane-rejected" : "idle";
         this.renderView((messages) =>
-          sessionExpiredModel(messages, backend, this.environment, this.signInFeedback)
+          sessionExpiredModel(
+            messages,
+            backend,
+            this.environment,
+            this.signInFeedback,
+            canRequestPaneCookieAccess(this.root.ownerDocument)
+          )
         );
       } else {
         this.renderView((messages) => ({
           id: "connection-error",
           environment: this.environment,
           status: {
-            label: messages.connectionError.statusLabel(backendLabels[backend]),
+            label:
+              code === "ACCESS_DENIED"
+                ? messages.connectionError.deniedHeading
+                : messages.connectionError.statusLabel(backendLabels[backend]),
             detail: code,
             tone: "danger",
           },
           eyebrow: messages.connectionError.eyebrow,
-          heading: messages.connectionError.heading,
-          description: messages.connectionError.description,
+          heading:
+            code === "ACCESS_DENIED"
+              ? messages.connectionError.deniedHeading
+              : messages.connectionError.heading,
+          description: messages.connectionError.descriptionFor(code),
           actions: [
             {
               id: "retry-connection",
@@ -1032,7 +1052,7 @@ export class ProductionTaskPaneRuntime {
       return;
     }
     if (actionId === "open-secure-sign-in") {
-      if (this.signInPending) return;
+      if (this.signInPending || this.cookieRequestPending || this.connectionWorkBusy()) return;
       const attempt = ++this.signInAttempt;
       this.signInPending = true;
       this.signInFeedback = "opened";
@@ -1042,7 +1062,13 @@ export class ProductionTaskPaneRuntime {
         const result = this.openSecureSignIn();
         if (!this.controller)
           this.renderView((messages) =>
-            sessionExpiredModel(messages, this.selectedBackend, this.environment, "opened")
+            sessionExpiredModel(
+              messages,
+              this.selectedBackend,
+              this.environment,
+              "opened",
+              canRequestPaneCookieAccess(this.root.ownerDocument)
+            )
           );
         outcome = await result;
       } catch {
@@ -1064,13 +1090,35 @@ export class ProductionTaskPaneRuntime {
       this.renderControllerState();
       if (!this.controller) {
         this.renderView((messages) =>
-          sessionExpiredModel(messages, this.selectedBackend, this.environment, this.signInFeedback)
+          sessionExpiredModel(
+            messages,
+            this.selectedBackend,
+            this.environment,
+            this.signInFeedback,
+            canRequestPaneCookieAccess(this.root.ownerDocument)
+          )
         );
+      }
+      if (outcome === "completed") {
+        // Landing is not pane authentication. Verify only the two safe GETs.
+        await this.connect(this.selectedBackend, Boolean(this.controller));
       }
       return;
     }
     if (actionId === "allow-pane-cookies") {
-      if (this.cookieRequestPending || !this.signInLandingReached) return;
+      if (
+        this.cookieRequestPending ||
+        this.signInPending ||
+        this.connectionCheck.phase === "checking"
+      )
+        return;
+      const state = this.controller?.getState();
+      if (
+        this.connectionCheck.code !== "SESSION_EXPIRED" &&
+        !(state?.kind === "error" && state.error.code === "SESSION_EXPIRED")
+      )
+        return;
+      this.captureFormState();
       this.cookieRequestPending = true;
       this.updateConnectionControls();
       const attempt = this.signInAttempt;
@@ -1083,8 +1131,15 @@ export class ProductionTaskPaneRuntime {
       this.renderControllerState();
       if (!this.controller)
         this.renderView((messages) =>
-          sessionExpiredModel(messages, this.selectedBackend, this.environment, this.signInFeedback)
+          sessionExpiredModel(
+            messages,
+            this.selectedBackend,
+            this.environment,
+            this.signInFeedback,
+            canRequestPaneCookieAccess(this.root.ownerDocument)
+          )
         );
+      if (granted) await this.connect(this.selectedBackend, Boolean(this.controller));
       return;
     }
     if (actionId === "retry-search" && !this.controller) {

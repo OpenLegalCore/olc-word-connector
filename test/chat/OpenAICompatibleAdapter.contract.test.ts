@@ -122,7 +122,7 @@ function createFailure(
     const fetch = expectedFetch(
       observations,
       "/v1/models",
-      async () => new Response("Access", { status: 200, headers: { "Content-Type": "text/html" } })
+      async () => new Response(null, { status: 302, headers: { Location: "/login" } })
     );
     const adapter = new OpenAICompatibleAdapter(
       { transport: "same-origin", modelId: MODEL_ID },

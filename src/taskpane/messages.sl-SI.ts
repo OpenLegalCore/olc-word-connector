@@ -134,28 +134,28 @@ export const slSIMessages = {
     eyebrow: "ZAŠČITENA SEJA",
     heading: "Potreben je dostop",
     description:
-      "Zaščiteni dostop ni bil sprejet. Prijavite se in preverite povezavo. Vaš vnos je ohranjen; dokument ni bil spremenjen.",
+      "Podokno ni moglo uporabiti zaščitenega dostopa. Če ste že prijavljeni, najprej dovolite piškotke aplikacije v tem podoknu; sicer odprite varno prijavo. Vnos je ohranjen in ne bo samodejno poslan.",
     signInOpenedTitle: "Varna prijava je odprta",
     signInOpenedMessage:
-      "Dokončajte prijavo v pogovornem oknu Office in nato preverite povezavo iz tega podokna. Vaš vnos je ohranjen.",
+      "Office lahko pred odprtjem okna vpraša Allow / Ignore. Allow odpre varno prijavo; Ignore dostopa ne spremeni. Po vrnitvi se preveri samo povezava, vaše sporočilo se ne pošlje.",
     signInFailedTitle: "Varne prijave ni bilo mogoče odpreti",
     signInFailedMessage:
       "Prijavnega okna Office ni bilo mogoče odpreti ali vrniti. Preverite dovoljenje za pojavna okna in podporo Office Dialog. Vaš vnos je ohranjen.",
     retrySearch: "Preveri povezavo",
     openSecureSignIn: "Odpri varno prijavo",
     completedTitle: "Prijavna stran je dosežena",
-    closedTitle: "Prijavno okno je zaprto ali prekinjeno",
+    closedTitle: "Prijava ni bila dokončana",
     closedMessage:
-      "Dostop še ni preverjen. Ohranite vnos in izrecno preverite povezavo ali znova odprite prijavo.",
+      "Okno je bilo odklonjeno, zaprto ali prekinjeno. To ni zavrnitev pravilnika dostopa. Vnos je ohranjen; obnovite lahko dostop do piškotkov ali odprete prijavo, ko želite.",
     completedMessage:
-      "Zdaj preverite povezavo v Wordu. Dosežena prijavna stran v pogovornem oknu še ne dokazuje dostopa iz tega podokna.",
+      "Preverjam dostop iz podokna. Sama dosežena prijavna stran še ne dokazuje dostopa iz tega podokna. Vaše sporočilo ne bo poslano.",
     paneRejectedTitle: "Dostop iz Word podokna je še zavrnjen",
     paneRejectedMessage:
       "Prijavno okno se je vrnilo, podokno pa še potrebuje dostop. Piškotki aplikacije so morda blokirani ali pravilnik zahteva prijavo. Zahtevate lahko dostop do piškotkov te aplikacije; če ga Word blokira, naj upravljavec preveri dokumentirano ozko izjemo brskalnika. Vaš vnos je ohranjen.",
     allowPaneCookies: "Dovoli piškotke aplikacije v podoknu",
     cookieGrantedTitle: "Dostop do piškotkov aplikacije je dovoljen",
     cookieGrantedMessage:
-      "Izrecno preverite povezavo. Dovoljenje za piškotke še ne potrjuje veljavne seje; nič ni bilo poslano.",
+      "Preverjam zaščiteno povezavo. Dovoljenje za piškotke še ne potrjuje veljavne seje; vaše sporočilo ne bo poslano.",
     cookieFailedTitle: "Dostop do piškotkov aplikacije ni na voljo",
     cookieFailedMessage:
       "Word, brskalnik ali vaša izbira dostopa niso dovolili. Ohranite vnos; upravljavec naj preveri nastavitve piškotkov in ozko izjemo za domeni aplikacije in Access ekipe. Ne izklapljajte zasebnosti brskalnika v celoti.",
@@ -163,6 +163,20 @@ export const slSIMessages = {
     footerMessage: "NESPREMENJENO",
   },
   connectionError: {
+    deniedHeading: "Dostop je zavrnjen",
+    descriptionFor: (code: string): string => {
+      if (code === "ACCESS_DENIED")
+        return "Zaščitena zahteva je bila zavrnjena (403). To ne dokazuje poteka seje. Vnos je ohranjen; upravljavec mora preveriti dovoljenja.";
+      if (code === "NETWORK_ERROR")
+        return "Zahteva ni dosegla storitve. Preverite omrežje; ponovna prijava morda ne bo pomagala. Vnos je ohranjen.";
+      if (code === "SERVICE_UNAVAILABLE")
+        return "Strežnik je vrnil odziv o nedosegljivi storitvi. Povezavo preverite pozneje; vnos je ohranjen.";
+      if (code === "TIMEOUT")
+        return "Preverjanje povezave je trajalo predolgo. Vnos je ohranjen; sporočilo ni bilo oddano.";
+      if (code === "INVALID_RESPONSE")
+        return "Storitev je vrnila nepričakovan odziv. Ni bil sprejet kot seja ali odgovor. Vnos je ohranjen.";
+      return "Preverjanje povezave ni uspelo. Vnos je ohranjen; ponovite ga, ko želite.";
+    },
     statusLabel: (provider: string): string => `Storitev ${provider} ni na voljo`,
     eyebrow: "POVEZAVA S STORITVIJO",
     heading: "Preverjanje povezave ni uspelo",

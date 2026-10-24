@@ -73,7 +73,8 @@ export class OfficeSignInDialog implements SecureSignIn {
           { height: 60, width: 45, displayInIframe: false, promptBeforeOpen: true },
           (result) => {
             if (result.status !== Office.AsyncResultStatus.Succeeded) {
-              finish("failed");
+              // Office's Ignore choice (12009) is not an Access policy denial.
+              finish(result.error?.code === 12009 ? "closed" : "failed");
               return;
             }
             dialog = result.value;
