@@ -28,7 +28,7 @@ a declined dialog, not policy denial. No new diagnostics or Access mutation.
 | Settings control on staging | a756274 delivered; artifact and isolated production-bundle wiring verified |
 | Cookie grant after a new iframe | Reproduced in isolated Firefox with synthetic identity; fixed locally |
 | Owner's exact browser/Word cause | Still unproven; actual Word session unavailable |
-| Current lifecycle successor on staging | Not deployed |
+| Last documented lifecycle delivery | ded891c, Pages success recorded 2026-10-24T03:56:50.495Z; not freshly rechecked by the evidence sync |
 
 All 15 local contribution gates pass for the lifecycle successor: **592 tests
 passed / 1 protected live skipped**, typecheck, lint, formatting, production audit
@@ -40,9 +40,12 @@ Exact-head CI and immutable identity are recorded in the final handoff and PR.
 No live provider call.
 Exact-head CI remains a required PR gate; its actual URL/result, reproducible
 commands and final immutable Git identity are recorded in the handoff and PR.
-These checks do not establish a Word runtime PASS. The next live step requires
-separately approved Pages-only staging delivery. Real Word reopen/idle/expiry
-acceptance is still open. Where the host forbids Storage Access, the recommended
+These checks do not establish a Word runtime PASS. The separately approved
+Pages-only delivery is recorded in the [synchronization report](OLC72_SYNC_REPORT_20261024.md)
+and [sanitized existing evidence](evidence/olc72-access-20261024/README.md).
+The synchronization adds documentation only; it does not rerun functional checks
+or establish current live state. Real Word reopen/idle/expiry acceptance is still
+**NOT_RUN**, and Access required is not declared resolved. Where the host forbids Storage Access, the recommended
 Word-scoped application-session architecture requires separate approval; it is
 documented rather than silently changing Access rules or implementing a bypass.
 
