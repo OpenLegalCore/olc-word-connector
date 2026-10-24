@@ -1,6 +1,36 @@
 # OLC-72 Word Web access recovery — reviewed plan
 
-Status: IN REVIEW, callback review based on `8fdd6f3`, 2026-10-24. No live
+Status: IN REVIEW, settings-check follow-up based on `c062b372`, 2026-10-24.
+The sections below preserve earlier diagnostic evidence; their former connection
+and pending-delivery statements are historical, not today's activation state.
+
+## Current follow-up: Settings connection check
+
+The candidate adds **Nastavitve → Preveri povezavo / Settings → Check connection**
+to the actual task pane. It uses the existing provider-free `/api/session` probe,
+then `/v1/models` only if that protected landing is accepted. Both GETs use
+same-origin credentials, manual redirects and no-store. No document text is sent.
+The settings result is localized and timestamped. While checking, stale success is
+replaced by a pending message; duplicate checks, Send and document writes are
+blocked. The successful path does not rebuild the form or controller, recapture a
+selection or change the draft. Typing and language changes remain available.
+
+On sign-in challenge, the latest draft is captured and the existing Office dialog,
+explicit pane recheck and optional user-gesture cookie flow are reused. The
+controller, locale and attached/removed selection survive this check's recovery;
+Word events during it do not silently replace the displayed target. There is no
+automatic completion or replay. Denial, timeout and transport failure are reported
+as failures; abort/disposal and connection generation prevent late success.
+
+Owner has confirmed draft retention after approximately 30 minutes in the previous
+staging candidate. That proves retention for that observation only. Fresh GETs
+from the actual Word pane, actual callback/cookie recovery and preservation through
+that recovery remain **NOT VERIFIED**. Local synthetic tests are not Word PASS.
+This new settings change is not deployed; see [status](STATUS.md).
+
+## Historical diagnosis and callback preparation
+
+Earlier review scope: No live
 Access, cookie, Worker, tunnel or Engine configuration is changed. The owner-confirmed visual PASS is
 preserved. Word for Mac is backlog. Native Word document-write acceptance is
 still pending; synthetic tests are not a Word PASS.

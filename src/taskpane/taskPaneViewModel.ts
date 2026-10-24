@@ -46,6 +46,13 @@ export interface TaskPaneNotice {
   role?: "alert" | "status";
 }
 
+export interface ConnectionCheckStatus {
+  phase: "idle" | "checking" | "success" | "failure";
+  checkedAt?: number;
+  code?: string;
+  disabled?: boolean;
+}
+
 export interface TaskPaneAttachment {
   label: string;
   preview: string;

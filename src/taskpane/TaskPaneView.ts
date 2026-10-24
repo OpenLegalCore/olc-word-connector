@@ -3,6 +3,7 @@
 import { messagesFor, type UiLocale } from "./i18n";
 import { createSafeLegalAnswer } from "./safeLegalAnswer";
 import type {
+  ConnectionCheckStatus,
   TaskPaneAction,
   TaskPaneFieldFixture,
   TaskPaneTone,
@@ -12,7 +13,7 @@ import type {
 const canonicalMark = "/assets/office/1.0.0.2/openlegalcore-mark-80.png";
 
 type SettingsFocusTarget =
-  { readonly kind: "language"; readonly locale: UiLocale } | { readonly kind: "close" };
+  { readonly kind: "language"; readonly locale: UiLocale } | { readonly kind: "close" | "check" };
 
 function focusWithoutScroll(control: HTMLElement | null | undefined): void {
   try {
@@ -176,6 +177,8 @@ export class TaskPaneView {
   private settingsOpen = false;
   private focusLanguageControl = false;
   private languageAnnouncement = "";
+  private connectionCheck?: ConnectionCheckStatus;
+  private readonly actionDisabledByModel = new Map<string, boolean>();
 
   constructor(
     private readonly root: HTMLElement,
@@ -248,6 +251,61 @@ export class TaskPaneView {
     this.localeChangeHandler = handler;
   }
 
+  configureConnectionCheck(status?: ConnectionCheckStatus): void {
+    this.connectionCheck = status;
+    const panel = this.root.querySelector<HTMLElement>("#olc-settings-popover");
+    if (panel && status && !panel.querySelector(".olc-connection-check")) {
+      panel
+        .querySelector('[data-action-id="close-settings"]')
+        ?.before(this.createConnectionCheck(this.root.ownerDocument));
+    }
+    const button = panel?.querySelector<HTMLButtonElement>('[data-action-id="check-connection"]');
+    const result = panel?.querySelector<HTMLElement>("#olc-connection-check-result");
+    if (button && result && status) {
+      const messages = messagesFor(this.locale).settings;
+      button.textContent =
+        status.phase === "checking" ? messages.checkingConnection : messages.checkConnection;
+      button.disabled = Boolean(status.disabled || status.phase === "checking");
+      const summary =
+        status.phase === "success"
+          ? messages.connectionPassed
+          : status.phase === "failure"
+            ? messages.connectionFailed
+            : status.phase === "checking"
+              ? messages.checkingConnection
+              : messages.connectionUnchecked;
+      const time =
+        status.checkedAt === undefined
+          ? ""
+          : messages.checkedAt(new Date(status.checkedAt).toLocaleString(this.locale));
+      result.textContent = [summary, time, status.code].filter(Boolean).join(" ");
+    }
+    for (const id of ["send", "replace-proposal", "insert-proposal", "retry-search"]) {
+      const action = this.root.querySelector<HTMLButtonElement>(`button[data-action-id="${id}"]`);
+      if (action)
+        action.disabled =
+          status?.phase === "checking" ||
+          (id === "retry-search" && Boolean(status?.disabled)) ||
+          Boolean(this.actionDisabledByModel.get(id));
+    }
+  }
+
+  private createConnectionCheck(document: Document): HTMLElement {
+    const section = element(document, "section", "olc-connection-check");
+    const button = createAction(document, {
+      id: "check-connection",
+      label: messagesFor(this.locale).settings.checkConnection,
+      variant: "secondary",
+    });
+    button.setAttribute("aria-describedby", "olc-connection-check-result");
+    const result = element(document, "p", "olc-metadata");
+    result.id = "olc-connection-check-result";
+    result.setAttribute("role", "status");
+    result.setAttribute("aria-live", "polite");
+    section.append(button, result);
+    return section;
+  }
+
   hasFocusedSettingsControl(): boolean {
     const panel = this.root.querySelector<HTMLElement>("#olc-settings-popover");
     return Boolean(this.settingsOpen && panel?.contains(this.root.ownerDocument.activeElement));
@@ -267,9 +325,10 @@ export class TaskPaneView {
     }
     if (
       activeElement instanceof HTMLButtonElement &&
-      activeElement.dataset.actionId === "close-settings"
+      (activeElement.dataset.actionId === "close-settings" ||
+        activeElement.dataset.actionId === "check-connection")
     ) {
-      return { kind: "close" };
+      return { kind: activeElement.dataset.actionId === "check-connection" ? "check" : "close" };
     }
     return undefined;
   }
@@ -280,7 +339,9 @@ export class TaskPaneView {
         ? this.root.querySelector<HTMLInputElement>(
             `input[name="olc-ui-language"][value="${target.locale}"]`
           )
-        : this.root.querySelector<HTMLButtonElement>('button[data-action-id="close-settings"]');
+        : this.root.querySelector<HTMLButtonElement>(
+            `button[data-action-id="${target.kind === "check" ? "check-connection" : "close-settings"}"]`
+          );
     focusWithoutScroll(control);
   }
 
@@ -359,11 +420,21 @@ export class TaskPaneView {
     ) as HTMLButtonElement;
     close.type = "button";
     close.dataset.actionId = "close-settings";
-    panel.append(heading, fieldset, close);
+    panel.append(heading, fieldset);
+    if (this.connectionCheck) panel.append(this.createConnectionCheck(document));
+    panel.append(close);
     return [controls, panel];
   }
 
   render(model: TaskPaneViewModel): void {
+    this.actionDisabledByModel.clear();
+    for (const action of [
+      ...(model.actions ?? []),
+      ...(model.footer.actions ?? []),
+      ...(model.proposal?.actions ?? []),
+    ]) {
+      this.actionDisabledByModel.set(action.id, Boolean(action.disabled));
+    }
     const document = this.root.ownerDocument;
     const settingsFocusTarget = this.captureSettingsFocusTarget();
     const messages = messagesFor(this.locale);
@@ -505,6 +576,7 @@ export class TaskPaneView {
 
     app.append(header, status, main, footer);
     this.root.replaceChildren(app);
+    this.configureConnectionCheck(this.connectionCheck);
     if (this.focusLanguageControl) {
       this.focusLanguageControl = false;
       const current = this.root.querySelector<HTMLInputElement>(

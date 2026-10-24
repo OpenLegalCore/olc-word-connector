@@ -226,6 +226,7 @@ export class OpenAICompatibleAdapter implements ChatGateway {
     await this.withRequestBoundary(signal, async (requestSignal) => {
       const response = await this.fetchImpl(`${this.baseUrl}/v1/models`, {
         method: "GET",
+        cache: "no-store",
         headers: this.headers("application/json"),
         credentials: this.requestCredentials,
         redirect: this.requestRedirect,

@@ -247,6 +247,15 @@ not add regeneration, redlining or tracked-change management.
 
 ## 9. Restore protected access
 
+In the OLC-72 candidate, open **Settings → Check connection** to check access
+without reloading the pane or sending your draft. It checks the protected session
+landing, then the expected Engine model. Settings shows the latest result and its
+time; it is not a promise that access will remain valid. A pending check disables
+another check and Send while keeping typing and language selection available.
+It retains the draft and attached or explicitly removed selection. If sign-in is
+required, continue with the existing recovery below. No message is automatically
+submitted after a check or sign-in. The new control still requires Word acceptance.
+
 If a protected browser request needs sign-in, the connector shows **Access
 required** instead of rendering a redirect or login page as an answer. Expiry
 is one possible cause; blocked cookies or login redirects can look similar.

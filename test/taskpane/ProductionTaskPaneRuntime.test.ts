@@ -49,8 +49,9 @@ class ControlledGateway implements ChatGateway {
   private lateResolve?: (result: CompletionResult) => void;
   private observer?: CompletionObserver;
 
-  async checkConnection(): Promise<void> {
+  async checkConnection(signal?: AbortSignal): Promise<void> {
     this.connectionChecks++;
+    if (signal?.aborted) throw new ChatGatewayError("CANCELLED");
     if (this.connectionError) {
       throw this.connectionError;
     }
@@ -199,6 +200,275 @@ afterEach(() => {
 });
 
 describe("production Engine-only task-pane runtime", () => {
+  it("does not overlap either connection-check control with a pending sign-in dialog", async () => {
+    let finish!: (value: "completed") => void;
+    const state = setup({
+      openSignIn: () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    setQuestion("Retained\nDraft");
+    state.olcEngine.connectionError = new ChatGatewayError("SESSION_EXPIRED");
+    click("toggle-settings");
+    click("check-connection");
+    await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+    click("open-secure-sign-in");
+    for (const id of ["check-connection", "retry-search"]) {
+      expect(root().querySelector<HTMLButtonElement>(`[data-action-id="${id}"]`)?.disabled).toBe(
+        true
+      );
+      click(id);
+    }
+    expect(state.olcEngine.connectionChecks).toBe(2);
+    finish("completed");
+    await vi.waitFor(() =>
+      expect(
+        root().querySelector<HTMLButtonElement>('[data-action-id="retry-search"]')?.disabled
+      ).toBe(false)
+    );
+    expect(state.olcEngine.connectionChecks).toBe(2);
+    state.olcEngine.connectionError = undefined;
+    click("retry-search");
+    await waitForReady();
+    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+      "Retained\nDraft"
+    );
+    expect(state.olcEngine.requests).toHaveLength(0);
+  });
+  it.each([
+    ["sl-SI", false],
+    ["sl-SI", true],
+    ["en-US", false],
+    ["en-US", true],
+  ] as const)(
+    "checks access from settings in %s, removed attachment %s, without replacing the form",
+    async (locale, removed) => {
+      const requests: Array<{ url: string; init?: RequestInit }> = [];
+      const word = new FakeWordAdapter(SNAPSHOT);
+      activeRuntime = createProductionTaskPaneRuntime(
+        root(),
+        word,
+        "STAGING",
+        new TaskPaneView(root()),
+        {
+          initialLocale: locale,
+          fetch: async (url, init) => {
+            requests.push({ url, init });
+            return url === "/api/session"
+              ? new Response(null, {
+                  headers: { "Content-Type": "text/html", "X-OLC-Word-Gateway": "1" },
+                })
+              : new Response(
+                  JSON.stringify({ object: "list", data: [{ id: OLC_ENGINE_MODEL_ID }] }),
+                  { headers: { "Content-Type": "application/json" } }
+                );
+          },
+        }
+      );
+      activeRuntime.start();
+      await waitForReady();
+      if (removed) click("remove-selection");
+      const input = setQuestion("Synthetic draft\nSecond line");
+      const captures = word.captureCalls;
+      click("toggle-settings");
+      const now = vi.spyOn(Date, "now").mockReturnValue(1_800_000_000_000);
+      click("check-connection");
+      await vi.waitFor(() =>
+        expect(root().querySelector("#olc-connection-check-result")?.textContent).toContain(
+          locale === "sl-SI" ? "Obe preverjanji" : "Both access checks"
+        )
+      );
+      expect(root().querySelector("#runtime-legal-question")).toBe(input);
+      expect(input.value).toBe("Synthetic draft\nSecond line");
+      expect(Boolean(root().querySelector(".olc-selection-attachment"))).toBe(!removed);
+      expect(document.documentElement.lang).toBe(locale);
+      expect(word.captureCalls).toBe(captures);
+      expect(word.applyCalls).toHaveLength(0);
+      expect(requests.map((x) => x.url)).toEqual([
+        "/api/session",
+        "/v1/models",
+        "/api/session",
+        "/v1/models",
+      ]);
+      for (const { init } of requests)
+        expect(init).toMatchObject({
+          method: "GET",
+          credentials: "same-origin",
+          redirect: "manual",
+          cache: "no-store",
+        });
+      const previous = root().querySelector("#olc-connection-check-result")!.textContent;
+      now.mockReturnValue(1_800_000_010_000);
+      click("check-connection");
+      await vi.waitFor(() => expect(requests).toHaveLength(6));
+      await vi.waitFor(() =>
+        expect(root().querySelector("#olc-connection-check-result")?.textContent).not.toBe(previous)
+      );
+      expect(root().querySelector("#runtime-legal-question")).toBe(input);
+    }
+  );
+
+  it("allows typing and locale changes during a single check, blocks duplicate checks and Send, and retains the removed attachment", async () => {
+    const state = setup({ locale: "sl-SI" });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    click("remove-selection");
+    let input = setQuestion("Before check\nLine two");
+    let finish!: () => void;
+    vi.spyOn(state.olcEngine, "checkConnection").mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        })
+    );
+    click("toggle-settings");
+    click("check-connection");
+    click("check-connection");
+    await vi.waitFor(() => expect(state.olcEngine.checkConnection).toHaveBeenCalledTimes(1));
+    expect(
+      root().querySelector<HTMLButtonElement>('[data-action-id="check-connection"]')?.disabled
+    ).toBe(true);
+    expect(root().querySelector<HTMLButtonElement>('[data-action-id="send"]')?.disabled).toBe(true);
+    pressEnter(input);
+    expect(state.olcEngine.requests).toHaveLength(0);
+    input = setQuestion("Edited during check\nSecond line");
+    const language = root().querySelector<HTMLInputElement>(
+      'input[name="olc-ui-language"][value="en-US"]'
+    )!;
+    language.checked = true;
+    language.dispatchEvent(new Event("change", { bubbles: true }));
+    finish();
+    await vi.waitFor(() =>
+      expect(root().querySelector("#olc-connection-check-result")?.textContent).toContain(
+        "Both access checks"
+      )
+    );
+    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+      "Edited during check\nSecond line"
+    );
+    expect(root().querySelector(".olc-selection-attachment")).toBeNull();
+    expect(document.documentElement.lang).toBe("en-US");
+    expect(state.olcEngine.requests).toHaveLength(0);
+    expect(state.word.applyCalls).toHaveLength(0);
+  });
+
+  it.each([false, true])(
+    "uses explicit recovery after a settings check, preserves original attachment state %s, and never submits",
+    async (removed) => {
+      const state = setup({ locale: "sl-SI", openSignIn: async () => "completed" as const });
+      activeRuntime = state.runtime;
+      await waitForReady();
+      if (removed) click("remove-selection");
+      setQuestion("Ohrani osnutek\nDruga vrstica");
+      const captures = state.word.captureCalls;
+      state.olcEngine.connectionError = new ChatGatewayError("SESSION_EXPIRED");
+      click("toggle-settings");
+      click("check-connection");
+      await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+      state.word.emitSelectionChange({
+        ...SNAPSHOT,
+        snapshotId: "late-other-selection",
+        text: "Different selection",
+      });
+      click("open-secure-sign-in");
+      await vi.waitFor(() => expect(root().textContent).toContain("Prijavna stran je dosežena"));
+      state.olcEngine.connectionError = undefined;
+      click("retry-search");
+      await waitForReady();
+      expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+        "Ohrani osnutek\nDruga vrstica"
+      );
+      expect(Boolean(root().querySelector(".olc-selection-attachment"))).toBe(!removed);
+      if (!removed)
+        expect(root().querySelector(".olc-selection-preview")?.textContent).toBe(SNAPSHOT.text);
+      expect(state.word.captureCalls).toBe(captures);
+      expect(state.word.applyCalls).toHaveLength(0);
+      expect(state.olcEngine.requests).toHaveLength(0);
+      expect(document.documentElement.lang).toBe("sl-SI");
+    }
+  );
+
+  it.each(["ACCESS_DENIED", "TIMEOUT", "NETWORK_ERROR"] as const)(
+    "reports a fresh %s failure, then explicitly retries only the connection",
+    async (code) => {
+      const state = setup();
+      activeRuntime = state.runtime;
+      await waitForReady();
+      click("remove-selection");
+      setQuestion("Retained draft\nSecond line");
+      state.olcEngine.connectionError = new ChatGatewayError(code);
+      click("toggle-settings");
+      click("check-connection");
+      await vi.waitFor(() => expect(viewState()).toBe("connection-error"));
+      expect(root().querySelector("#olc-connection-check-result")?.textContent).toContain(code);
+      expect(root().querySelector("#olc-connection-check-result")?.textContent).not.toContain(
+        "Both access checks passed"
+      );
+      state.olcEngine.connectionError = undefined;
+      click("retry-connection");
+      await waitForReady();
+      expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+        "Retained draft\nSecond line"
+      );
+      expect(root().querySelector(".olc-selection-attachment")).toBeNull();
+      expect(state.olcEngine.requests).toHaveLength(0);
+      expect(state.word.applyCalls).toHaveLength(0);
+    }
+  );
+
+  it("ignores a late settings-check response after disposal and aborts its signal", async () => {
+    const state = setup();
+    activeRuntime = state.runtime;
+    await waitForReady();
+    setQuestion("Draft stays");
+    let finish!: () => void;
+    let signal: AbortSignal | undefined;
+    const check: ChatGateway["checkConnection"] = (s) => {
+      signal = s;
+      return new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+    };
+    vi.spyOn(state.olcEngine, "checkConnection").mockImplementation(check);
+    click("toggle-settings");
+    click("check-connection");
+    await vi.waitFor(() => expect(signal).toBeDefined());
+    state.runtime.dispose();
+    const before = root().innerHTML;
+    finish();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(signal?.aborted).toBe(true);
+    expect(root().innerHTML).toBe(before);
+    expect(state.olcEngine.requests).toHaveLength(0);
+  });
+
+  it("disables settings checks during streaming and keeps a completed answer on later successful checks", async () => {
+    const state = setup({ pending: true });
+    activeRuntime = state.runtime;
+    await waitForReady();
+    setQuestion("Synthetic request");
+    click("send");
+    await vi.waitFor(() => expect(viewState()).toBe("searching"));
+    click("toggle-settings");
+    click("check-connection");
+    expect(state.olcEngine.connectionChecks).toBe(1);
+    expect(
+      root().querySelector<HTMLButtonElement>('[data-action-id="check-connection"]')?.disabled
+    ).toBe(true);
+    state.olcEngine.resolveLate();
+    await vi.waitFor(() => expect(viewState()).toBe("result"));
+    const workspace = root().querySelector("#olc-workspace");
+    click("check-connection");
+    await vi.waitFor(() => expect(state.olcEngine.connectionChecks).toBe(2));
+    expect(root().querySelector("#olc-workspace")).toBe(workspace);
+    expect(viewState()).toBe("result");
+    expect(state.olcEngine.requests).toHaveLength(1);
+    expect(state.word.applyCalls).toHaveLength(0);
+  });
   it("reports dialog close/disconnection without claiming authentication, losing the draft or retrying", async () => {
     const state = setup({ locale: "sl-SI", openSignIn: async () => "closed" as const });
     activeRuntime = state.runtime;
@@ -572,6 +842,11 @@ describe("production Engine-only task-pane runtime", () => {
 
     click("open-secure-sign-in");
     expect(openSignIn).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() =>
+      expect(
+        root().querySelector<HTMLButtonElement>('[data-action-id="retry-search"]')?.disabled
+      ).toBe(false)
+    );
     state.olcEngine.connectionError = undefined;
     click("retry-search");
     await waitForReady();
@@ -590,11 +865,21 @@ describe("production Engine-only task-pane runtime", () => {
     click("send");
     await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
     click("open-secure-sign-in");
+    await vi.waitFor(() =>
+      expect(
+        root().querySelector<HTMLButtonElement>('[data-action-id="retry-search"]')?.disabled
+      ).toBe(false)
+    );
     state.olcEngine.connectionError = new ChatGatewayError("SESSION_EXPIRED");
     click("retry-search");
     await vi.waitFor(() => expect(state.olcEngine.connectionChecks).toBe(2));
     await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
     click("open-secure-sign-in");
+    await vi.waitFor(() =>
+      expect(
+        root().querySelector<HTMLButtonElement>('[data-action-id="retry-search"]')?.disabled
+      ).toBe(false)
+    );
     state.olcEngine.connectionError = undefined;
     click("retry-search");
     await waitForReady();

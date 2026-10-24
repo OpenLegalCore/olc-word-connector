@@ -17,6 +17,12 @@ export const slSIMessages = {
     slovenian: "Slovenščina",
     english: "English",
     languageChanged: (language: string): string => `Izbrani jezik: ${language}.`,
+    checkConnection: "Preveri povezavo",
+    checkingConnection: "Preverjam povezavo …",
+    connectionUnchecked: "Preverite dostop iz tega podokna brez oddaje sporočila.",
+    connectionPassed: "Obe preverjanji dostopa sta uspeli. Sporočilo ni bilo poslano.",
+    connectionFailed: "Preverjanje dostopa ni uspelo. Vaš vnos je ohranjen.",
+    checkedAt: (time: string): string => `Zadnje preverjanje: ${time}`,
   },
   initializing: {
     statusLabel: "Vzpostavljanje povezave z Wordom",

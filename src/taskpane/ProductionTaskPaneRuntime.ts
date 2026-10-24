@@ -16,7 +16,11 @@ import {
 } from "../office/WordAdapter";
 import { applyDocumentLocale, messagesFor, type MessageCatalog, type UiLocale } from "./i18n";
 import { TaskPaneView } from "./TaskPaneView";
-import type { TaskPaneEnvironment, TaskPaneViewModel } from "./taskPaneViewModel";
+import type {
+  ConnectionCheckStatus,
+  TaskPaneEnvironment,
+  TaskPaneViewModel,
+} from "./taskPaneViewModel";
 import type { SecureSignIn, SignInOutcome } from "./OfficeSignInDialog";
 import {
   checkProtectedSession,
@@ -414,6 +418,8 @@ export class ProductionTaskPaneRuntime {
   private unsubscribeSelectionChanges?: () => void;
   private connectionAbort?: AbortController;
   private connectionId = 0;
+  private connectionCheck: ConnectionCheckStatus = { phase: "idle" };
+  private connectionRecoveryFromSettings = false;
   private selectionReadId = 0;
   private lastInput?: SearchInput;
   private question = "";
@@ -503,6 +509,7 @@ export class ProductionTaskPaneRuntime {
     }
     this.connectionId++;
     this.connectionAbort?.abort();
+    this.connectionAbort = undefined;
     this.controller?.dispose();
     this.unsubscribe?.();
     this.gateways.olcEngine.disconnect();
@@ -516,7 +523,10 @@ export class ProductionTaskPaneRuntime {
   }
 
   private renderView(createModel: (messages: MessageCatalog) => TaskPaneViewModel): void {
-    this.currentRender = () => this.view.render(createModel(messagesFor(this.locale)));
+    this.currentRender = () => {
+      this.view.render(createModel(messagesFor(this.locale)));
+      this.updateConnectionControls();
+    };
     this.currentRender();
   }
 
@@ -543,6 +553,14 @@ export class ProductionTaskPaneRuntime {
   }
 
   private renderControllerState(state = this.controller?.getState()): void {
+    if (this.connectionRecoveryFromSettings) {
+      if (this.connectionCheck.code === "SESSION_EXPIRED") {
+        this.renderView((messages) =>
+          sessionExpiredModel(messages, this.selectedBackend, this.environment, this.signInFeedback)
+        );
+      }
+      return;
+    }
     if (!state) {
       return;
     }
@@ -721,34 +739,80 @@ export class ProductionTaskPaneRuntime {
     }
   }
 
-  private async connect(backend: RuntimeBackend): Promise<void> {
+  private connectionWorkBusy(): boolean {
+    const state = this.controller?.getState();
+    return (
+      state?.kind === "capturing" ||
+      state?.kind === "searching" ||
+      (state?.kind === "result" && state.documentChange?.status === "applying")
+    );
+  }
+
+  private updateConnectionControls(): void {
+    this.view.configureConnectionCheck({
+      ...this.connectionCheck,
+      disabled:
+        this.disposed ||
+        Boolean(this.connectionAbort) ||
+        this.signInPending ||
+        this.cookieRequestPending ||
+        this.connectionWorkBusy(),
+    });
+  }
+
+  private async connect(backend: RuntimeBackend, fromSettings = false): Promise<void> {
+    if (
+      this.disposed ||
+      this.connectionAbort ||
+      this.connectionWorkBusy() ||
+      this.signInPending ||
+      this.cookieRequestPending
+    )
+      return;
+    const restoreWorkspace = this.connectionRecoveryFromSettings;
+    const preserveWorkspace = fromSettings || restoreWorkspace;
+    this.captureFormState();
+    this.selectionReadId++;
     this.signInAttempt++;
     this.closeSecureSignIn();
     this.signInPending = false;
     const connectionId = ++this.connectionId;
-    this.connectionAbort?.abort();
     const abort = new AbortController();
     this.connectionAbort = abort;
-    this.renderView((messages) => connectingModel(messages, backend, this.environment));
+    this.connectionCheck = { phase: "checking" };
+    if (preserveWorkspace) this.updateConnectionControls();
+    else this.renderView((messages) => connectingModel(messages, backend, this.environment));
     try {
       await this.checkSession?.(abort.signal);
       if (connectionId !== this.connectionId || this.disposed) return;
       await this.gateway().checkConnection(abort.signal);
-      if (connectionId !== this.connectionId) {
+      if (connectionId !== this.connectionId || this.disposed || abort.signal.aborted) {
         return;
       }
-      this.unsubscribe?.();
-      this.controller?.dispose();
+      this.connectionCheck = { phase: "success", checkedAt: Date.now() };
+      this.connectionRecoveryFromSettings = false;
       this.signInFeedback = "idle";
       this.signInLandingReached = false;
-      this.controller = new TaskPaneController(this.word, this.gateway());
-      this.unsubscribe = this.controller.subscribe((state) => this.renderControllerState(state));
-      await this.startSelectionMonitoring();
+      if (preserveWorkspace && this.controller) {
+        const state = this.controller.getState();
+        if (state.kind === "error" && state.error.code === "SESSION_EXPIRED")
+          this.controller.reset();
+        else if (restoreWorkspace) this.renderControllerState();
+      } else {
+        this.unsubscribe?.();
+        this.controller?.dispose();
+        this.controller = new TaskPaneController(this.word, this.gateway());
+        this.unsubscribe = this.controller.subscribe((state) => this.renderControllerState(state));
+        await this.startSelectionMonitoring();
+      }
     } catch (error) {
-      if (connectionId !== this.connectionId) {
+      if (connectionId !== this.connectionId || this.disposed || abort.signal.aborted) {
         return;
       }
+      this.captureFormState();
       const code = error instanceof ChatGatewayError ? error.code : "CONNECTION_FAILED";
+      this.connectionCheck = { phase: "failure", checkedAt: Date.now(), code };
+      this.connectionRecoveryFromSettings = preserveWorkspace;
       if (code === "SESSION_EXPIRED") {
         this.signInFeedback = this.signInLandingReached ? "pane-rejected" : "idle";
         this.renderView((messages) =>
@@ -782,6 +846,7 @@ export class ProductionTaskPaneRuntime {
     } finally {
       if (connectionId === this.connectionId) {
         this.connectionAbort = undefined;
+        this.updateConnectionControls();
       }
     }
   }
@@ -823,7 +888,12 @@ export class ProductionTaskPaneRuntime {
   }
 
   private async refreshDisplayedSelection(fromWordEvent: boolean): Promise<void> {
-    if (this.disposed || this.controller?.getState().kind !== "ready") {
+    if (
+      this.disposed ||
+      this.connectionRecoveryFromSettings ||
+      this.connectionCheck.phase === "checking" ||
+      this.controller?.getState().kind !== "ready"
+    ) {
       return;
     }
     if (fromWordEvent) {
@@ -865,7 +935,12 @@ export class ProductionTaskPaneRuntime {
   }
 
   private async search(input?: SearchInput): Promise<void> {
-    if (!this.controller) {
+    if (
+      !this.controller ||
+      this.disposed ||
+      this.connectionAbort ||
+      this.connectionRecoveryFromSettings
+    ) {
       return;
     }
     if (!input) {
@@ -912,6 +987,20 @@ export class ProductionTaskPaneRuntime {
   }
 
   private async handleAction(actionId: string): Promise<void> {
+    if (this.disposed) return;
+    if (actionId === "check-connection") {
+      await this.connect(this.selectedBackend, true);
+      return;
+    }
+    if (this.connectionAbort && actionId !== "cancel-connection" && actionId !== "remove-selection")
+      return;
+    if (
+      this.connectionRecoveryFromSettings &&
+      (actionId === "retry-search" || actionId === "retry-connection")
+    ) {
+      await this.connect(this.selectedBackend, true);
+      return;
+    }
     if (actionId === "replace-proposal" || actionId === "insert-proposal") {
       await this.controller?.applyProposal(actionId === "replace-proposal" ? "replace" : "insert");
       return;
@@ -937,8 +1026,9 @@ export class ProductionTaskPaneRuntime {
       this.captureFormState();
       this.selectionRemoved = true;
       this.selectionReadId++;
-      await this.releaseDisplayedSelection();
+      const release = this.releaseDisplayedSelection();
       this.renderControllerState();
+      await release;
       return;
     }
     if (actionId === "open-secure-sign-in") {
@@ -982,6 +1072,7 @@ export class ProductionTaskPaneRuntime {
     if (actionId === "allow-pane-cookies") {
       if (this.cookieRequestPending || !this.signInLandingReached) return;
       this.cookieRequestPending = true;
+      this.updateConnectionControls();
       const attempt = this.signInAttempt;
       const granted =
         canRequestPaneCookieAccess(this.root.ownerDocument) &&

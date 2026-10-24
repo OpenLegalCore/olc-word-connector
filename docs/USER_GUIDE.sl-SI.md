@@ -248,6 +248,15 @@ ustvarjanja odgovora, redline ali upravljanja sledenja spremembam.
 
 ## 9. Obnovite zaščiteni dostop
 
+V kandidatu OLC-72 odprite **Nastavitve → Preveri povezavo**. Preverjanje ne
+naloži podokna znova in ne odda osnutka. Preveri zaščiteno prijavno stran in nato
+pričakovani model Engine. Nastavitve pokažejo zadnji rezultat in čas preverjanja;
+to ni zagotovilo trajne veljavnosti dostopa. Med preverjanjem sta ponovno
+preverjanje in Pošlji onemogočena, tipkanje in izbira jezika pa ostaneta dostopna.
+Osnutek ter pripeta ali izrecno odstranjena priponka so ohranjeni. Če je potrebna
+prijava, nadaljujte po obstoječem toku spodaj. Preverjanje in prijava sporočila ne
+oddata samodejno. Novi kontrolnik še potrebuje sprejem v dejanskem Wordu.
+
 Če zaščitena zahteva potrebuje prijavo, komponenta prikaže **Potreben je dostop**,
 namesto da bi preusmeritev ali prijavno stran prikazala kot odgovor. Potek seje
 je samo eden od možnih vzrokov; enako se lahko pokažejo blokirani piškotki ali

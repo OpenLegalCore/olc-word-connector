@@ -42,6 +42,12 @@ design is preserved; native Word Web write qualification and
 [production access recovery](docs/WORD_WEB_ACCESS_RECOVERY.md) remain open.
 Word for Mac is backlog. This candidate is not a released editing capability.
 
+The draft also adds **Settings → Check connection**: fresh protected-session and
+model-discovery GETs without reloading the pane or sending a message. The draft,
+language and selection attachment survive the check and explicit sign-in recovery.
+See [current qualification status](docs/STATUS.md); retained input alone does not
+establish that access or authentication recovery works in Word.
+
 |                         |                                                                         |
 | ----------------------- | ----------------------------------------------------------------------- |
 | **Word host**           | Word for the web is verified; Windows and Mac are not yet tested        |

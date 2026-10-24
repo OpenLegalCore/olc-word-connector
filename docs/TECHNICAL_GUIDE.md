@@ -83,6 +83,17 @@ proves a valid session. The new landing callback is a local Worker-example
 change, requiring a matched future delivery and production Word Web qualification; see the
 [access recovery evidence and plan](WORD_WEB_ACCESS_RECOVERY.md).
 
+The settings connection check reuses the same protected-session probe and gateway
+model check, with `no-store` on both GETs. A successful manual check updates only
+the settings controls and a timestamped result; it does not recreate the workspace,
+controller or selected Word target. Failure captures the latest draft and uses the
+existing recovery screen. Recovery from this check preserves the controller and
+attachment state instead of recapturing Word's selection. Connection generation,
+abort and disposal guards reject late results; busy checks, completions, document
+writes and pending sign-in/cookie requests cannot overlap. No check replays a
+completion. Presentation/localization stays in the view, provider HTTP in the
+existing gateway/probe, and Word operations remain untouched.
+
 Document-review JSON has the same bounded 1 MiB ceiling as the SSE wire, plus
 its field/count/UTF-8 limits. The old 50,000-character plain-answer default must
 not reject an otherwise valid structured response. An explicitly configured

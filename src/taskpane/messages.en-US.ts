@@ -15,6 +15,12 @@ export const enUSMessages = {
     slovenian: "Slovenščina",
     english: "English",
     languageChanged: (language: string): string => `Language changed to ${language}.`,
+    checkConnection: "Check connection",
+    checkingConnection: "Checking connection…",
+    connectionUnchecked: "Check access from this pane without sending your message.",
+    connectionPassed: "Both access checks passed. No message was sent.",
+    connectionFailed: "Access check failed. Your message is retained.",
+    checkedAt: (time: string): string => `Last check: ${time}`,
   },
   initializing: {
     statusLabel: "Opening Word connection",
