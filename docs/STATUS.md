@@ -35,8 +35,8 @@ automatic completion, silent-login promise or provider fallback is added.
 | Real-browser synthetic qualification | Firefox 157, all cookies blocked, actual production bundle, synthetic Office/Access/Engine; no completion |
 | Open-pane draft/locale/removed attachment | Retained through synthetic expiry/recovery; no automatic resend |
 | New pane | New explicit login; prior memory session/draft not persisted |
-| Actual Word with the new session architecture | **NOT_RUN**; no connected supported Word surface available |
-| Existing functional/visual owner evidence | Preserved as historical evidence; no new completion or visual acceptance claimed |
+| Actual Word edge cases with the new session architecture | **NOT_RUN in this continuation**; no connected supported Word surface available |
+| Functional/visual owner evidence | Existing evidence preserved; PR #2 and OLC-72 also record the owner's 2026-10-24 normal-operation report, without an exact artifact SHA or separate expiry/reopen qualification |
 | Active staging source | `aa5d369f3e99067e8059a50fdd99f22535ca9810`; previous `ded891c22b735ca323bfede552e5219683d24841` retained for rollback |
 | New architecture delivery | **STAGING TECHNICAL PASS**: existing new Workers/store, auth-only Access destination append, two narrow routes and prepared Pages delivery verified |
 | Original server credential availability | Confirmed privately and provisioned only to the new API Worker; no replacement or export of deployed secrets |
@@ -68,8 +68,19 @@ This establishes effective write access after reconnection; it does not prove
 the internal cause of the preceding transport failures. The API Worker is not
 a human Access destination. Both new workers.dev/preview surfaces stay disabled.
 
-Next: actual Word Web dialog, usable form, open-pane recovery after known
-expiry/revocation with draft/locale/removed attachment retention, canceled dialog
-and new-pane login. No connected Word browser tab or Document Control session is
-available, so those cases remain NOT_RUN. No new completion or document write
-is needed for this access acceptance; the original incident is not declared fixed.
+Replacement-chat handoff, 2026-10-24: the owner reports an existing signed-in
+Word welcome page in the earlier visible browser panel. This chat's browser
+inventory exposes two surfaces with zero tabs; direct binding returns
+`Tab not found in browser 2`. Document Control reports no connected Word session.
+The [sanitized Word-surface handoff](evidence/olc72-word-session-activation-20261024/word-surface-handoff.md)
+records these direct observations separately from the already accepted owner
+functional report. It establishes a connection limitation, not a new login failure.
+
+Next: expose the same existing signed-in Word tab to this chat, then verify the
+loaded artifact, native Office dialog, usable form, open-pane recovery after
+known expiry/revocation with draft/locale/removed attachment retention, canceled
+dialog and separate new-pane login. These specific cases were NOT_RUN here.
+No new Microsoft login, OAuth consent, staging activation, completion or document
+write is needed to resolve the surface connection. Existing windows, processes,
+checkouts, local edits and recovery packages remain preserved; no rollback
+trigger was observed. OLC-72 remains IN REVIEW.
