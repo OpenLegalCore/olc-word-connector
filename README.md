@@ -48,18 +48,20 @@ language and selection attachment survive the check and explicit sign-in recover
 See [current qualification status](docs/STATUS.md); retained input alone does not
 establish that access or authentication recovery works in Word.
 
-The current access-lifecycle follow-up reactivates previously granted app-cookie
-permission on a new pane, offers the existing cookie-access action before another
-dialog, and verifies only safe GETs after recovery. HTML denial/server failures
-are distinguished from login challenges. A controlled browser reproduces the
-grant lifecycle; actual Word reopen/expiry recovery remains unverified. No
-cookie-independent application session or Access-policy change is implemented.
+The current draft implements a [cookie-independent Word session](docs/WORD_SCOPED_SESSION.md):
+explicit Office dialog login, verified human Access JWT, PKCE and single-use
+codes in strongly consistent server storage, then a memory-only short-lived
+Word capability on dedicated same-origin API routes. Storage Access is no longer
+a prerequisite. This architecture is locally implemented; staging activation and
+actual Word reopen/expiry acceptance are pending. It does not establish the
+cause or resolution of the owner's individual incident. See the
+[prepared staging/rollback sequence](docs/WORD_SESSION_STAGING.md).
 
 |                         |                                                                         |
 | ----------------------- | ----------------------------------------------------------------------- |
-| **Word host**           | Word for the web is verified; Windows and Mac are not yet tested        |
+| **Word host**           | Earlier Word Web flow verified; new session flow pending; Windows/Mac not tested        |
 | **Legal sources**       | Slovenian legislation and case law supplied by the configured backend   |
-| **Backend path**        | OLC Engine through the fixed same-origin `/v1/*` contract               |
+| **Backend path**        | OLC Engine through the dedicated same-origin `/word-api/v1/*` boundary               |
 | **Document context**    | No document content, or only the exact selected text                    |
 | **Interface languages** | English (`en-US`) and Slovenian (`sl-SI`)                               |
 | **License**             | Apache License 2.0, subject to third-party notices and trademark policy |

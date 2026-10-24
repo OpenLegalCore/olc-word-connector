@@ -13,8 +13,8 @@ corpus, hosting, identity, DNS or credentials.
 1. The task pane calls only relative routes on the HTTPS origin that serves it.
 2. OLC Engine and infrastructure credentials remain server-side.
 3. OLC Engine is the only backend. There is no fallback or automatic retry.
-4. The gateway exposes only the required `/v1/models`,
-   `/v1/chat/completions` and `/api/session` paths.
+4. The dedicated API exposes only `/word-api/` session, models and completion
+   operations; the separate `/word-auth/authorize` boundary verifies human login.
 5. Unexpected hosts, paths, methods, content types, redirects and oversized
    bodies fail closed.
 6. A request contains no Word text or only the exact selection shown in the
@@ -22,22 +22,30 @@ corpus, hosting, identity, DNS or credentials.
 
 ```mermaid
 flowchart LR
-    Word["Word task pane"] --> Gateway["Same-origin gateway"]
-    Gateway --> Engine["OLC Engine"]
-    Identity["Interactive browser session"] --> Gateway
-    Access["Service-token protected origin"] --> Engine
+    Word["Word task pane"] --> API["Word-scoped API Worker"]
+    Word --> Dialog["Office top-level login"]
+    Dialog --> Auth["Human Access + verified JWT"]
+    Auth --> Store["SQLite Durable Object"]
+    API --> Store
+    API --> Engine["OLC Engine"]
+    Access["Server-only service credentials"] --> Engine
 ```
 
 ## Browser-facing contract
 
-The production adapter uses `credentials: "same-origin"` and manual redirect
-handling. It never creates an Engine Bearer or Cloudflare Access header.
+Production wraps the Engine adapter with a memory-only Word session. Browser
+requests use `credentials:omit` and a Word-scoped Authorization capability, never
+an Engine bearer or Access service token. Human Access cookies are used only in
+the separate top-level Office dialog. See [PKCE, JWT and session boundary](WORD_SCOPED_SESSION.md).
 
-| Route                  | Method | Expected response                                                                |
-| ---------------------- | ------ | -------------------------------------------------------------------------------- |
-| `/v1/models`           | `GET`  | HTTP 200 `application/json` with `object: "list"` and model `lexai-engine-local` |
-| `/v1/chat/completions` | `POST` | HTTP 200 `text/event-stream`                                                     |
-| `/api/session`         | `GET`  | Content-free protected-session landing page                                      |
+| Route | Method | Result |
+| --- | --- | --- |
+| `/word-api/v1/models` | GET | Model list with `lexai-engine-local` |
+| `/word-api/v1/chat/completions` | POST | Bounded native SSE |
+| `/word-api/session` | GET | Authenticated session metadata |
+| `/word-api/session/exchange` | POST | Single-use code + PKCE exchange |
+| `/word-api/session/revoke` | POST | Revoke current Word capability |
+| `/word-auth/authorize` | GET | Human Access + verified JWT; exact Office return |
 
 The local OLC-72 candidate fixes the model and selects the documented
 `lexai_document_review_v1` profile (supported from Engine 9753ad1, not 09171ea).
@@ -105,7 +113,7 @@ Raw final JSON stays in current-result memory only. See
 This local adapter is not an activation or semantic-acceptance claim. The
 existing login failure remains an unchanged production blocker.
 
-## Reference gateway
+## Preserved legacy gateway and new API boundary
 
 The reference files are:
 
@@ -137,20 +145,15 @@ Linear, logs or command arguments.
 
 ## Session recovery and cancellation
 
-A redirect, HTML login response or `401` maps to legacy `SESSION_EXPIRED`
-(**Access required**); this does not prove expiry. Non-HTML `403` is
-`ACCESS_DENIED`. See the [Word Web recovery plan](WORD_WEB_ACCESS_RECOVERY.md)
-for the required production identity/cookie qualification.
-The local recovery candidate opens same-origin `signin.html` in an Office
-dialog, then the fixed `/api/session` landing. The Worker example's exact-CSP
-callback reports only a nonce-bound landing event. The pane checks the landing
-and model discovery separately on explicit recovery; no completion is sent.
-If the pane still cannot use the session, the user can explicitly request app
-cookie access via Storage Access API. A grant does not authenticate, retry or
-submit: another explicit connection check is required. Unsupported/denied grants
-retain the message and explain the narrow managed-browser fallback. Word sandbox,
-cookie/policy and real-browser qualification remain mandatory. This requires
-matching future frontend/Worker delivery; no live change was made here.
+The new API checks the shared Durable Object on every protected request and
+SSE start. Missing/expired/revoked capability returns 401; denial is 403, not
+inferred expiry. Timeout, network failure, throttling, unavailability and malformed
+responses remain separate. Code exchange is atomic and rate limited. The Office
+dialog passes no credentials to the pane; its verified, state-bound code is
+exchanged before the two safe GETs. Cancellation and late exchanges cannot restore
+a closed pane. There is no Storage Access action in the new composition.
+The old protected gateway/callback remains preserved for rollback. Current
+source/configuration is not a live change; see [staging procedure](WORD_SESSION_STAGING.md).
 
 Cancel, timeout and supersession abort the active fetch and invalidate its
 operation identity. Late deltas, resolution and rejection cannot become a

@@ -246,6 +246,7 @@ describe("production Engine-only task-pane runtime", () => {
   ] as const)(
     "checks access from settings in %s, removed attachment %s, without replacing the form",
     async (locale, removed) => {
+      const now = vi.spyOn(Date, "now").mockReturnValue(1_800_000_000_000);
       const requests: Array<{ url: string; init?: RequestInit }> = [];
       const word = new FakeWordAdapter(SNAPSHOT);
       activeRuntime = createProductionTaskPaneRuntime(
@@ -255,26 +256,48 @@ describe("production Engine-only task-pane runtime", () => {
         new TaskPaneView(root()),
         {
           initialLocale: locale,
+          signIn: {
+            open: async (exchange) => {
+              await exchange!(
+                "c".repeat(43),
+                "v".repeat(43),
+                "s".repeat(43),
+                new AbortController().signal
+              );
+              return "completed";
+            },
+            close: () => {},
+          },
           fetch: async (url, init) => {
             requests.push({ url, init });
-            return url === "/api/session"
-              ? new Response(null, {
-                  headers: { "Content-Type": "text/html", "X-OLC-Word-Gateway": "1" },
-                })
-              : new Response(
-                  JSON.stringify({ object: "list", data: [{ id: OLC_ENGINE_MODEL_ID }] }),
-                  { headers: { "Content-Type": "application/json" } }
-                );
+            return url === "/word-api/session/exchange"
+              ? new Response(
+                  JSON.stringify({
+                    token: "t".repeat(43),
+                    scope: "word:models word:complete",
+                    expiresAt: Date.now() + 899_000,
+                  }),
+                  { headers: { "Content-Type": "application/json", "X-OLC-Word-Gateway": "1" } }
+                )
+              : url === "/word-api/session"
+                ? new Response(null, {
+                    headers: { "Content-Type": "application/json", "X-OLC-Word-Gateway": "1" },
+                  })
+                : new Response(
+                    JSON.stringify({ object: "list", data: [{ id: OLC_ENGINE_MODEL_ID }] }),
+                    { headers: { "Content-Type": "application/json" } }
+                  );
           },
         }
       );
       activeRuntime.start();
+      await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+      click("open-secure-sign-in");
       await waitForReady();
       if (removed) click("remove-selection");
       const input = setQuestion("Synthetic draft\nSecond line");
       const captures = word.captureCalls;
       click("toggle-settings");
-      const now = vi.spyOn(Date, "now").mockReturnValue(1_800_000_000_000);
       click("check-connection");
       await vi.waitFor(() =>
         expect(root().querySelector("#olc-connection-check-result")?.textContent).toContain(
@@ -288,22 +311,23 @@ describe("production Engine-only task-pane runtime", () => {
       expect(word.captureCalls).toBe(captures);
       expect(word.applyCalls).toHaveLength(0);
       expect(requests.map((x) => x.url)).toEqual([
-        "/api/session",
-        "/v1/models",
-        "/api/session",
-        "/v1/models",
+        "/word-api/session/exchange",
+        "/word-api/session",
+        "/word-api/v1/models",
+        "/word-api/session",
+        "/word-api/v1/models",
       ]);
-      for (const { init } of requests)
+      for (const { init } of requests.slice(1))
         expect(init).toMatchObject({
           method: "GET",
-          credentials: "same-origin",
+          credentials: "omit",
           redirect: "manual",
           cache: "no-store",
         });
       const previous = root().querySelector("#olc-connection-check-result")!.textContent;
       now.mockReturnValue(1_800_000_010_000);
       click("check-connection");
-      await vi.waitFor(() => expect(requests).toHaveLength(6));
+      await vi.waitFor(() => expect(requests).toHaveLength(7));
       await vi.waitFor(() =>
         expect(root().querySelector("#olc-connection-check-result")?.textContent).not.toBe(previous)
       );
@@ -491,118 +515,52 @@ describe("production Engine-only task-pane runtime", () => {
     expect(state.olcEngine.requests).toHaveLength(1);
     expect(state.word.applyCalls).toHaveLength(0);
   });
-  it.each([true, false])(
-    "checks both protected route prefixes from the pane only when its session landing is accepted: %s",
-    async (accepted) => {
-      const paths: string[] = [];
-      activeRuntime = createProductionTaskPaneRuntime(
-        root(),
-        new FakeWordAdapter(SNAPSHOT),
-        "STAGING",
-        new TaskPaneView(root()),
-        {
-          fetch: async (url) => {
-            paths.push(url);
-            return url === "/api/session"
-              ? new Response(null, {
-                  status: accepted ? 200 : 302,
-                  headers: { "Content-Type": "text/html", "X-OLC-Word-Gateway": "1" },
-                })
-              : new Response(
-                  JSON.stringify({ object: "list", data: [{ id: OLC_ENGINE_MODEL_ID }] }),
-                  { headers: { "Content-Type": "application/json" } }
-                );
-          },
-        }
-      );
-      activeRuntime.start();
-      await vi.waitFor(() => expect(viewState()).toBe(accepted ? "ready" : "session-expired"));
-      expect(paths).toEqual(accepted ? ["/api/session", "/v1/models"] : ["/api/session"]);
-    }
-  );
-
+  it("starts unauthenticated without probing legacy cookie-protected routes", async () => {
+    const fetch = vi.fn();
+    activeRuntime = createProductionTaskPaneRuntime(
+      root(),
+      new FakeWordAdapter(SNAPSHOT),
+      "STAGING",
+      new TaskPaneView(root()),
+      { fetch }
+    );
+    activeRuntime.start();
+    await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+    expect(fetch).not.toHaveBeenCalled();
+    expect(root().querySelector('[data-action-id="allow-pane-cookies"]')).toBeNull();
+  });
   it.each(["granted", "denied", "unsupported"] as const)(
-    "preserves draft, locale and removed selection through dialog + %s pane-cookie access, never auto-resubmitting",
+    "recovers without %s cookie permissions, retaining draft/locale/removal and never resending",
     async (permission) => {
       const request = vi.fn(async () => {
-        if (permission === "denied") throw new Error("blocked");
+        throw new Error("blocked");
       });
       Object.defineProperty(document, "requestStorageAccess", {
         configurable: true,
         value: permission === "unsupported" ? undefined : request,
-      });
-      Object.defineProperty(document, "hasStorageAccess", {
-        configurable: true,
-        value: async () => true,
       });
       const state = setup({ locale: "sl-SI", openSignIn: async () => "completed" as const });
       activeRuntime = state.runtime;
       await waitForReady();
       setQuestion("Ohranjen sintetični vnos.\nDruga vrstica.");
       click("remove-selection");
-      state.olcEngine.completionError = new ChatGatewayError("SESSION_EXPIRED");
-      click("send");
-      await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
       state.olcEngine.connectionError = new ChatGatewayError("SESSION_EXPIRED");
-      click("open-secure-sign-in");
-      await vi.waitFor(() =>
-        expect(root().textContent).toContain("Dostop iz Word podokna je še zavrnjen")
-      );
-      expect(state.olcEngine.connectionChecks).toBe(2);
+      click("toggle-settings");
+      click("check-connection");
+      await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
       state.olcEngine.connectionError = undefined;
-      if (permission !== "unsupported") click("allow-pane-cookies");
-      else expect(root().querySelector('[data-action-id="allow-pane-cookies"]')).toBeNull();
-      expect(request).toHaveBeenCalledTimes(permission === "unsupported" ? 0 : 1);
-      if (permission === "granted") await waitForReady();
-      else if (permission === "denied")
-        await vi.waitFor(() =>
-          expect(root().textContent).toContain("Dostop do piškotkov aplikacije ni na voljo")
-        );
-      expect(state.olcEngine.connectionChecks).toBe(permission === "granted" ? 3 : 2);
-      expect(state.olcEngine.requests).toHaveLength(1);
-      if (permission !== "granted") click("retry-search");
+      click("open-secure-sign-in");
       await waitForReady();
       expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
         "Ohranjen sintetični vnos.\nDruga vrstica."
       );
       expect(root().querySelector(".olc-selection-attachment")).toBeNull();
       expect(document.documentElement.lang).toBe("sl-SI");
-      expect(state.olcEngine.requests).toHaveLength(1);
+      expect(request).not.toHaveBeenCalled();
+      expect(state.olcEngine.requests).toHaveLength(0);
       expect(state.word.applyCalls).toHaveLength(0);
     }
   );
-
-  it("can restore pane cookies before reopening sign-in, keeping the draft and removed attachment", async () => {
-    let allowed = false;
-    const request = vi.fn(async () => {
-      allowed = true;
-    });
-    Object.defineProperty(document, "requestStorageAccess", { configurable: true, value: request });
-    Object.defineProperty(document, "hasStorageAccess", {
-      configurable: true,
-      value: async () => allowed,
-    });
-    const state = setup({ openSignIn: vi.fn(async () => "completed" as const) });
-    activeRuntime = state.runtime;
-    await waitForReady();
-    setQuestion("Retained\nMultiline draft");
-    click("remove-selection");
-    state.olcEngine.connectionError = new ChatGatewayError("SESSION_EXPIRED");
-    click("toggle-settings");
-    click("check-connection");
-    await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
-    expect(root().querySelector('[data-action-id="allow-pane-cookies"]')).not.toBeNull();
-    state.olcEngine.connectionError = undefined;
-    click("allow-pane-cookies");
-    expect(request).toHaveBeenCalledTimes(1);
-    await waitForReady();
-    expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
-      "Retained\nMultiline draft"
-    );
-    expect(root().querySelector(".olc-selection-attachment")).toBeNull();
-    expect(state.olcEngine.requests).toHaveLength(0);
-    expect(state.word.applyCalls).toHaveLength(0);
-  });
 
   it("ignores a late dialog completion after runtime disposal without a connection or submission", async () => {
     let finish!: (value: "completed") => void;

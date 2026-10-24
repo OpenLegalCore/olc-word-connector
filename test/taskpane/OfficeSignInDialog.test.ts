@@ -1,217 +1,166 @@
+// @vitest-environment node
+import { webcrypto } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { OfficeSignInDialog, secureSignInOrigin } from "../../src/taskpane/OfficeSignInDialog";
-import { handleRequest } from "../../infrastructure/cloudflare/word-gateway-example/worker.js";
-import { runInNewContext } from "node:vm";
+import {
+  OfficeSignInDialog,
+  secureSignInOrigin,
+  type CodeExchange,
+} from "../../src/taskpane/OfficeSignInDialog";
+import { ChatGatewayError } from "../../src/chat/ChatGatewayError";
 
 const origin = "https://word.example.invalid";
-const nonce = "ab".repeat(16);
-const originalOffice = Object.getOwnPropertyDescriptor(globalThis, "Office");
-const handlers = new Map<string, (event: unknown) => void>();
-const close = vi.fn();
-const messageChild = vi.fn();
-let callback: (result: unknown) => void;
-const display = vi.fn((_url, _options, done) => {
-  callback = done;
-});
-const ui = { displayDialogAsync: display } as unknown as Pick<Office.UI, "displayDialogAsync">;
-function opened(): void {
-  callback({
-    status: "succeeded",
-    value: {
-      close,
-      messageChild,
-      addEventHandler: (type: string, handler: (event: unknown) => void) =>
-        handlers.set(type, handler),
-    },
-  });
-}
-function message(overrides = {}): void {
-  handlers.get("message")?.({
-    origin,
-    message: JSON.stringify({ type: "olc-word-session-landing", nonce }),
-    ...overrides,
-  });
-}
+let handlers: Record<string, (event: Record<string, unknown>) => void>;
+let dialog: {
+  close: ReturnType<typeof vi.fn>;
+  messageChild: ReturnType<typeof vi.fn>;
+  addEventHandler: ReturnType<typeof vi.fn>;
+};
+let ui: Pick<Office.UI, "displayDialogAsync">;
 beforeEach(() => {
-  handlers.clear();
-  vi.clearAllMocks();
-  messageChild.mockReset();
-  Object.defineProperty(globalThis, "Office", {
-    configurable: true,
-    value: {
-      AsyncResultStatus: { Succeeded: "succeeded" },
-      EventType: { DialogMessageReceived: "message", DialogEventReceived: "event" },
-      context: { requirements: { isSetSupported: () => true } },
-    },
+  handlers = {};
+  vi.stubGlobal("crypto", webcrypto);
+  vi.stubGlobal("Office", {
+    context: { requirements: { isSetSupported: () => true } },
+    AsyncResultStatus: { Succeeded: "succeeded" },
+    EventType: { DialogMessageReceived: "message", DialogEventReceived: "event" },
   });
+  dialog = {
+    close: vi.fn(),
+    messageChild: vi.fn(),
+    addEventHandler: vi.fn((type, handler) => {
+      handlers[type] = handler;
+    }),
+  };
+  ui = {
+    displayDialogAsync: vi.fn((_url, _options, callback) =>
+      callback!({
+        status: "succeeded",
+        value: dialog,
+      } as unknown as Office.AsyncResult<Office.Dialog>)
+    ) as unknown as Office.UI["displayDialogAsync"],
+  };
 });
 afterEach(() => {
+  vi.unstubAllGlobals();
   vi.useRealTimers();
-  if (originalOffice) Object.defineProperty(globalThis, "Office", originalOffice);
-  else Reflect.deleteProperty(globalThis, "Office");
 });
-describe("Office sign-in lifecycle", () => {
-  it("checks native dialog capability before opening, without a storage or popup fallback", async () => {
-    const office = globalThis as unknown as {
-      Office: { context: { requirements: { isSetSupported: (set: string) => boolean } } };
-    };
-    office.Office.context.requirements.isSetSupported = (set) => set !== "DialogOrigin";
-    await expect(new OfficeSignInDialog(origin, ui, () => nonce).open()).resolves.toBe("failed");
-    expect(display).not.toHaveBeenCalled();
+async function challenge(): Promise<{ type: string; state: string; challenge: string }> {
+  await vi.waitFor(() => expect(dialog.messageChild).toHaveBeenCalled());
+  return JSON.parse(dialog.messageChild.mock.calls[0][0]);
+}
+const message = (state: string, extra = {}, source: string | undefined = origin): void =>
+  handlers.message({
+    origin: source,
+    message: JSON.stringify({ type: "olc-word-authorized", state, code: "c".repeat(43), ...extra }),
   });
-  it.each(["parent-first", "child-first"])(
-    "completes the actual gateway callback with a lost fragment and %s readiness",
-    async (order) => {
-      vi.useFakeTimers();
-      const page = await handleRequest(
-        new Request(origin + "/api/session"),
-        {
-          PUBLIC_HOST: "word.example.invalid",
-          ENGINE_ORIGIN: "https://engine.example.invalid",
-          ENGINE_API_KEY: "synthetic",
-          CF_ACCESS_CLIENT_ID: "synthetic",
-          CF_ACCESS_CLIENT_SECRET: "synthetic",
-        },
-        vi.fn()
-      );
-      const script = (await page.text()).match(/<script>([\s\S]+?)<\/script>/)![1];
-      let childReceive: ((event: unknown) => void) | undefined;
-      const runChild = async (): Promise<void> => {
-        runInNewContext(script, {
-          location: { origin, hash: "" },
-          Office: {
-            AsyncResultStatus: { Succeeded: "succeeded" },
-            EventType: { DialogParentMessageReceived: "parent" },
-            onReady: async () => undefined,
-            context: {
-              ui: {
-                addHandlerAsync: (
-                  _type: string,
-                  handler: (event: unknown) => void,
-                  done: (value: unknown) => void
-                ) => {
-                  childReceive = handler;
-                  done({ status: "succeeded" });
-                },
-                messageParent: (payload: string, options: { targetOrigin: string }) => {
-                  expect(options.targetOrigin).toBe(origin);
-                  message({ message: payload });
-                },
-              },
-            },
-          },
-        });
-        await Promise.resolve();
-      };
-      messageChild.mockImplementation((payload, options) => {
-        expect(options.targetOrigin).toBe(origin);
-        childReceive?.({ origin, message: payload });
-      });
-      const signIn = new OfficeSignInDialog(origin, ui, () => nonce);
-      let outcome: unknown;
-      const pending = signIn.open().then((value) => {
-        outcome = value;
-      });
-      try {
-        if (order === "child-first") await runChild();
-        opened();
-        if (order === "parent-first") await runChild();
-        await vi.advanceTimersByTimeAsync(500);
-        expect(outcome).toBe("completed");
-        await pending;
-        expect(close).toHaveBeenCalledTimes(1);
-        const count = messageChild.mock.calls.length;
-        await vi.advanceTimersByTimeAsync(5000);
-        expect(messageChild).toHaveBeenCalledTimes(count);
-      } finally {
-        signIn.close();
-      }
-    }
-  );
-
-  it("fails closed when the host lacks parent-to-dialog messaging", async () => {
-    const signIn = new OfficeSignInDialog(origin, ui, () => nonce);
-    const result = signIn.open();
-    callback({ status: "succeeded", value: { close, addEventHandler: vi.fn() } });
-    await expect(result).resolves.toBe("failed");
-    expect(close).toHaveBeenCalledTimes(1);
+describe("Office PKCE sign-in", () => {
+  it("accepts an origin/state-bound authorization denial without attempting exchange", async () => {
+    const exchange = vi.fn<CodeExchange>(async () => {});
+    const signIn = new OfficeSignInDialog(origin, ui),
+      pending = signIn.open(exchange);
+    const value = await challenge();
+    handlers.message({
+      origin,
+      message: JSON.stringify({ type: "olc-word-authorization-denied", state: "x".repeat(43) }),
+    });
+    handlers.message({
+      origin,
+      message: JSON.stringify({ type: "olc-word-authorization-denied", state: value.state }),
+    });
+    await expect(pending).resolves.toBe("denied");
+    expect(exchange).not.toHaveBeenCalled();
   });
-  it("treats Office Ignore as a declined dialog, not a denied Access policy or success", async () => {
-    const result = new OfficeSignInDialog(origin, ui, () => nonce).open();
-    callback({ status: "failed", error: { code: 12009 } });
-    await expect(result).resolves.toBe("closed");
-    expect(messageChild).not.toHaveBeenCalled();
-  });
-  it("opens only same-origin HTTPS in a top-level Office dialog and accepts a bound landing message", async () => {
-    const signIn = new OfficeSignInDialog(origin, ui, () => nonce);
-    const result = signIn.open();
-    opened();
-    expect(display).toHaveBeenCalledWith(
-      `${origin}/signin.html`,
+  it("opens the fixed bootstrap synchronously; exchanges only exact-origin/state/shape and matching S256", async () => {
+    const exchange = vi.fn<CodeExchange>(async () => {}),
+      signIn = new OfficeSignInDialog(origin, ui);
+    const result = signIn.open(exchange);
+    expect(ui.displayDialogAsync).toHaveBeenCalledWith(
+      origin + "/signin.html",
       expect.objectContaining({ displayInIframe: false, promptBeforeOpen: true }),
       expect.any(Function)
     );
-    message();
-    await expect(result).resolves.toBe("completed");
-    expect(close).toHaveBeenCalledTimes(1);
-    expect(messageChild).toHaveBeenCalledWith(
-      JSON.stringify({ type: "olc-word-session-challenge", nonce }),
-      { targetOrigin: origin }
-    );
-  });
-  it("ignores wrong/missing origins, nonce, extra fields and malformed messages", async () => {
-    const signIn = new OfficeSignInDialog(origin, ui, () => nonce);
-    const result = signIn.open();
-    opened();
-    message({ origin: "https://other.example.invalid" });
-    message({ origin: undefined });
-    message({
-      message: JSON.stringify({ type: "olc-word-session-landing", nonce: "00".repeat(16) }),
+    const value = await challenge();
+    handlers.message({
+      message: JSON.stringify({
+        type: "olc-word-authorized",
+        state: value.state,
+        code: "c".repeat(43),
+      }),
     });
-    message({
-      message: JSON.stringify({ type: "olc-word-session-landing", nonce, success: true }),
-    });
-    message({ message: "null" });
-    message({ message: null });
-    message({ message: 123 });
-    message({ message: "[" });
-    expect(close).not.toHaveBeenCalled();
-    message();
+    message(value.state, {}, "https://other.example.invalid");
+    message("x".repeat(43));
+    message(value.state, { extra: true });
+    handlers.message({ origin, message: "invalid" });
+    expect(exchange).not.toHaveBeenCalled();
+    message(value.state);
+    message(value.state);
     await expect(result).resolves.toBe("completed");
+    expect(exchange).toHaveBeenCalledTimes(1);
+    const verifier = exchange.mock.calls[0]![1];
+    expect(
+      Buffer.from(
+        await webcrypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))
+      ).toString("base64url")
+    ).toBe(value.challenge);
+    expect(dialog.messageChild.mock.calls[0][1]).toEqual({ targetOrigin: origin });
+    expect(dialog.close).toHaveBeenCalledTimes(1);
   });
-  it("closes a late-created dialog after cancellation, without accepting its messages", async () => {
-    const signIn = new OfficeSignInDialog(origin, ui, () => nonce);
-    const result = signIn.open();
+  it.each(["closed", "denied", "expired", "failed"] as const)(
+    "distinguishes %s and never accepts a late message",
+    async (outcome) => {
+      const exchange = vi.fn(async () => {
+        throw new ChatGatewayError(
+          outcome === "denied"
+            ? "ACCESS_DENIED"
+            : outcome === "expired"
+              ? "SESSION_EXPIRED"
+              : "NETWORK_ERROR"
+        );
+      });
+      const signIn = new OfficeSignInDialog(origin, ui),
+        result = signIn.open(exchange),
+        value = await challenge();
+      if (outcome === "closed") handlers.event({ error: 12006 });
+      else message(value.state);
+      await expect(result).resolves.toBe(outcome);
+      message(value.state);
+      expect(exchange).toHaveBeenCalledTimes(outcome === "closed" ? 0 : 1);
+    }
+  );
+  it("rejects concurrent attempts; cancellation aborts an exchange and closes late windows", async () => {
+    let signal!: AbortSignal;
+    const signIn = new OfficeSignInDialog(origin, ui);
+    const result = signIn.open(async (_c, _v, _s, abort) => {
+      signal = abort;
+      await new Promise(() => {});
+    });
+    await expect(signIn.open(async () => {})).resolves.toBe("failed");
+    const value = await challenge();
+    message(value.state);
     signIn.close();
-    opened();
     await expect(result).resolves.toBe("closed");
-    expect(close).toHaveBeenCalledTimes(1);
-    expect(handlers.size).toBe(0);
+    expect(signal.aborted).toBe(true);
   });
-  it("bounds the wait, permits one dialog, and handles user close/error without claiming authentication", async () => {
+  it("bounds the login window and treats Office Ignore as closed", async () => {
     vi.useFakeTimers();
-    const signIn = new OfficeSignInDialog(origin, ui, () => nonce);
-    const first = signIn.open();
-    opened();
-    await expect(signIn.open()).resolves.toBe("failed");
-    await vi.advanceTimersByTimeAsync(300000);
-    await expect(first).resolves.toBe("failed");
-    const second = signIn.open();
-    opened();
-    handlers.get("event")?.({ error: 12006 });
-    await expect(second).resolves.toBe("closed");
-    const third = signIn.open();
-    callback({ status: "failed" });
-    await expect(third).resolves.toBe("failed");
+    const signIn = new OfficeSignInDialog(origin, ui),
+      result = signIn.open(async () => {});
+    await vi.advanceTimersByTimeAsync(300_001);
+    await expect(result).resolves.toBe("failed");
+    ui.displayDialogAsync = vi.fn((_url, _options, callback) =>
+      callback!({
+        status: "failed",
+        error: { code: 12009 },
+      } as unknown as Office.AsyncResult<Office.Dialog>)
+    ) as unknown as Office.UI["displayDialogAsync"];
+    await expect(signIn.open(async () => {})).resolves.toBe("closed");
   });
   it.each([
-    "http://example.invalid",
-    "https://user@example.invalid",
-    "https://example.invalid/path",
-    "https://example.invalid:8443",
-  ])("rejects unsafe origin %s without opening anything", async (unsafe) => {
-    expect(() => secureSignInOrigin(unsafe)).toThrow();
-    await expect(new OfficeSignInDialog(unsafe, ui).open()).resolves.toBe("failed");
-    expect(display).not.toHaveBeenCalled();
+    "http://word.example.invalid",
+    origin + "/",
+    origin + ":443",
+    "https://user@word.example.invalid",
+  ])("rejects unsafe origin %s", (value) => {
+    expect(() => secureSignInOrigin(value)).toThrow();
   });
 });

@@ -22,15 +22,10 @@ import type {
   TaskPaneViewModel,
 } from "./taskPaneViewModel";
 import type { SecureSignIn, SignInOutcome } from "./OfficeSignInDialog";
-import {
-  checkProtectedSession,
-  canRequestPaneCookieAccess,
-  requestPaneCookieAccess,
-  restorePaneCookieAccess,
-} from "./protectedSession";
+import { WordSessionClient } from "./WordSessionClient";
 
 export const OLC_ENGINE_MODEL_ID = "lexai-engine-local";
-export const SECURE_SIGN_IN_PATH = "/api/session";
+export const SECURE_SIGN_IN_PATH = "/word-auth/authorize";
 export const LEGAL_QUESTION_PLACEHOLDER = messagesFor("en-US").ready.questionPlaceholder;
 
 const COPY_CONFIRMATION_DURATION_MS = 2_000;
@@ -40,14 +35,7 @@ export type RuntimeBackend = "olc-engine";
 type RuntimeGateway = ChatGateway & { disconnect(): void };
 type CopyFeedback = "copied" | "failed";
 type SignInFeedback =
-  | "idle"
-  | "opened"
-  | "closed"
-  | "failed"
-  | "completed"
-  | "pane-rejected"
-  | "cookie-granted"
-  | "cookie-failed";
+  "idle" | "opened" | "closed" | "failed" | "completed" | "pane-rejected" | "denied" | "expired";
 
 export interface ProductionGateways {
   readonly olcEngine: RuntimeGateway;
@@ -343,15 +331,17 @@ function sessionExpiredModel(
   messages: MessageCatalog,
   backend: RuntimeBackend,
   environment: TaskPaneEnvironment | undefined,
-  signInFeedback: SignInFeedback,
-  paneCookieAccessAvailable = false
+  signInFeedback: SignInFeedback
 ): TaskPaneViewModel {
   const notices = {
+    expired: [messages.session.expiredTitle, messages.session.expiredMessage],
     closed: [messages.session.closedTitle, messages.session.closedMessage],
     completed: [messages.session.completedTitle, messages.session.completedMessage],
     "pane-rejected": [messages.session.paneRejectedTitle, messages.session.paneRejectedMessage],
-    "cookie-granted": [messages.session.cookieGrantedTitle, messages.session.cookieGrantedMessage],
-    "cookie-failed": [messages.session.cookieFailedTitle, messages.session.cookieFailedMessage],
+    denied: [
+      messages.connectionError.deniedHeading,
+      messages.connectionError.descriptionFor("ACCESS_DENIED"),
+    ],
   };
   const feedback =
     signInFeedback in notices ? notices[signInFeedback as keyof typeof notices] : undefined;
@@ -390,15 +380,6 @@ function sessionExpiredModel(
         label: messages.session.openSecureSignIn,
         variant: "quiet",
       },
-      ...(paneCookieAccessAvailable
-        ? [
-            {
-              id: "allow-pane-cookies",
-              label: messages.session.allowPaneCookies,
-              variant: "secondary" as const,
-            },
-          ]
-        : []),
     ],
     footer: { eyebrow: messages.session.footerEyebrow, message: messages.session.footerMessage },
   };
@@ -423,7 +404,6 @@ export class ProductionTaskPaneRuntime {
   private signInAttempt = 0;
   private signInPending = false;
   private signInLandingReached = false;
-  private cookieRequestPending = false;
   private copyFeedback?: CopyFeedback;
   private copyFeedbackTimeout?: ReturnType<typeof setTimeout>;
   private copyOperationId = 0;
@@ -465,7 +445,8 @@ export class ProductionTaskPaneRuntime {
     private readonly openSecureSignIn: () => boolean | Promise<SignInOutcome> = () => false,
     initialLocale: UiLocale = "en-US",
     private readonly closeSecureSignIn: () => void = () => undefined,
-    private readonly checkSession?: (signal?: AbortSignal) => Promise<void>
+    private readonly checkSession?: (signal?: AbortSignal) => Promise<void>,
+    private readonly clearSession: () => void = () => undefined
   ) {
     this.locale = initialLocale;
   }
@@ -487,6 +468,7 @@ export class ProductionTaskPaneRuntime {
 
   dispose(): void {
     this.disposed = true;
+    this.clearSession();
     this.signInAttempt++;
     this.closeSecureSignIn();
     this.signInFeedback = "idle";
@@ -549,13 +531,7 @@ export class ProductionTaskPaneRuntime {
     if (this.connectionRecoveryFromSettings) {
       if (this.connectionCheck.code === "SESSION_EXPIRED") {
         this.renderView((messages) =>
-          sessionExpiredModel(
-            messages,
-            this.selectedBackend,
-            this.environment,
-            this.signInFeedback,
-            canRequestPaneCookieAccess(this.root.ownerDocument)
-          )
+          sessionExpiredModel(messages, this.selectedBackend, this.environment, this.signInFeedback)
         );
       }
       return;
@@ -567,13 +543,7 @@ export class ProductionTaskPaneRuntime {
       this.resetCopyFeedback();
       if (this.connectionCheck.phase === "success") this.connectionCheck = { phase: "idle" };
       this.renderView((messages) =>
-        sessionExpiredModel(
-          messages,
-          this.selectedBackend,
-          this.environment,
-          this.signInFeedback,
-          canRequestPaneCookieAccess(this.root.ownerDocument)
-        )
+        sessionExpiredModel(messages, this.selectedBackend, this.environment, this.signInFeedback)
       );
       return;
     }
@@ -761,19 +731,12 @@ export class ProductionTaskPaneRuntime {
         this.disposed ||
         Boolean(this.connectionAbort) ||
         this.signInPending ||
-        this.cookieRequestPending ||
         this.connectionWorkBusy(),
     });
   }
 
   private async connect(backend: RuntimeBackend, fromSettings = false): Promise<void> {
-    if (
-      this.disposed ||
-      this.connectionAbort ||
-      this.connectionWorkBusy() ||
-      this.signInPending ||
-      this.cookieRequestPending
-    )
+    if (this.disposed || this.connectionAbort || this.connectionWorkBusy() || this.signInPending)
       return;
     const restoreWorkspace = this.connectionRecoveryFromSettings;
     const preserveWorkspace = fromSettings || restoreWorkspace;
@@ -789,7 +752,6 @@ export class ProductionTaskPaneRuntime {
     if (preserveWorkspace) this.updateConnectionControls();
     else this.renderView((messages) => connectingModel(messages, backend, this.environment));
     try {
-      await restorePaneCookieAccess(this.root.ownerDocument, abort.signal);
       if (connectionId !== this.connectionId || this.disposed || abort.signal.aborted) return;
       await this.checkSession?.(abort.signal);
       if (connectionId !== this.connectionId || this.disposed) return;
@@ -824,13 +786,7 @@ export class ProductionTaskPaneRuntime {
       if (code === "SESSION_EXPIRED") {
         this.signInFeedback = this.signInLandingReached ? "pane-rejected" : "idle";
         this.renderView((messages) =>
-          sessionExpiredModel(
-            messages,
-            backend,
-            this.environment,
-            this.signInFeedback,
-            canRequestPaneCookieAccess(this.root.ownerDocument)
-          )
+          sessionExpiredModel(messages, backend, this.environment, this.signInFeedback)
         );
       } else {
         this.renderView((messages) => ({
@@ -1052,7 +1008,7 @@ export class ProductionTaskPaneRuntime {
       return;
     }
     if (actionId === "open-secure-sign-in") {
-      if (this.signInPending || this.cookieRequestPending || this.connectionWorkBusy()) return;
+      if (this.signInPending || this.connectionWorkBusy()) return;
       const attempt = ++this.signInAttempt;
       this.signInPending = true;
       this.signInFeedback = "opened";
@@ -1062,13 +1018,7 @@ export class ProductionTaskPaneRuntime {
         const result = this.openSecureSignIn();
         if (!this.controller)
           this.renderView((messages) =>
-            sessionExpiredModel(
-              messages,
-              this.selectedBackend,
-              this.environment,
-              "opened",
-              canRequestPaneCookieAccess(this.root.ownerDocument)
-            )
+            sessionExpiredModel(messages, this.selectedBackend, this.environment, "opened")
           );
         outcome = await result;
       } catch {
@@ -1082,64 +1032,25 @@ export class ProductionTaskPaneRuntime {
       this.signInFeedback =
         outcome === "completed"
           ? "completed"
-          : outcome === "closed"
-            ? "closed"
-            : outcome === true
-              ? "opened"
-              : "failed";
+          : outcome === "expired"
+            ? "expired"
+            : outcome === "denied"
+              ? "denied"
+              : outcome === "closed"
+                ? "closed"
+                : outcome === true
+                  ? "opened"
+                  : "failed";
       this.renderControllerState();
       if (!this.controller) {
         this.renderView((messages) =>
-          sessionExpiredModel(
-            messages,
-            this.selectedBackend,
-            this.environment,
-            this.signInFeedback,
-            canRequestPaneCookieAccess(this.root.ownerDocument)
-          )
+          sessionExpiredModel(messages, this.selectedBackend, this.environment, this.signInFeedback)
         );
       }
       if (outcome === "completed") {
         // Landing is not pane authentication. Verify only the two safe GETs.
         await this.connect(this.selectedBackend, Boolean(this.controller));
       }
-      return;
-    }
-    if (actionId === "allow-pane-cookies") {
-      if (
-        this.cookieRequestPending ||
-        this.signInPending ||
-        this.connectionCheck.phase === "checking"
-      )
-        return;
-      const state = this.controller?.getState();
-      if (
-        this.connectionCheck.code !== "SESSION_EXPIRED" &&
-        !(state?.kind === "error" && state.error.code === "SESSION_EXPIRED")
-      )
-        return;
-      this.captureFormState();
-      this.cookieRequestPending = true;
-      this.updateConnectionControls();
-      const attempt = this.signInAttempt;
-      const granted =
-        canRequestPaneCookieAccess(this.root.ownerDocument) &&
-        (await requestPaneCookieAccess(this.root.ownerDocument));
-      this.cookieRequestPending = false;
-      if (this.disposed || attempt !== this.signInAttempt) return;
-      this.signInFeedback = granted ? "cookie-granted" : "cookie-failed";
-      this.renderControllerState();
-      if (!this.controller)
-        this.renderView((messages) =>
-          sessionExpiredModel(
-            messages,
-            this.selectedBackend,
-            this.environment,
-            this.signInFeedback,
-            canRequestPaneCookieAccess(this.root.ownerDocument)
-          )
-        );
-      if (granted) await this.connect(this.selectedBackend, Boolean(this.controller));
       return;
     }
     if (actionId === "retry-search" && !this.controller) {
@@ -1201,20 +1112,23 @@ export function createProductionTaskPaneRuntime(
   } catch {
     clipboard = undefined;
   }
+  const session = new WordSessionClient(
+    dependencies.fetch ?? ((url, init) => globalThis.fetch(url, init))
+  );
   return new ProductionTaskPaneRuntime(
     root,
     view,
     word,
-    createSameOriginProductionGateways(dependencies),
+    createSameOriginProductionGateways({ ...dependencies, fetch: session.fetch }),
     environment,
     clipboard,
-    () => dependencies.signIn?.open() ?? false,
+    () =>
+      dependencies.signIn?.open((code, verifier, state, signal) =>
+        session.exchange(code, verifier, state, signal)
+      ) ?? false,
     dependencies.initialLocale,
     () => dependencies.signIn?.close(),
-    (signal) =>
-      checkProtectedSession(
-        dependencies.fetch ?? ((url, init) => globalThis.fetch(url, init)),
-        signal
-      )
+    (signal) => session.check(signal),
+    () => session.clear()
   );
 }

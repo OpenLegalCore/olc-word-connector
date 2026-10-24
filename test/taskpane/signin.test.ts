@@ -1,32 +1,38 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-
+import { afterEach, expect, it, vi } from "vitest";
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.resetModules();
 });
-describe("same-origin sign-in bootstrap", () => {
-  it("waits for Office then uses only the fixed session path, ignoring URL query/fragment inputs", async () => {
-    vi.resetModules();
-    let ready!: () => void;
-    const replace = vi.fn();
-    vi.stubGlobal("Office", {
-      onReady: () =>
-        new Promise<void>((resolve) => {
-          ready = resolve;
-        }),
-    });
-    vi.stubGlobal("location", {
-      origin: "https://word.example.invalid",
-      search: "?return_url=https://other.example.invalid",
-      hash: "#old-fragment",
-      replace,
-    });
-    await import("../../src/taskpane/signin.js");
-    expect(replace).not.toHaveBeenCalled();
-    ready();
-    await vi.waitFor(() =>
-      expect(replace).toHaveBeenCalledWith("https://word.example.invalid/api/session")
-    );
-    expect(replace).toHaveBeenCalledTimes(1);
+it("navigates only after an exact-origin native challenge to the fixed auth path", async () => {
+  let receive!: (event: Record<string, unknown>) => void;
+  const replace = vi.fn();
+  vi.stubGlobal("Office", {
+    onReady: async () => {},
+    EventType: { DialogParentMessageReceived: "message" },
+    context: {
+      ui: {
+        addHandlerAsync: (_type: string, handler: typeof receive) => {
+          receive = handler;
+        },
+      },
+    },
   });
+  const origin = "https://word.example.invalid";
+  vi.stubGlobal("location", {
+    origin,
+    replace,
+    search: "?return=https://other.invalid",
+    hash: "#ignored",
+  });
+  await import("../../src/taskpane/signin.js");
+  await vi.waitFor(() => expect(receive).toBeTypeOf("function"));
+  const value = { type: "olc-word-authorize", challenge: "c".repeat(43), state: "s".repeat(43) };
+  receive({ origin: "https://other.invalid", message: JSON.stringify(value) });
+  receive({ origin, message: JSON.stringify({ ...value, redirect: "https://other.invalid" }) });
+  expect(replace).not.toHaveBeenCalled();
+  receive({ origin, message: JSON.stringify(value) });
+  receive({ origin, message: JSON.stringify(value) });
+  expect(replace).toHaveBeenCalledExactlyOnceWith(
+    origin + `/word-auth/authorize?challenge=${value.challenge}&state=${value.state}`
+  );
 });

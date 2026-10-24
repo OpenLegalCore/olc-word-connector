@@ -127,35 +127,30 @@ export const enUSMessages = {
     footerMessage: "UNCHANGED",
   },
   session: {
+    expiredTitle: "Sign-in is no longer valid",
+    expiredMessage:
+      "The sign-in code or Word session is no longer valid. Your message is retained; open sign-in again when ready.",
     statusLabel: "Access required",
     eyebrow: "PROTECTED SESSION",
     heading: "Access required",
     description:
-      "This pane could not use protected access. If you already signed in, allow app cookies here first; otherwise open secure sign-in. Your message is retained and will not be sent automatically.",
+      "Sign in outside this pane to start a short-lived Word session. Your message is retained and will not be sent automatically.",
     signInOpenedTitle: "Secure sign-in opened",
     signInOpenedMessage:
       "Office may ask Allow / Ignore before opening the window. Allow opens secure sign-in; Ignore leaves access unchanged. After return, only the connection is checked, never your message.",
-    signInFailedTitle: "Secure sign-in could not open",
+    signInFailedTitle: "Secure sign-in could not complete",
     signInFailedMessage:
-      "Office sign-in could not open or return. Check popup permission and Office dialog support. Your message is retained.",
+      "Sign-in or the secure code exchange could not complete. Your message is retained; try sign-in again when ready.",
     retrySearch: "Check connection",
     openSecureSignIn: "Open secure sign-in",
-    completedTitle: "Sign-in landing reached",
+    completedTitle: "Word session created",
     closedTitle: "Sign-in was not completed",
     closedMessage:
-      "The window was declined, closed or disconnected. This is not an access-policy denial. Your message is retained; you can restore app cookie access or open sign-in when ready.",
-    completedMessage:
-      "Checking access from this pane. Reaching the dialog landing alone does not prove that this pane can use the session. Your message will not be sent.",
+      "The window was declined, closed or disconnected. This is not an access-policy denial. Your message is retained; sign in when ready.",
+    completedMessage: "Checking the Word session and connection. Your message will not be sent.",
     paneRejectedTitle: "Word pane access still rejected",
     paneRejectedMessage:
-      "The dialog returned, but this pane still needs access. App cookies may be blocked or policy may require sign-in. You can request cookie access for this app; if Word blocks it, ask the operator for the documented narrow browser exception. Your message is retained.",
-    allowPaneCookies: "Allow app cookies in this pane",
-    cookieGrantedTitle: "App cookie access allowed",
-    cookieGrantedMessage:
-      "Checking the protected connection. Cookie permission alone does not establish a valid session; your message will not be sent.",
-    cookieFailedTitle: "App cookie access unavailable",
-    cookieFailedMessage:
-      "Word, the browser, or your choice did not allow access. Keep your draft and ask the operator to check the app cookie settings and a narrow app/team-domain exception. Do not disable browser privacy globally.",
+      "The Word session is no longer valid. Your message is retained; sign in again when ready.",
     footerEyebrow: "DOCUMENT BOUNDARY",
     footerMessage: "UNCHANGED",
   },

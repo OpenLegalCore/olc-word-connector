@@ -42,8 +42,8 @@ override. It uses:
 
 | Purpose         | Route                       |
 | --------------- | --------------------------- |
-| Model discovery | `GET /v1/models`            |
-| Completion      | `POST /v1/chat/completions` |
+| Model discovery | `GET /word-api/v1/models`            |
+| Completion      | `POST /word-api/v1/chat/completions` |
 
 Completion sends `stream: true`, `stream_options.include_usage: true` and the
 frozen locale mapped to `response_language: sl|en`. Text deltas are emitted to
@@ -72,18 +72,12 @@ The current task pane supports `en-US` and `sl-SI`. Locale is resolved from
 Office, then the browser, then English, and is not persisted. It controls
 connector UI and `response_language`; it does not rewrite the question.
 
-The browser sends only same-origin credentials. Redirects and `401` become the
-legacy `SESSION_EXPIRED` access-challenge code; they do not prove expiry. Every
-`403`, including HTML, is `ACCESS_DENIED`; `5xx`, timeout and network failure
-remain separate. Unmarked `200` HTML is invalid. Sign-in uses the same-origin
-Office Dialog bootstrap and protected `/api/session` callback already delivered.
-Only an explicit click requests a NEW Storage Access grant; a new iframe can
-silently reactivate an existing `granted` permission before the safe connection
-GETs. The existing cookie action no longer requires another dialog first.
-Dialog completion or an explicit cookie grant verifies the pane with the two
-safe GETs only, never a completion. The Office Allow/Ignore prompt is retained.
-Cookie-only access still depends on Word's parent sandbox/browser policy; see the
-[access recovery evidence and plan](WORD_WEB_ACCESS_RECOVERY.md).
+Production now wraps the unchanged Engine adapter with `WordSessionClient`.
+Requests use dedicated `/word-api/*` routes, `credentials:omit` and a memory-only
+Word capability. The Office dialog uses PKCE and a verified-JWT authorization
+Worker; one-time consumption/revocation use a SQLite Durable Object. There is no
+Storage Access dependency, refresh token or automatic message replay. Read the
+[full trust boundary and limits](WORD_SCOPED_SESSION.md).
 
 The settings connection check reuses the same protected-session probe and gateway
 model check, with `no-store` on both GETs. A successful manual check updates only
@@ -92,7 +86,7 @@ controller or selected Word target. Failure captures the latest draft and uses t
 existing recovery screen. Recovery from this check preserves the controller and
 attachment state instead of recapturing Word's selection. Connection generation,
 abort and disposal guards reject late results; busy checks, completions, document
-writes and pending sign-in/cookie requests cannot overlap. No check replays a
+writes and pending sign-in requests cannot overlap. No check replays a
 completion. Presentation/localization stays in the view, provider HTTP in the
 existing gateway/probe, and Word operations remain untouched.
 
@@ -109,7 +103,7 @@ versioned root-relative `/assets/office/1.0.0.2/openlegalcore-mark-80.png` path.
 
 ## Gateway and credential isolation
 
-The checked-in Worker is an inert example with only `/v1/models`,
+The legacy checked-in Worker remains an inert example with only `/v1/models`,
 `/v1/chat/completions` and `/api/session`. It requires `PUBLIC_HOST`,
 `ENGINE_ORIGIN`, `ENGINE_API_KEY`, `CF_ACCESS_CLIENT_ID` and
 `CF_ACCESS_CLIENT_SECRET`. All credentials remain server-side. The production
@@ -117,6 +111,10 @@ bundle verifier rejects server bindings, Access headers, persistent browser
 storage, private-origin markers and test harnesses. Approved plain-text writes
 are confined to `OfficeWordAdapter`; HTML/OOXML and whole-body writes remain
 forbidden. No transport or rendering layer may write to Word.
+
+The new auth/API Workers and shared store are in `infrastructure/cloudflare/word-session/`.
+They are prepared source/configuration, not live resources. See
+[activation and rollback](WORD_SESSION_STAGING.md).
 
 ## Builds and verification
 

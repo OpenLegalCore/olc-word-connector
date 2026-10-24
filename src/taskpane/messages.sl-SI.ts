@@ -130,35 +130,30 @@ export const slSIMessages = {
     footerMessage: "NESPREMENJENO",
   },
   session: {
+    expiredTitle: "Prijava ni več veljavna",
+    expiredMessage:
+      "Prijavna koda ali Word seja ni več veljavna. Vnos je ohranjen; znova odprite prijavo, ko želite.",
     statusLabel: "Potreben je dostop",
     eyebrow: "ZAŠČITENA SEJA",
     heading: "Potreben je dostop",
     description:
-      "Podokno ni moglo uporabiti zaščitenega dostopa. Če ste že prijavljeni, najprej dovolite piškotke aplikacije v tem podoknu; sicer odprite varno prijavo. Vnos je ohranjen in ne bo samodejno poslan.",
+      "Za kratkotrajno Word sejo se prijavite v ločenem oknu. Vnos je ohranjen in ne bo samodejno poslan.",
     signInOpenedTitle: "Varna prijava je odprta",
     signInOpenedMessage:
       "Office lahko pred odprtjem okna vpraša Allow / Ignore. Allow odpre varno prijavo; Ignore dostopa ne spremeni. Po vrnitvi se preveri samo povezava, vaše sporočilo se ne pošlje.",
-    signInFailedTitle: "Varne prijave ni bilo mogoče odpreti",
+    signInFailedTitle: "Varne prijave ni bilo mogoče dokončati",
     signInFailedMessage:
-      "Prijavnega okna Office ni bilo mogoče odpreti ali vrniti. Preverite dovoljenje za pojavna okna in podporo Office Dialog. Vaš vnos je ohranjen.",
+      "Prijave ali varne izmenjave kode ni bilo mogoče dokončati. Vnos je ohranjen; prijavo znova odprite, ko želite.",
     retrySearch: "Preveri povezavo",
     openSecureSignIn: "Odpri varno prijavo",
-    completedTitle: "Prijavna stran je dosežena",
+    completedTitle: "Word seja je ustvarjena",
     closedTitle: "Prijava ni bila dokončana",
     closedMessage:
-      "Okno je bilo odklonjeno, zaprto ali prekinjeno. To ni zavrnitev pravilnika dostopa. Vnos je ohranjen; obnovite lahko dostop do piškotkov ali odprete prijavo, ko želite.",
-    completedMessage:
-      "Preverjam dostop iz podokna. Sama dosežena prijavna stran še ne dokazuje dostopa iz tega podokna. Vaše sporočilo ne bo poslano.",
+      "Okno je bilo odklonjeno, zaprto ali prekinjeno. To ni zavrnitev pravilnika dostopa. Vnos je ohranjen; prijavo odprite, ko želite.",
+    completedMessage: "Preverjam Word sejo in povezavo. Vaše sporočilo ne bo poslano.",
     paneRejectedTitle: "Dostop iz Word podokna je še zavrnjen",
     paneRejectedMessage:
-      "Prijavno okno se je vrnilo, podokno pa še potrebuje dostop. Piškotki aplikacije so morda blokirani ali pravilnik zahteva prijavo. Zahtevate lahko dostop do piškotkov te aplikacije; če ga Word blokira, naj upravljavec preveri dokumentirano ozko izjemo brskalnika. Vaš vnos je ohranjen.",
-    allowPaneCookies: "Dovoli piškotke aplikacije v podoknu",
-    cookieGrantedTitle: "Dostop do piškotkov aplikacije je dovoljen",
-    cookieGrantedMessage:
-      "Preverjam zaščiteno povezavo. Dovoljenje za piškotke še ne potrjuje veljavne seje; vaše sporočilo ne bo poslano.",
-    cookieFailedTitle: "Dostop do piškotkov aplikacije ni na voljo",
-    cookieFailedMessage:
-      "Word, brskalnik ali vaša izbira dostopa niso dovolili. Ohranite vnos; upravljavec naj preveri nastavitve piškotkov in ozko izjemo za domeni aplikacije in Access ekipe. Ne izklapljajte zasebnosti brskalnika v celoti.",
+      "Word seja ni več veljavna. Vnos je ohranjen; znova se prijavite, ko želite.",
     footerEyebrow: "MEJA DOSTOPA DO DOKUMENTA",
     footerMessage: "NESPREMENJENO",
   },

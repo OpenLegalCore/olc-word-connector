@@ -1,3 +1,18 @@
+# OLC-72 Word Web access recovery
+
+Status: **IN REVIEW**, 2026-10-24. The owner explicitly approved the
+[cookie-independent Word-session implementation](WORD_SCOPED_SESSION.md) after
+`d419b477`. It is implemented and tested locally; activation and actual Word
+acceptance are separate. The cause of the individual owner incident remains
+unproven. [Staging preparation and rollback](WORD_SESSION_STAGING.md) add separate
+auth/API Workers and transactional storage without weakening old routes.
+
+The remaining sections are **historical diagnostic evidence and superseded
+cookie-only recommendations**. They are retained verbatim and do not describe
+the new production composition or grant live-change permission.
+
+---
+
 # OLC-72 Word Web access recovery — reviewed plan
 
 Status: IN REVIEW, access-lifecycle fix based on delivered `a756274`, 2026-10-24.

@@ -74,6 +74,7 @@ npm run build:word-harness
 npm run build:dev
 npm run build:stage
 npm run build
+npm run build:word-session
 npm run verify:bundle
 ```
 

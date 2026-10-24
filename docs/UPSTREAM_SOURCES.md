@@ -115,3 +115,16 @@ The recorded Git commits, tag targets, upstream license texts, source asset
 blob and committed raster-asset blobs were rechecked for this documentation
 review. The production package versions and license identifiers match the
 committed npm lockfile.
+
+## Word authorization dependency
+
+`jose@6.2.13` (MIT), upstream commit
+`316b7f2cb41b8377515d9cc2e81e03f8e50ee935`, is an exact locked npm dependency
+for server-only Access JWT verification. No third-party implementation is manually
+copied or adapted. Miniflare/workerd and esbuild are exact development dependencies
+for local strongly consistent storage tests and Worker packaging. See
+[notices](../THIRD_PARTY_NOTICES.md) and [session architecture](WORD_SCOPED_SESSION.md).
+
+Miniflare-only dependency overrides pin `undici@7.30.1` and `sharp@0.35.5`
+to avoid known vulnerable transitive versions. These test-tool overrides do not
+change the browser or authorization Worker dependency set.

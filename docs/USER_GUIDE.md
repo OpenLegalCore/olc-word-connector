@@ -256,36 +256,26 @@ It retains the draft and attached or explicitly removed selection. If sign-in is
 required, continue with the existing recovery below. No message is automatically
 submitted after a check or sign-in. The new control still requires Word acceptance.
 
-If a protected browser request needs sign-in, the connector shows **Access
-required** instead of rendering a redirect or login page as an answer. Expiry
-is one possible cause; blocked cookies or login redirects can look similar.
-A `403` access denial, server unavailability and network failure are reported
-separately, even if the error page is HTML. If recovery repeats, use
-the [Word Web diagnosis](WORD_WEB_ACCESS_RECOVERY.md), rather than repeating Send.
+The current draft uses a short-lived Word session, independent of iframe
+cookies. **Access required** means there is no usable Word capability; `403`
+denial, network error, timeout and server failure remain distinct.
 
-1. If already signed in, try the existing **Allow app cookies in this pane**
-   action first, when available. It does not open another login window.
-2. Otherwise select **Open secure sign-in**. Office may ask **Allow / Ignore**
-   before opening the window. Ignore cancels the window; it is not policy denial.
-   Complete the operator's sign-in in the dialog. Canceling retains your message.
-3. The return page closes the dialog when its bound message is accepted. That
-   event alone does not prove that Word can use the session.
-4. Return to Word.
-5. The connector checks only the protected connection after return or a cookie
-   grant. Review the restored form before explicitly selecting **Send**. You can
-   use the existing **Check connection** again without submitting anything.
+1. Select **Open secure sign-in**. Office may ask **Allow / Ignore**. Ignore
+   cancels the dialog; it is not a policy denial.
+2. Complete the operator's sign-in outside the pane. A current top-level login
+   may avoid credential reentry where the identity provider permits.
+3. The native Office callback exchanges a single-use PKCE-bound code for a
+   memory-only Word session. Then only session/model GETs check the connection.
+4. Review the retained message and selection attachment, then explicitly **Send**.
+   No previous request is automatically submitted.
 
-The connector never retries automatically and has no fallback provider. Sign-in
-recovery does not send the previous message. Review the current message and
-selection attachment before explicitly selecting **Send**.
-
-**Allow app cookies in this pane** requests only app cookie access through the
-browser's Storage Access API. On a reopened pane, an existing grant is reactivated
-without requesting new permission. Only successful connection GETs establish
-current access; a cookie grant is not authentication. If unavailable or denied,
-keep the draft and follow the
-operator's narrow app/team-domain cookie exception procedure; do not disable
-privacy globally. This local candidate still needs actual Word Web qualification.
+The session lasts at most 15 minutes. Recovery in an open pane retains the
+multiline message, locale and attached/removed selection. Closing the pane
+ends its in-memory state: copy a draft before closing; reopening requires a
+new explicit sign-in gesture. There is no persistent draft or refresh token.
+No Storage Access or browser cookie exception is required by this architecture.
+Activation and actual Word qualification of this draft are still pending; see
+[the architecture and evidence limits](WORD_SCOPED_SESSION.md).
 
 The repository controls only its post-login confirmation page. The external
 identity-provider or access page belongs to the deployment operator.

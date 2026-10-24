@@ -257,36 +257,24 @@ Osnutek ter pripeta ali izrecno odstranjena priponka so ohranjeni. Če je potreb
 prijava, nadaljujte po obstoječem toku spodaj. Preverjanje in prijava sporočila ne
 oddata samodejno. Novi kontrolnik še potrebuje sprejem v dejanskem Wordu.
 
-Če zaščitena zahteva potrebuje prijavo, komponenta prikaže **Potreben je dostop**,
-namesto da bi preusmeritev ali prijavno stran prikazala kot odgovor. Potek seje
-je samo eden od možnih vzrokov; enako se lahko pokažejo blokirani piškotki ali
-prijavna preusmeritev. Zavrnjeni dostop `403`, nedosegljiv strežnik in omrežna
-napaka so prikazani ločeno, tudi če strežnik vrne HTML stran.
-Če se težava ponavlja, uporabite [načrt diagnostike](WORD_WEB_ACCESS_RECOVERY.md),
-ne ponavljajte oddaje sporočila.
+Trenutni kandidat uporablja kratkotrajno Word sejo, neodvisno od piškotkov
+podokna. **Potreben je dostop** pomeni, da ni uporabne Word seje. Zavrnitev `403`,
+omrežna napaka, časovna omejitev in nedosegljiv strežnik ostanejo ločeni izidi.
 
-1. Če ste že prijavljeni, najprej uporabite obstoječe dejanje **Dovoli piškotke
-   aplikacije v podoknu**, kadar je na voljo. To ne odpre novega prijavnega okna.
-2. Sicer izberite **Odpri varno prijavo**. Office lahko pred odprtjem vpraša
-   **Allow / Ignore**. Ignore odkloni okno, ne pomeni zavrnitve pravilnika.
-   V oknu dokončajte prijavo upravljavca. Preklic ohrani vaš vnos.
-3. Povratna stran zapre okno ob sprejetem vezanem sporočilu. To še ne dokazuje,
-   da Word podokno lahko uporablja sejo.
-4. Vrnite se v Word.
-5. Po vrnitvi ali dovoljenju za piškotke komponenta preveri samo zaščiteno
-   povezavo. Preglejte obnovljeni obrazec in šele sami izberite **Pošlji**.
-   Obstoječi **Preveri povezavo** lahko uporabite znova brez oddaje sporočila.
+1. Izberite **Odpri varno prijavo**. Office lahko vpraša **Allow / Ignore**.
+   Ignore prekliče okno; ne pomeni zavrnitve pravilnika.
+2. Prijavo dokončajte v ločenem oknu. Veljavna vrhnja prijava lahko prepreči
+   ponovni vnos poverilnic, če to dovoljuje ponudnik identitete.
+3. Povratni Office kanal zamenja enkratno PKCE kodo za Word sejo samo v pomnilniku.
+   Nato se preverita samo seja in seznam modelov, brez oddaje vprašanja.
+4. Preglejte ohranjeni vnos in priponko izbora ter šele sami izberite **Pošlji**.
 
-Komponenta zahteve nikoli ne ponovi samodejno in nima nadomestnega ponudnika.
-Obnova prijave ne pošlje prejšnjega sporočila. Pred izrecno izbiro **Pošlji**
-preglejte trenutno sporočilo in priponko izbora.
-
-**Dovoli piškotke aplikacije v podoknu** prek Storage Access API zahteva samo
-dostop do piškotkov aplikacije. Novo odprto podokno že podeljeno dovoljenje znova
-aktivira brez zahteve za novo dovoljenje. Dostop potrdijo šele uspešni GET-i;
-dovoljenje samo še ni prijava. Ob nepodprtem ali zavrnjenem dostopu ohranite vnos in z upravljavcem
-preverite ozko izjemo za domeni aplikacije in Access ekipe. Ne izklapljajte
-zasebnosti brskalnika v celoti. Lokalni kandidat še potrebuje pravi Word Web sprejem.
+Seja traja največ 15 minut. V odprtem podoknu obnova ohrani večvrstični vnos,
+jezik in pripeti oziroma odstranjeni izbor. Zaprtje podokna uniči pomnilniško
+stanje: pred zaprtjem prekopirajte osnutek; ponovno odprtje zahteva nov izrecni
+prijavni klik. Trajnega osnutka ali refresh tokena ni. Novi tok ne zahteva Storage
+Access ali izjeme za piškotke brskalnika. Aktivacija in preverjanje v dejanskem
+Wordu sta še odprta; glejte [arhitekturo in omejitve dokazov](WORD_SCOPED_SESSION.md).
 
 Repozitorij nadzoruje samo potrditveno stran po prijavi. Zunanja stran
 ponudnika identitete ali dostopa pripada upravljavcu okolja.

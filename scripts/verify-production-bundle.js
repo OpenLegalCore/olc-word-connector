@@ -66,7 +66,7 @@ const forbiddenContent = [
   {
     label: "gateway server runtime marker",
     pattern:
-      /(?:private-upstream\.example\.invalid|word-gateway-example|OWUI_API_KEY|OWUI_ORIGIN|CF_ACCESS_CLIENT_ID|CF_ACCESS_CLIENT_SECRET)/i,
+      /(?:private-upstream\.example\.invalid|word-gateway-example|OWUI_API_KEY|OWUI_ORIGIN|CF_ACCESS_CLIENT_ID|CF_ACCESS_CLIENT_SECRET|WordSessionStore|createRemoteJWKSet|ACCESS_AUDIENCE)/i,
   },
   {
     label: "whole-document or HTML mutation",

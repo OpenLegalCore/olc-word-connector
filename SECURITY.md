@@ -59,6 +59,16 @@ tokens belong only in the trusted gateway. The Engine Bearer is distinct from
 the Access service-token pair and must never enter the task-pane bundle,
 browser storage, manifest, URL or logs.
 
+The new OLC-72 Word-session boundary verifies the human Access JWT at a separate
+server authorization endpoint and uses S256 PKCE with atomically consumed codes.
+A Word-scoped opaque capability (max 15 minutes) exists only in pane memory and
+its server record supports revocation. It is never forwarded to Engine. The
+same-origin API is reachable without an iframe cookie but every protected
+operation requires this capability. No broad Access bypass or disabling of the
+old protected gateway is part of the design. See [architecture](docs/WORD_SCOPED_SESSION.md)
+and [prepared activation](docs/WORD_SESSION_STAGING.md). This is not a declaration
+that the owner's individual Access incident is resolved or Word-qualified.
+
 The local OLC-72 document proposal candidate treats proposals as untrusted plain
 text, separate from the explanation. Only an explicit click after successful
 completion may invoke its one-shot writer. Replacement checks the retained

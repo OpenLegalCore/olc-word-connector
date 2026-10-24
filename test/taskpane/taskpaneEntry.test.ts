@@ -160,7 +160,7 @@ describe("production task-pane entry initialization", () => {
     expect(document.documentElement.lang).toBe("en-US");
     expect(document.title).toBe("OpenLegalCore for Word");
     expect(document.querySelector(".olc-app")?.getAttribute("data-view-state")).toBe(
-      "connection-error"
+      "session-expired"
     );
   });
 
@@ -209,7 +209,7 @@ describe("production task-pane entry initialization", () => {
     expect(document.querySelectorAll(".olc-app")).toHaveLength(1);
     expect(document.querySelectorAll('button[data-action-id^="select-"]')).toHaveLength(0);
     expect(wordRun).not.toHaveBeenCalled();
-    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(fetch).not.toHaveBeenCalled());
   });
 
   it.each([
@@ -234,11 +234,11 @@ describe("production task-pane entry initialization", () => {
       expect(document.documentElement.lang).toBe("en-US");
       expect(document.title).toBe("OpenLegalCore for Word");
       expect(document.querySelector(".olc-app")?.getAttribute("data-view-state")).toBe(
-        "connection-error"
+        "session-expired"
       );
-      expect(document.body.textContent).toContain("Connection check failed");
+      expect(document.body.textContent).toContain("Access required");
       expect(wordRun).not.toHaveBeenCalled();
-      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(fetch).not.toHaveBeenCalled();
     }
   );
 
@@ -261,11 +261,11 @@ describe("production task-pane entry initialization", () => {
     expect(document.documentElement.lang).toBe("en-US");
     expect(document.title).toBe("OpenLegalCore for Word");
     expect(document.querySelector(".olc-app")?.getAttribute("data-view-state")).toBe(
-      "connection-error"
+      "session-expired"
     );
     expect(document.body.textContent).not.toContain("sensitive navigator value");
     expect(wordRun).not.toHaveBeenCalled();
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it("fails safely when navigator.language and Office.onReady registration throw", async () => {
@@ -322,7 +322,7 @@ describe("production task-pane entry initialization", () => {
 
   it.each([
     ["unsupported host", "Excel", "unsupported"],
-    ["supported Word host", "Word", "connection-error"],
+    ["supported Word host", "Word", "session-expired"],
   ])("renders the localized safe state for an %s", async (_label, host, state) => {
     installNavigator({ language: "en-US" } as Navigator);
     installOffice({
