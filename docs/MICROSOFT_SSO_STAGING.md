@@ -1,11 +1,15 @@
 # Microsoft SSO staging and rollback
 
-**Microsoft API and task pane activated; actual Word acceptance pending.**
+**Microsoft API and task pane activated; selected Word Web SSO access checks have MANUAL PASS.**
 The owner's actual Microsoft API token is cryptographically verified. The first
 attempt was rolled back after 503; corrected API issuance/session/models/revoke
 now pass. Pages canonicalizes `.html` to extensionless URLs, so no-store rules
 cover both spellings and all 69 delivered file/header comparisons pass. See
 [actual delivery and manual acceptance protocol](evidence/olc72-microsoft-delivery-20261025/README.md).
+The owner confirmed successful pane reopen and a successful connection check
+after more than 16 minutes idle. Draft/language/attachment preservation and the
+other explicitly listed cases remain `NOT_RUN`; proposal acceptance is separate
+under OLC-74.
 See [runtime regression and rollback evidence](evidence/olc72-worker-runtime-20261025/README.md). The retained rollback
 baseline is `aa5d369f3e99067e8059a50fdd99f22535ca9810`, not the older pre-session
 frontend. Its Pages bytes, both session Workers, SQLite namespace, original

@@ -56,18 +56,21 @@ older hosts use a Microsoft Office-dialog fallback. Staging authorization remain
 restricted to the configured verified owner. Draft, language and attachment choice
 survive recovery in an open pane, with no automatic message replay or Word write.
 
-This candidate is **IN REVIEW; Microsoft SSO staging is activated**. The dedicated
-registrations and cryptographically verified owner authorization are configured.
-Actual API issuance, session/model discovery, revocation and delivered asset/header
-checks pass. Actual Microsoft Word/NAA startup, reopening and expiry acceptance
-remain pending; automatic tests and the earlier aa5 usable-form report do not
-establish those outcomes. The aa5 rollback is retained. Tunnel, DNS, local Engine
-and server-only credentials are unchanged. See [actual delivery evidence](docs/evidence/olc72-microsoft-delivery-20261025/README.md)
+Microsoft SSO pane-reopen and post-idle access checks have **MANUAL PASS** owner
+acceptance for the reported scenarios. This is not automated evidence or proof
+of a specific internal recovery mechanism; draft/language/attachment preservation
+and other unrun scenarios remain open. The separate document-proposal acceptance
+is tracked under OLC-74. This candidate remains **IN REVIEW; Microsoft SSO staging
+is activated**. The dedicated registrations and cryptographically verified owner
+authorization are configured. Actual API issuance, session/model discovery,
+revocation and delivered asset/header checks pass. The aa5 rollback is retained.
+Tunnel, DNS, local Engine and server-only credentials are unchanged. See [actual
+delivery evidence](docs/evidence/olc72-microsoft-delivery-20261025/README.md)
 and [rollback](docs/MICROSOFT_SSO_STAGING.md).
 
 |                         |                                                                         |
 | ----------------------- | ----------------------------------------------------------------------- |
-| **Word host**           | Earlier Word Web flow verified; Microsoft SSO candidate pending; Windows/Mac not tested        |
+| **Word host**           | Microsoft SSO reopen and post-idle access checks: manual pass; Windows/Mac not tested           |
 | **Legal sources**       | Slovenian legislation and case law supplied by the configured backend   |
 | **Backend path**        | OLC Engine through the dedicated same-origin `/word-api/v1/*` boundary               |
 | **Document context**    | No document content, or only the exact selected text                    |

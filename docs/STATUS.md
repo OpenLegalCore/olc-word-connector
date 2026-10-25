@@ -1,6 +1,7 @@
 # Word Connector — OLC-72 and OLC-74 review status
 
-Updated: 2026-10-25. **IN REVIEW**, draft PR #2,
+Updated: 2026-10-25. Microsoft SSO reopen and post-idle access checks have
+**MANUAL PASS** owner acceptance; PR #2 remains draft and under review,
 `codex/olc-72-word-native-sse`.
 
 ## Isolated OLC-74 adapter candidate — 2026-10-25
@@ -15,30 +16,42 @@ Copy answer; the proposal's separate explicit actions remain available.
 
 See [adapter contract, evidence, delivery dependencies and rollback](OLC74_ADAPTER_HANDOFF.md).
 No active SSO, Pages, Worker, Engine, Tunnel, DNS, browser or Word state was
-changed. The owner now explicitly accepts repeated pane close/reopen showing
-connected state and a usable form. Idle over 16 minutes and preservation of
-input, language and attached/removed selection still await actual results;
-**OLC-72 remains open**. Existing historical entries below retain their original
+changed. The owner MANUAL PASS from PR #2 documentation commit
+`c2b8b63c496d34ae89688bd544b66aeb4824a6aa` covers repeated pane reopen and
+one post-idle access check. Preservation of nonempty input, language and
+attached/removed selection remains NOT_RUN; see the exact acceptance below. Existing historical entries below retain their original
 checkpoint context. The new adapter has offline evidence only; actual model,
 Word editing and durable result reopen remain unqualified.
 
-## Primary outcome still required
+## Owner-accepted login outcome
 
-Remove repeated **Cloudflare user sign-ins** and access interruptions after
-idle time or reopening the pane. A manually recovered usable form does not
-close this usability objective. The owner approved Microsoft identity from Word
-through MSAL/NAA as the replacement user authentication boundary. Engine content
-work is separate and is not part of this change.
+The owner manually confirmed the active Microsoft SSO task pane reconnects to a
+usable form after repeated close-with-X/ribbon reopen, and that **Settings →
+Check connection** succeeds after the agreed over-16-minute idle interval while
+the pane stays open. These observations complete the owner-accepted login/access
+objective for those two scenarios. They are manual reports, do not prove a
+specific internal recovery mechanism, and do not accept preservation of a
+nonempty draft, language or selection attachment. OLC-74 proposal acceptance is
+a separate scope.
 
 The corrected Microsoft API is **ACTIVATED** and its actual owner-token safe
 probe passes. Pages source `edfaf1d` is delivered after successful exact-head CI. All 69
 static comparisons, canonical-URL no-store/CSP checks and public configuration
-checks pass. Actual Word acceptance remains pending owner execution. See
+checks pass. See
 [actual delivery and manual protocol](evidence/olc72-microsoft-delivery-20261025/README.md). The retained rollback implementation is
 `aa5d369f3e99067e8059a50fdd99f22535ca9810`. The owner's manual-login screenshot
 showing **OLC Engine connected** and a usable form is accepted as evidence of
-that delivered flow. No repeated browser connection, Cloudflare login or new
-Word test was requested or simulated as a substitute for that report.
+that delivered flow. The screenshot `image(20261025-084628).png` records the
+successful post-idle check and “Sporočilo ni bilo poslano”. No automated or
+specific internal-mechanism claim is made.
+
+Remaining `NOT_RUN`: whether an interactive Microsoft/Cloudflare sign-in was
+shown during either reported scenario; post-idle preservation of a nonempty
+draft/language/attachment; the second idle check with the attachment removed;
+runtime NAA and loaded-script diagnostics; unsupported-host fallback/cancellation;
+and actual second-account denial. These do not undo the two manual passes above.
+Proposal preview/apply semantics remain outside this SSO acceptance and are
+tracked under OLC-74.
 
 ## End-to-end activation continuation (2026-10-25)
 
@@ -78,7 +91,10 @@ Correction `4c99928` passed all gates/CI and was activated: actual Microsoft
 issuance, session, models and revoke passed (200), then revoked session returned
 401. Final static checks found `.html` canonicalization bypassed the no-store
 rules; explicit extensionless rules were delivered in `edfaf1d` and passed all
-69 static/header comparisons. Actual Word acceptance is pending. See
+69 static/header comparisons. At that activation checkpoint, Word acceptance
+was pending; the later owner results are recorded in the
+[delivery acceptance evidence](evidence/olc72-microsoft-delivery-20261025/README.md).
+See
 [owner enrollment](MICROSOFT_SSO.md#owner-enrollment-continuation-2026-10-25).
 
 See the [fresh preflight evidence](evidence/olc72-activation-preflight-20261025/README.md).
