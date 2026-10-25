@@ -146,6 +146,22 @@ error/stop/DONE/cancellation state. That contract must exclude content, identity
 credentials and arbitrary exception strings and specify retention/access rules.
 This candidate neither claims nor implements that future Engine change.
 
+## Later terminal category and isolated private capture candidate
+
+The [16:51 owner attempt investigation](evidence/olc74-terminal-failure-20261025/README.md)
+retains reported `terminal_validation_failed` without claiming a specific Engine
+guard or joined run. The private recorder drops the old arbitrary exception text;
+there is no assumption that protected run.json contains it. Protected artifacts
+remain NOT_READ after automatic approval rejected authentication before execution.
+
+A separate unactivated Engine [draft PR #56](https://github.com/OpenLegalCore/olc-engine/pull/56)
+adds fixed guard/field metadata at origin and one bounded private outer failure
+snapshot. It covers early and late failures plus explicit required-exact rejection,
+keeps validators/public SSE unchanged and never adds a general frontend message.
+Word product and this document's missing correlation contract remain unchanged.
+This improves prospective origin evidence only; no past cause or automatic
+pane→Engine joining is claimed. Controlled tests are not actual Word/model acceptance.
+
 ## Current frontend-only rollback
 
 The current SSE-code frontend keeps exact Pages `4bcc267c…` / source `dc3bef4…`

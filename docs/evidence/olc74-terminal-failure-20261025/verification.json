@@ -1,0 +1,41 @@
+{
+  "word_base": "d4726db179e278153509a95bea7d68b71248d089",
+  "branch": "codex/olc-74-word-adapter-offline",
+  "scope": "documentation only; Word production code/configuration/dependencies unchanged",
+  "engine_candidate": "1f81f126a5a70cb17fd9f5e78290c274d7f393fa",
+  "engine_base": "eef8ed0794046922842258ce587aab722db5fcb4",
+  "engine_tree": "d1c4a55133a2d3f4da605b341841f0cf530de8cf",
+  "engine_remote_verification": {
+    "paths": 10,
+    "all_remote_bytes_match": true
+  },
+  "engine_review": "independent ENTRY and EXIT diagnostic candidate review PASS before publication",
+  "engine_checks": {
+    "local_full": {
+      "exit": 0,
+      "pass": 2578,
+      "skip": 461,
+      "fail": 0
+    },
+    "studio_lws_overlapping": {
+      "exit": 0,
+      "pass": 76,
+      "skip": 37,
+      "fail": 0
+    },
+    "ci_url": "https://github.com/OpenLegalCore/olc-engine/actions/runs/40216069057",
+    "ci_result": "Actual final result recorded in publication PR comment; do not infer from local tests"
+  },
+  "word_doc_checks": {
+    "git_diff_check_exit": 0,
+    "json_parse": "PASS",
+    "relative_markdown_links": "PASS",
+    "reviewed_path_scope": "PASS",
+    "privacy_secret_review": "PASS",
+    "unchanged_product_manifest_package_lock_scripts": "PASS"
+  },
+  "word_full_suite_current_doc_head": "NOT_RUN; documentation only, no redundant product build/test",
+  "historical_reproduction": "NOT_RUN; actual joined rejected result/guard unavailable",
+  "protected_artifacts": "NOT_READ after automatic authentication approval rejection before execution; no retry",
+  "live_provider_completion_replay_or_runtime_changes": 0
+}

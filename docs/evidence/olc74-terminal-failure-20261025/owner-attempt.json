@@ -1,0 +1,16 @@
+{
+  "attemptId": "03deaad8-d499-4198-8399-5a0f615d0c03",
+  "startedAt": "2026-10-25T16:51:39.442Z",
+  "finishedAt": "2026-10-25T16:51:49.056Z",
+  "httpStatus": 200,
+  "reason": "SSE_ERROR_EVENT",
+  "upstreamCode": "terminal_validation_failed",
+  "frontendVersion": "word-b597de926a50cb988c79b8aa166b7ba4da8c986aa2afb94d2509a28b3d3c28cb",
+  "provenance": "podal lastnik, brez neodvisnega pregleda zavihka",
+  "actual_request_body": "NOT_ACQUIRED",
+  "original_writer_output": "NOT_ACQUIRED",
+  "concrete_rejection_guard": "UNDETERMINED",
+  "joined_engine_run": "NOT_ESTABLISHED",
+  "historical_reproduction": "NOT_RUN; insufficient joined data",
+  "word_actions_or_new_calls": 0
+}

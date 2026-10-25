@@ -1,0 +1,29 @@
+{
+  "word_control_plane_read": {
+    "pages": "6f22feb3-14cc-4fab-a3e0-d9b30cd55c79",
+    "source": "de34ecdbc6d53ce756ecfc2e44b7c7ff6133339f",
+    "status": "success",
+    "changed": false
+  },
+  "engine_pin": "eef8ed0794046922842258ce587aab722db5fcb4",
+  "protected_artefacts": {
+    "status": "NOT_READ",
+    "reason": "Automatic approval rejected local-password-file sudo authentication as unacceptable risk and conflict with prior system-prompt instruction; command not executed",
+    "credential_read_or_root_execution": false,
+    "retry_or_workaround": false,
+    "absence_inference": false
+  },
+  "proven_code_gap": "Fixed common upstream category loses exact guard. citation_validation_error is not in safe_run projection; do not assume it is saved. Both early StructuredOutputError and explicit exact-source errors share the category.",
+  "not_proven": "Which exact guard failed, whether Writer was reached, actual DocumentRequest/mode/status/notice/Writer result/source obligations or joined Engine run for this owner attempt.",
+  "missing_for_historical_reproduction": [
+    "joined run identity or comparable original sent-body hash/response ID",
+    "actual rejected Writer result and admitted document mode/status/notice/source obligations, or at least the original fixed failing guard/field"
+  ],
+  "candidate_scope": "private Engine inspection only, no frontend notice/request/SSE change; one request-local outer failure snapshot with typed fixed codes/fields and bounded context",
+  "joining_limit": "Word attempt UUID is not forwarded; future existing private inspection ID/bodyhash only joins independently retained actual wire bytes. Candidate does not add pane-to-run correlation or recover historical cause.",
+  "provider_completion_replay": 0,
+  "runtime_restart_or_infrastructure_changes": 0,
+  "word_model_acceptance": "NOT_RUN; reported attempt remains FAIL_OWNER_REPORTED / root cause UNDETERMINED",
+  "automatic_approval_block": "Protected evidence access remains blocked; candidate uses only accessible source/operator metadata/journal and controlled offline replies.",
+  "active_delivery_or_runtime_changes": false
+}

@@ -1,0 +1,9 @@
+{
+  "active": "active",
+  "pid_matches_operator": true,
+  "invocation_matches_retained": true,
+  "cwd_matches_operator": true,
+  "operator_pin": "eef8ed0794046922842258ce587aab722db5fcb4",
+  "operator_imports": 53,
+  "runtime_code_reimported": false
+}

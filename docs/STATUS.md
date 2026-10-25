@@ -293,3 +293,31 @@ Rollback `4bcc267c…` / source `dc3bef4…` and its exact 24-file packet are re
 provider call or independent Word test. Word clipboard/proposal display/use,
 Apply/Undo/Redo/reopen and remaining acceptance are NOT_RUN. Historical SSO MANUAL
 PASS and FAIL_OWNER_REPORTED are unchanged. See [actual cleaned delivery evidence](evidence/olc74-sse-activation-20261025/README.md).
+
+
+## OLC-74 later owner attempt and isolated capture candidate — 2026-10-25
+
+Owner supplied attempt `03deaad8-d499-4198-8399-5a0f615d0c03`,
+16:51:39.442–16:51:49.056 UTC: HTTP 200 / SSE_ERROR_EVENT,
+upstreamCode `terminal_validation_failed`, frontendVersion
+`word-b597de926a50cb988c79b8aa166b7ba4da8c986aa2afb94d2509a28b3d3c28cb`.
+Provenance: **podal lastnik, brez neodvisnega pregleda zavihka**. Concrete guard,
+Writer output and joined Engine run remain **UNDETERMINED / NOT_ACQUIRED**.
+Protected inspection is **NOT_READ** after automatic approval rejected its sudo
+authentication method before execution; not an absence claim and no retry/bypass.
+Engine metadata matches the retained eef8ed0 operator process/invocation/cwd proof;
+no new protected import/byte verification. Nearby 200 is not attributed by time.
+
+The proven code gap loses the fixed guard in private inspection. Unified work in
+this session prepared [separate Engine draft PR #56](https://github.com/OpenLegalCore/olc-engine/pull/56),
+source `1f81f126a5a70cb17fd9f5e78290c274d7f393fa`, from exact installed pin.
+It adds fixed reason/field metadata and bounded private outer-handler capture,
+without loosening validation, changing public SSE or adding a frontend notice.
+Local final suite 2578 PASS / 461 prerequisite SKIP; separate Studio/LWS contracts
+76 PASS / 37 PG SKIP, overlapping. Exact CI outcome is in the linked handoff.
+**NOT ACTIVATED; this is a diagnostic candidate, not a proven incident fix.**
+Historical reproduction is NOT_RUN because joined data are unavailable. Word UUID
+joining remains unsupported; private run ID/bodyhash requires independently
+retained actual sent bytes. No new provider/completion/replay, Word action,
+Engine/Studio/LWS runtime or infrastructure change or merge. Word source/deployment/Workers/SSO and all
+existing checkouts remain preserved. See [clean evidence and limits](evidence/olc74-terminal-failure-20261025/README.md).
