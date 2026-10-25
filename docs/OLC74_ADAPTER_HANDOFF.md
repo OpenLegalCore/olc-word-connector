@@ -1,10 +1,11 @@
 # OLC-74 Word adapter — isolated offline candidate
 
-Status: **IN REVIEW; NOT DEPLOYED; NOT WORD/MODEL ACCEPTED** (2026-10-25).
+Status: **IN REVIEW; STAGING DELIVERED; NOT WORD/MODEL ACCEPTED** (2026-10-25).
 
 The later [concrete staging preparation](OLC74_STAGING_CANDIDATE.md) preserves
 this product baseline, incorporates PR #2 manual SSO acceptance and records the
-actual Engine operator delivery. Its remaining route-proof blocker is explicit.
+actual Engine operator delivery. The later [staging activation](evidence/olc74-staging-activation-20261025/README.md)
+records owner-executed route proof and actual delivery of Word `e8ff0317`.
 
 ## Pins and scope
 
@@ -124,9 +125,10 @@ installation remains a separate CI gate.
 
 This section preserves the original offline checkpoint. The later
 [staging preparation](OLC74_STAGING_CANDIDATE.md) supplies current artifacts,
-operator delivery evidence and the remaining route-proof blocker.
+operator delivery evidence; the linked later activation supersedes the route blocker.
 
-This is a source/artifact candidate, not permission to activate it.
+At this historical offline checkpoint activation was not authorized. The later
+owner-approved frontend-only staging activation is recorded separately above.
 
 1. Reconcile Word PR #2 and Engine PR54 again. Keep the exact reviewed adapter
    commit and Engine pin together; any newer source needs its own review. Require

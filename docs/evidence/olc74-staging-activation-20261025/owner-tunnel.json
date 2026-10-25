@@ -1,0 +1,28 @@
+{
+  "result": "PASS_OWNER_EXECUTED_STRUCTURAL_MAPPING",
+  "provenance": "Owner manually executed the protected local read and supplied the result with activation authorization. This is not an agent automated Tunnel/config inspection.",
+  "checks": {
+    "active_cloudflared_unit": true,
+    "active_process_cmdline_explicitly_selects_local_config": true,
+    "config_mtime_precedes_process_start": true,
+    "protected_word_origin_matches_current_api_worker_binding": true,
+    "ingress_destination_matches_listener": true,
+    "listener_python_pid_matches_operator_release_proof": true,
+    "same_engine_main_pid_confirmed_by_agent_unprivileged_systemd_read": true
+  },
+  "configuration_management": "local config explicitly selected by running process; no remote configuration inferred",
+  "engine": {
+    "release": "eef8ed0794046922842258ce587aab722db5fcb4",
+    "verified_imports": 53,
+    "import_and_profile_provenance": "Existing Engine operator evidence, not rerun",
+    "planner_model": "gpt-5.6-sol",
+    "planner_reasoning": "high",
+    "planner_max_output_tokens": 8000
+  },
+  "limits": [
+    "No new HTTP forwarding/completion probe.",
+    "Config/process/listener linkage is owner-executed evidence, not a fresh agent protected read.",
+    "Native Word/model acceptance remains separate."
+  ],
+  "sanitization": "Local addresses, PIDs, unit/config paths and process details remain in the local activation record; no environment or credentials published."
+}

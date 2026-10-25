@@ -1,7 +1,10 @@
-# OLC-74 staging candidate — preparation only
+# OLC-74 staging delivery and retained preparation
 
-**IN REVIEW / NOT DEPLOYED. Activation is blocked by unverified current Tunnel
-ingress mapping.** No Worker payload or change is part of this candidate.
+**IN REVIEW / STAGING DELIVERED / WORD ACCEPTANCE NOT_RUN.** On 2026-10-25 the
+owner authorized frontend-only activation of `e8ff0317ef699204783de90eb65b6377a95ce9cd`.
+Canonical Pages deployment is `82da70e6-53ef-409e-b6cc-7f0ee91a9dd4`; source and
+all delivered bytes match the reviewed package. See [actual activation evidence](evidence/olc74-staging-activation-20261025/README.md).
+No Worker payload or change is part of this delivery.
 
 ## Exact scope
 
@@ -31,11 +34,15 @@ evidence; no new import probe, environment export or model call was performed.
 
 The active Microsoft API Worker still points to the existing protected Word
 origin, and Microsoft auth is enabled. Auth/API versions match the baseline below.
-However, the remaining origin → local TEST listener mapping is **UNVERIFIED**:
-the Cloudflare connection returns 401 because it lacks Tunnel Read, local config
-read is denied, and noninteractive sudo requires OS authentication. Neither a
-model name nor a models GET is used as version evidence. The missing read must
-confirm the actual ingress and its listener/process binding before activation.
+The earlier mapping blocker is resolved by an **owner-executed** protected local
+read supplied with activation authorization. The active cloudflared process
+explicitly selects local configuration, whose mtime predates that process start.
+The protected Word origin's ingress destination matches the listener, and the
+listener's Python PID matches the exact Engine operator release/import proof.
+An agent read-only systemd check confirms that same Engine PID remains active.
+These are configuration/process/listener links; no new protected-config read,
+Tunnel Read permission, live completion or model-version inference was used.
+Private paths, addresses and PIDs remain local. See the [sanitized owner evidence](evidence/olc74-staging-activation-20261025/owner-tunnel.json).
 No Tunnel, route, Engine or identity setting was changed.
 
 Engine delivery PASS does not accept Word/model proposal behavior. Native Word
@@ -43,8 +50,10 @@ replacement/insertion, Undo/Redo and saved-result reopen remain NOT_RUN.
 
 ## Frontend and rollback bytes
 
-The current Pages source is `edfaf1dc3367cdd76c24ee9e176efb6bff2cedf8`,
-deployment **`7e4bcdfe-11ff-4d61-9789-80962046e5b1`**. The production branch is
+The pre-activation rollback Pages source is `edfaf1dc3367cdd76c24ee9e176efb6bff2cedf8`,
+deployment **`7e4bcdfe-11ff-4d61-9789-80962046e5b1`**. Current source is
+`e8ff0317ef699204783de90eb65b6377a95ce9cd`, deployment
+`82da70e6-53ef-409e-b6cc-7f0ee91a9dd4`. The Pages delivery branch is
 `main`; automatic production and preview deployments are disabled. The project
 is static (`uses_functions=false`). Preserve these settings and existing domains.
 
@@ -71,7 +80,7 @@ critical current-host GETs: **27 PASS**, including Microsoft CSP/no-store and
 absent X-Frame-Options for the three auth/taskpane documents. `_headers` matches
 the delivered source and its observed effects. No API/session/model GET was needed.
 
-## Review package and later commands
+## Review package and executed staging APPLY
 
 The local handoff supplies the final Word commit/tree, CI URL, archive hash,
 per-file checksums and concrete package path. Generated assets are deliberately
@@ -81,18 +90,27 @@ payload, operator environment, credentials or private Engine data.
 
 The existing CLI is Wrangler 4.151.3; its exact local path and hashes are pinned
 in the package. Its command help was checked without installing or updating anything.
-After separate activation authorization, a fresh unchanged-baseline read,
-successful current upstream mapping attestation, and exact-head CI, the package's
-APPLY command uploads only `frontend/` to `olc-word-staging --branch main` with the
-final reviewed commit. ROLLBACK either uses the exact Pages rollback endpoint for
-the baseline deployment or redeploys the verified `rollback/` directory with
-source `edfaf1d`. Both preserve Microsoft Workers. The package contains the full
-literal commands; none were executed here.
+After explicit owner staging authorization, unchanged-baseline readback,
+owner route attestation and exact `e8ff0317` CI success, the reviewed APPLY
+command uploaded only `frontend/` to `olc-word-staging --branch main` and exited 0.
+This `main` is the staging project's Pages delivery channel; GitHub main was not
+changed, and both PRs remain unmerged. No build or dependency installation was needed.
 
-Before any later switch, the operator must pause new submissions and cancel
-in-flight work. After a switch, verify the canonical Pages ID/source, exact bytes
-and SSO headers before releasing that pause. On failure restore the baseline
-Pages first; do not change Workers, Tunnel or Engine as an incidental remedy.
+Three sampled socket reads and an immediate pre-APPLY read found no established
+Engine HTTP connections. No application admission lock was installed and no Word
+window was inspected; the owner was asked to hold submissions during the switch.
+No active work was found or cancelled. All 78 required postflight HTTP checks pass
+on immutable, canonical pages.dev and custom hosts: all 23 served files per host,
+plus three extensionless critical documents per host. `_headers` is checked by
+its preserved checksum and observed CSP/cache effects, not as a served file.
+Auth/API versions, configuration and project settings are unchanged.
+
+The original review archive, extracted payload and rollback are retained unchanged.
+Wrangler's generated CLI cache was moved out of the reviewed packet; no payload
+file changed. Rollback is available at the exact baseline deployment and all 26
+immutable-host asset/header checks pass after activation. ROLLBACK was not executed.
+On later rollback use the retained Pages-only command; do not change Workers,
+Tunnel or Engine as an incidental remedy.
 
 ## Checks and limits
 
@@ -107,7 +125,7 @@ and its actual result is in the PR/package handoff. Conflict resolution, local
 links, JSON, exact path scope, privacy/secret review and `git diff --check` are
 recorded in [the evidence](evidence/olc74-staging-candidate-20261025/README.md).
 
-No activation, provider call, Word write, browser action, merge or other-project
-change occurred. The concrete remaining delivery blocker is a fresh effective
-Word Tunnel ingress/listener attestation; functional model/Word acceptance remains
-a later, separately authorized step.
+The actual staging frontend activation is recorded above. No provider call,
+completion, Word write, browser action, merge or other-project change occurred.
+Actual model behavior and native Word display/apply, Undo/Redo and result reopen
+remain NOT_RUN. Historical SSO MANUAL PASS is not acceptance of this new delivery.

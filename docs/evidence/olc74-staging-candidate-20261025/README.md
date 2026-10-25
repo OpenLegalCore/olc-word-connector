@@ -1,6 +1,8 @@
 # Staging preparation evidence — 2026-10-25
 
-**CANDIDATE ONLY / NOT DEPLOYED / UPSTREAM MAPPING UNVERIFIED.**
+**HISTORICAL PREPARATION CHECKPOINT:** candidate only, not deployed, upstream
+mapping unverified at that point. Later owner-executed mapping proof and staging
+activation are in the [separate delivery record](../olc74-staging-activation-20261025/README.md).
 
 See the [candidate contract and handoff](../../OLC74_STAGING_CANDIDATE.md).
 

@@ -68,6 +68,12 @@ Tunnel, DNS, local Engine and server-only credentials are unchanged. See [actual
 delivery evidence](docs/evidence/olc72-microsoft-delivery-20261025/README.md)
 and [rollback](docs/MICROSOFT_SSO_STAGING.md).
 
+The OLC-74 frontend at `e8ff0317` is now activated on **staging only** against
+Engine TEST `eef8ed0`. Delivered bytes, CSP/cache and unchanged Microsoft Worker
+versions pass postflight checks. [Activation evidence and retained rollback](docs/evidence/olc74-staging-activation-20261025/README.md)
+keep native Word proposal display/use and actual model acceptance **NOT_RUN**.
+The earlier SSO MANUAL PASS remains historical access acceptance.
+
 |                         |                                                                         |
 | ----------------------- | ----------------------------------------------------------------------- |
 | **Word host**           | Microsoft SSO reopen and post-idle access checks: manual pass; Windows/Mac not tested           |
@@ -121,9 +127,9 @@ See the [English user guide](docs/USER_GUIDE.md),
 - A valid Word selection appears automatically as a removable **Selected text**
   attachment. **Send** freezes the displayed attachment and interface language;
   the message and quoted selection remain separate fields.
-- The deployed basic answer flow does not edit Word. A local OLC-72 candidate
-  adds explicit proposal preview and guarded, user-clicked replacement/insertion;
-  [the isolated OLC-74 adapter accepts validated proposal-only results, with native Word qualification and activation pending](docs/OLC74_ADAPTER_HANDOFF.md).
+- Receiving an answer leaves Word unchanged. The staging OLC-74 adapter offers
+  separate validated proposal preview and guarded, user-clicked replacement/insertion;
+  [proposal-only results are delivered on staging, with native Word qualification pending](docs/OLC74_ADAPTER_HANDOFF.md).
   Redlining and tracked-change management are not included.
 - Cancellation, timeout, session expiry, backend failure and late responses
   leave the Word document unchanged.
