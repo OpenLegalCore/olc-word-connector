@@ -4,12 +4,6 @@ Updated: 2026-10-25. Microsoft SSO reopen and post-idle access checks have
 **MANUAL PASS** owner acceptance; PR #2 remains draft and under review,
 `codex/olc-72-word-native-sse`.
 
-**Current staging frontend:** OLC-74 source `e8ff0317`, Pages
-`82da70e6-53ef-409e-b6cc-7f0ee91a9dd4`, delivered after owner authorization and
-exact-source CI. [Delivery evidence](evidence/olc74-staging-activation-20261025/README.md)
-records 78/78 postflight checks, unchanged SSO Workers and retained rollback.
-Native Word/model proposal acceptance remains NOT_RUN; both PRs remain in review.
-
 ## Owner-accepted login outcome
 
 The owner manually confirmed the active Microsoft SSO task pane reconnects to a
@@ -22,7 +16,7 @@ nonempty draft, language or selection attachment. OLC-74 proposal acceptance is
 a separate scope.
 
 The corrected Microsoft API is **ACTIVATED** and its actual owner-token safe
-probe passed at the SSO checkpoint. Pages source `edfaf1d` was delivered after successful exact-head CI. All 69
+probe passes. Pages source `edfaf1d` is delivered after successful exact-head CI. All 69
 static comparisons, canonical-URL no-store/CSP checks and public configuration
 checks pass. See
 [actual delivery and manual protocol](evidence/olc72-microsoft-delivery-20261025/README.md). The retained rollback implementation is

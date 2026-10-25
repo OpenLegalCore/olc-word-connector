@@ -50,5 +50,11 @@
   },
   "no_new_build_or_dependency_install": true,
   "new_local_product_test_suite": "NOT_RUN; no source/test changes, existing delivered-head CI is valid",
-  "documentation_head_ci": "Not claimed by this release CI record; merge still requires exact then-current PR head CI."
+  "documentation_head_ci": "Not claimed by this release CI record; merge still requires exact then-current PR head CI.",
+  "documentation_integration": {
+    "initial_commit": "036e337f1052668d65629d9c09981bfde50d8b08",
+    "initial_result": "STATUS overlap with PR #2 manual-acceptance additions; GitHub CONFLICTING",
+    "correction": "Preserve the original SSO checkpoint section byte-for-byte and retain current OLC-74 outcome in its separate end section; docs only, additive follow-up without merge/rebase/force-push.",
+    "corrected_file_preview": "PASS; full committed-tree preview verified after commit"
+  }
 }

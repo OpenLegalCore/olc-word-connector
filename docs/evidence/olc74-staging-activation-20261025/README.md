@@ -121,6 +121,11 @@ odstavek jasneje.” First record the displayed separate proposal, any required
 notice, and the unchanged document. Applying it is a later explicit owner action.
 This protocol was prepared here; no such request was sent.
 
+The first published evidence commit introduced a STATUS overlap against PR #2.
+A documentation-only additive correction preserves the original SSO checkpoint
+section byte-for-byte and retains the current delivery outcome in its own end
+section. The read-only integration preview passes; no merge or redeploy was used.
+
 Only reviewed documentation/evidence paths are published on the adapter branch.
 Delivered-source CI is pinned above; it is not relabelled as CI for later evidence
 commits. The exact then-current PR head still needs CI before any future merge.
