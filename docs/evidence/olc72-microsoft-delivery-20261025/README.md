@@ -1,8 +1,10 @@
 # OLC-72 Microsoft staging delivery — actual evidence
 
-Microsoft SSO staging is activated. **OLC-72 remains IN REVIEW: actual Word
-startup, reopen and expiry acceptance is pending owner execution.** The primary
-objective remains no repeated Cloudflare user sign-ins or idle/reopen interruptions.
+Microsoft SSO staging is activated. **Owner Word Web acceptance for pane reopen
+and post-idle access verification: MANUAL PASS (2026-10-25).** This completes
+the observed Microsoft SSO access objective for those scenarios; it is neither
+automated evidence nor proof of a particular internal recovery mechanism.
+Acceptance of document proposals is a separate OLC-74 decision.
 
 ## Delivered versions and gates
 
@@ -28,12 +30,34 @@ regression and successful corrected activation are [recorded separately](../olc7
 Synthetic signature/claims/account-denial tests are not evidence of another real
 account or actual Word NAA. No completion request or Word write was made.
 
+## Owner Word Web acceptance — 2026-10-25
+
+The owner reported the following observations in the existing Word Web session:
+
+| Scenario | Result | Evidence and scope |
+| --- | --- | --- |
+| Repeatedly close the task pane with **X**, then reopen it with the Word ribbon button | **MANUAL PASS** | The connection returned and the form was usable. This records the observed result only; it does not establish the internal recovery path. |
+| Leave the pane open through the agreed idle interval (over 16 minutes), then use **Settings → Check connection** without closing it | **MANUAL PASS** | The owner confirmed “deluje” (works). Screenshot `image(20261025-084628).png` shows the successful check and “Sporočilo ni bilo poslano” (message was not sent). This is manual access verification, not an automated test. |
+| Preserve a nonempty draft, selected language and selection attachment during that post-idle check | **NOT_RUN** | The owner did not confirm preservation of these values in this check. No pass is inferred from the successful access result. |
+| Repeat the idle check with the selection attachment removed | **NOT_RUN** | No owner result was provided for this second idle interval. |
+| Whether Microsoft or Cloudflare showed an interactive sign-in during each reported scenario | **NOT_RUN** | The owner did not report this detail; no absence of an interactive prompt is inferred. |
+| Actual `NestedAppAuth` support and loaded task-pane script/version | **NOT_RUN** | No runtime diagnostic was captured; no implementation mechanism is inferred. |
+| Unsupported-host fallback/cancellation and denial of a second account | **NOT_RUN** | Not exercised in this acceptance. |
+
+The manual pass is limited to pane reopen and post-idle access verification. It
+does not accept proposal behavior, insertion/replacement, or any OLC-74 Engine
+semantics. OLC-74 proposal acceptance remains separate. The task pane reported
+that no message was sent; this acceptance involved no provider completion or
+Word document write.
+
 ## Owner Word acceptance protocol
 
-Automation cannot access the owner's Chrome browser (`Browser is not available:
-chrome`); the attempted IAB surface also failed. No replacement browser, login or
-new chat is required. Use the existing signed-in Chrome Word tab, with an existing
-test document opened from OneDrive/SharePoint and the approved installed manifest.
+The manual observations above supersede only the reopen and one post-idle
+access-check rows of this protocol. Remaining unperformed checks stay
+`NOT_RUN`. Automation cannot access the owner's Chrome browser (`Browser is not
+available: chrome`); the attempted IAB surface also failed. No replacement
+browser, login or new chat is required. The existing signed-in Chrome Word tab
+and approved installed manifest were used by the owner.
 
 1. Reopen OLC and report Connecting → usable form, any Microsoft action/consent,
    and whether Cloudflare appeared. Interaction must start only after the owner's
