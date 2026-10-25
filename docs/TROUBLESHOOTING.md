@@ -14,17 +14,17 @@ its security or document-safety boundaries.
 
 ## Start with the failing layer
 
-| Symptom | Most likely layer | First check |
-| --- | --- | --- |
-| Add-in or ribbon command is missing | Word registration / manifest | Correct XML manifest and permitted sideload method |
-| Task pane opens but never reaches the service chooser | Static hosting / JavaScript | Task-pane URL, HTTPS trust, browser console without sensitive data |
-| Connection check fails | Gateway / session / model discovery | Explicit provider, same-origin route, session and exact model ID |
-| Search starts but fails | Completion route / backend contract | Status code, content type, provider availability and response limits |
-| **Session expired** appears | Browser-facing identity | Complete secure sign-in, return to Word, select **Retry search** |
-| No useful source is returned | Backend corpus / retrieval | Refine the question and verify backend coverage |
-| Source text is visible but not clickable | Renderer URL policy | Exact HTTPS PISRS or sodnapraksa hostname |
-| **Selected text** is rejected | Word selection policy | Non-empty supported selection within one body or table cell |
-| Answer is visible but cannot be copied | Browser / host clipboard | Task-pane focus and clipboard permission |
+| Symptom                                               | Most likely layer                   | First check                                                          |
+| ----------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------- |
+| Add-in or ribbon command is missing                   | Word registration / manifest        | Correct XML manifest and permitted sideload method                   |
+| Task pane opens but never reaches the message input   | Static hosting / JavaScript         | Task-pane URL, HTTPS trust, browser console without sensitive data   |
+| Connection check fails                                | Gateway / session / model discovery | Explicit provider, same-origin route, session and exact model ID     |
+| Search starts but fails                               | Completion route / backend contract | Status code, content type, provider availability and response limits |
+| **Access required** appears                           | Browser-facing identity             | Complete secure sign-in, return to Word, select **Check connection** |
+| No useful source is returned                          | Backend corpus / retrieval          | Refine the question and verify backend coverage                      |
+| Source text is visible but not clickable              | Renderer URL policy                 | Exact HTTPS PISRS or sodnapraksa hostname                            |
+| **Selected text** is rejected                         | Word selection policy               | Non-empty supported selection within one body or table cell          |
+| Answer is visible but cannot be copied                | Browser / host clipboard            | Task-pane focus and clipboard permission                             |
 
 A successful static build proves none of the gateway, identity, model, corpus or
 Word-runtime layers.
@@ -38,6 +38,13 @@ Word-runtime layers.
    staging and production artifacts.
 5. For the verified development path, follow
    [Word for the web sideload](INSTALLATION.md#path-b-word-for-the-web-development-sideload).
+
+For a hosted Word for the web build, the task-pane response must retain a
+`frame-ancestors` policy that permits the observed Word host chain. The
+maintained Cloudflare policy names `word.cloud.microsoft` and
+`inclient.store.office.com` explicitly and permits the regional
+`*.officeapps.live.com` editor hosts. Do not remove the directive or replace
+these bounded sources with a general wildcard.
 
 The root `manifest.xml` expects the development task pane at
 `https://localhost:3002`. Start that server with:
@@ -54,16 +61,13 @@ non-loopback host.
 ## The task pane loads but live search does not work
 
 The stock development server serves the frontend but does not implement the
-same-origin `/api/*` or `/v1/*` provider routes. It can validate loading, Office
+same-origin `/v1/*` Engine routes. It can validate loading, Office
 integration and UI behavior without providing a legal backend.
 
 For live search, confirm that the operator deployment includes:
 
 - the same HTTPS origin for task-pane assets and gateway routes;
-- `GET /api/models` and `POST /api/chat/completions` for Open WebUI, when
-  enabled;
-- `GET /v1/models` and `POST /v1/chat/completions` for OLC Engine, when
-  enabled;
+- `GET /v1/models` and `POST /v1/chat/completions` for OLC Engine;
 - the exact configured model ID; and
 - a valid browser-facing identity session.
 
@@ -76,54 +80,42 @@ provider's model-list route and exact model ID.
 
 Check, in order:
 
-1. the provider selected in the task pane;
+1. the OLC Engine connection selected in the task pane;
 2. whether the browser session is valid;
 3. whether the corresponding same-origin route exists;
 4. whether the route returns HTTP 200 with the expected JSON content type and
    shape; and
 5. whether the configured model ID appears exactly in `data[].id`.
 
-Select **Try again** only after correcting the cause. The connector never falls
-back from Open WebUI to OLC Engine or in the opposite direction.
+Select **Try again** only after correcting the cause. The connector has no fallback backend and never retries automatically.
 
-## Session expired
+## Access required
 
-A same-origin redirect, HTML login response, `401` or `403` is treated as
-**Session expired**, not as a model answer.
+A same-origin redirect, HTML login response or `401` is treated as
+**Access required**, not as a model answer. The internal `SESSION_EXPIRED` code
+does not establish expiry: blocked cookies or a login challenge can produce the
+same symptom. A non-HTML `403` is **Access denied** and must not be diagnosed as
+session expiry. See [Word Web access recovery](WORD_WEB_ACCESS_RECOVERY.md) for
+the read-only evidence, missing browser evidence and production remediation plan.
 
 1. Select **Open secure sign-in**.
-2. Complete the operator-provided browser login.
-3. Confirm that the sign-in landing reports completion.
+2. Complete the operator-provided login in the Office dialog.
+3. Treat its return only as a landing event; it does not prove pane cookie access.
 4. Return to Word.
-5. Select **Retry search** explicitly.
+5. Select **Check connection** explicitly, review the form, then select **Send**.
 
-Sign-in completion does not automatically send the question again. The
-connector preserves the selected provider, exact question and context mode. If
-**Selected text** is active, Retry captures the then-current selection again.
+Sign-in completion does not automatically send the message again. Review the
+current message and displayed **Selected text** attachment before Send.
+
+When a dialog return is followed by another pane login challenge, the local
+candidate offers an explicit Storage Access API cookie-permission request.
+Denial/unsupported Word sandbox keeps the draft and points to a narrow managed
+browser exception. A grant still needs explicit checks of both protected route
+prefixes; never claim that the dialog or permission alone restored the session.
 
 If the identity page reports an invalid redirect URL, the operator must correct
 the identity application's allowed redirect/return configuration for the exact
 public origin and `/api/session` flow. Do not add a wildcard redirect.
-
-## Open WebUI is unavailable or rejects the request
-
-Verify the exact Open WebUI adapter profile:
-
-- `GET /api/models` returns JSON and includes the configured model;
-- `POST /api/chat/completions` accepts one user message, a fresh
-  `local:<UUIDv4>` chat ID and `stream: true`;
-- the completion response is `text/event-stream`;
-- the stream contains textual `choices[].delta.content` events; and
-- it ends with the required completion boundary.
-
-The browser must not hold the Open WebUI API key. In the reference topology,
-the gateway adds the Bearer credential server-side. A mismatched content type,
-malformed stream, missing completion boundary or oversized response fails
-closed.
-
-Compatibility is verified against the exact documented profile, not every Open
-WebUI version. Check release-specific behavior before upgrading an upstream
-deployment.
 
 ## OLC Engine is unavailable or rejects the request
 
@@ -131,28 +123,22 @@ Verify the direct engine contract:
 
 - `GET /v1/models` returns an OpenAI-compatible list object containing the exact
   configured model ID;
-- `POST /v1/chat/completions` accepts `stream: false` and one user message; and
-- the response is HTTP 200 `application/json` with non-empty text at
-  `choices[0].message.content`.
+- `POST /v1/chat/completions` accepts model `lexai-engine-local`, one user
+  message, `response_language`, `stream: true` and usage streaming; and
+- the response is HTTP 200 `text/event-stream` with content deltas, a
+  `finish_reason: "stop"` terminal and a following `[DONE]` event.
 
 A server that is generally described as “OpenAI-compatible” is not necessarily
-compatible with this exact contract. Redirects, HTML, malformed UTF-8, invalid
-JSON, missing content and oversized responses are rejected.
+compatible with this exact contract. Redirects, HTML, malformed UTF-8 or SSE,
+error/tool/length terminals, missing `stop` or `[DONE]`, and oversized responses
+are rejected.
 
 ## Model not available
 
 `MODEL_NOT_AVAILABLE` means that the configured model ID was not present in the
 selected provider's model list, or the selected route returned `404`.
 
-The default build-time ID is `olc-engine`. If the operator uses another ID,
-rebuild with an exact public identifier:
-
-```bash
-OLC_WORD_MODEL_ID=partner-model:latest npm run build:stage
-```
-
-Verify the resulting artifact and both enabled provider model lists. Never use a
-credential as a model ID.
+The Engine ID is fixed to `lexai-engine-local`; there is no build-time model override. Never use a credential as a model ID.
 
 ## Search returns no useful result
 
@@ -169,7 +155,7 @@ determine what can be retrieved.
 
 ## The answer has no reliable sources
 
-Do not rely on unsupported output. Use **Refine question** to request exact
+Do not rely on unsupported output. Use **Edit message** to request exact
 source identities and links. Verify the act, provision, court, file number,
 date, validity period and relevant reasoning directly in the authoritative
 source.
@@ -202,30 +188,31 @@ For **Selected text**:
    table; and
 4. inside a table, select text within one cell only.
 
-Selection is captured only when Search or an explicit Retry starts. A rejected
-selection causes no provider completion and no document mutation.
+Selection changes update the compact attachment while focus is in Word. Moving
+focus into the input preserves the displayed attachment; **Send** freezes it.
+Remove the attachment to send only the message. A rejected selection causes no
+provider completion and no document mutation.
 
-If the selection changed while the sign-in tab was open, review it before
-Retry. The retry intentionally captures the current selection rather than
-reusing hidden document text.
+If the selection changed while the sign-in tab was open, review the displayed
+attachment before Send. Hidden document text is never reused.
 
-## The question is rejected
+## The message is rejected
 
-The legal question must contain 1–4,000 characters. Remove accidental blank
-input or reduce an oversized question without moving confidential material to
+The message must contain 1–4,000 characters. Remove accidental blank
+input or reduce an oversized message without moving confidential material to
 another field.
 
-Question validation happens before selection capture or a provider request.
+Message validation happens before a provider request.
 
-## Cancel or timeout
+## Stop or timeout
 
-**Cancel** aborts the active request and returns the task pane to its ready
+**Stop** aborts the active request and returns the task pane to its ready
 state. The adapter timeout is 120 seconds. Both leave the document unchanged.
 
-Use one explicit Search or Retry action after resolving the cause. The
+Use one explicit Send action after resolving the cause. The
 connector does not issue automatic retries.
 
-## A late result appears after Cancel
+## A late result appears after Stop
 
 The controller invalidates cancelled, timed-out and superseded operations. A
 late resolve or reject must not become the visible result. This behavior passed
@@ -266,11 +253,11 @@ network failure.
 
 Key distinctions:
 
-| Manifest | Expected role |
-| --- | --- |
-| `manifest.xml` / `manifests/manifest.dev.xml` | Local development; `ReadWriteDocument` for the isolated development harness |
-| `manifests/manifest.stage.xml` | Inert example staging manifest; replace every `.example.invalid` URL before use |
-| `manifests/manifest.prod.xml` | Reserved production identity; this repository does not operate the referenced service |
+| Manifest                                      | Expected role                                                                         |
+| --------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `manifest.xml` / `manifests/manifest.dev.xml` | Local development; `ReadWriteDocument` for the isolated development harness           |
+| `manifests/manifest.stage.xml`                | Inert example staging manifest; replace every `.example.invalid` URL before use       |
+| `manifests/manifest.prod.xml`                 | Reserved production identity; this repository does not operate the referenced service |
 
 Staging and production manifests use `ReadDocument`. The active legal-source
 workflow does not mutate Word.
@@ -329,22 +316,22 @@ ad hoc server repair.
 
 The task pane exposes a content-free status code for controlled failures.
 
-| Code | Meaning | Safe next step |
-| --- | --- | --- |
-| `SESSION_EXPIRED` | Browser-facing protected session is no longer accepted | Secure sign-in, return to Word, explicit Retry |
-| `AUTH_REQUIRED` / `ACCESS_DENIED` | Direct credential or upstream authorization failed | Operator checks server-side identity; do not place keys in the browser |
-| `MODEL_NOT_AVAILABLE` | Exact model ID is absent or model route returned `404` | Compare build-time ID with `data[].id` |
-| `RATE_LIMITED` | Provider returned `429` | Wait according to operator policy; retry once explicitly |
-| `SERVICE_UNAVAILABLE` | Provider returned a server error | Check provider health; do not switch providers silently |
-| `NETWORK_ERROR` | Fetch failed before a valid response | Check HTTPS, DNS, route and gateway availability |
-| `TIMEOUT` | Bounded request expired | Check backend latency; retry explicitly after diagnosis |
-| `INVALID_RESPONSE` | Status, content type, structure, encoding or size violated the contract | Compare the response with the integration guide |
-| `EMPTY_RESPONSE` | Completion text was empty | Check model/backend behavior |
-| `NO_SELECTION` | Selected-text mode found no visible text | Select text and retry |
-| `SELECTION_TOO_LARGE` | Selection exceeded 20,000 characters | Reduce the selection |
-| `UNSUPPORTED_SELECTION` | Selection crossed an unsupported structure | Use plain body text or one table cell |
-| `WORD_READ_FAILED` | Word selection capture failed | Retry with a simple synthetic selection; report if repeatable |
-| `COMPLETION_FAILED` / `CONNECTION_FAILED` | Unexpected completion or connection failure | Capture only non-sensitive state and inspect the responsible layer |
+| Code                                      | Meaning                                                                 | Safe next step                                                         |
+| ----------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `SESSION_EXPIRED`                         | Browser-facing protected session is no longer accepted                  | Secure sign-in, return to Word, explicit Retry                         |
+| `AUTH_REQUIRED` / `ACCESS_DENIED`         | Direct credential or upstream authorization failed                      | Operator checks server-side identity; do not place keys in the browser |
+| `MODEL_NOT_AVAILABLE`                     | Exact model ID is absent or model route returned `404`                  | Compare build-time ID with `data[].id`                                 |
+| `RATE_LIMITED`                            | Provider returned `429`                                                 | Wait according to operator policy; retry once explicitly               |
+| `SERVICE_UNAVAILABLE`                     | Provider returned a server error                                        | Check provider health; do not switch providers silently                |
+| `NETWORK_ERROR`                           | Fetch failed before a valid response                                    | Check HTTPS, DNS, route and gateway availability                       |
+| `TIMEOUT`                                 | Bounded request expired                                                 | Check backend latency; retry explicitly after diagnosis                |
+| `INVALID_RESPONSE`                        | Status, content type, structure, encoding or size violated the contract | Compare the response with the integration guide                        |
+| `EMPTY_RESPONSE`                          | Completion text was empty                                               | Check model/backend behavior                                           |
+| `NO_SELECTION`                            | Selected-text mode found no visible text                                | Select text and retry                                                  |
+| `SELECTION_TOO_LARGE`                     | Selection exceeded 20,000 characters                                    | Reduce the selection                                                   |
+| `UNSUPPORTED_SELECTION`                   | Selection crossed an unsupported structure                              | Use plain body text or one table cell                                  |
+| `WORD_READ_FAILED`                        | Word selection capture failed                                           | Retry with a simple synthetic selection; report if repeatable          |
+| `COMPLETION_FAILED` / `CONNECTION_FAILED` | Unexpected completion or connection failure                             | Capture only non-sensitive state and inspect the responsible layer     |
 
 `CANCELLED` is normally an intentional transition back to ready state rather
 than a user-facing error.

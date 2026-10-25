@@ -7,11 +7,17 @@ export type SearchingState = {
   readonly kind: "searching";
   readonly operationId: number;
   readonly request: CompletionRequest;
+  readonly partialText: string;
 };
 export type ResultState = {
   readonly kind: "result";
   readonly request: CompletionRequest;
   readonly result: CompletionResult;
+  readonly documentChange?: {
+    readonly status: "ready" | "applying" | "applied" | "failed";
+    readonly canReplace: boolean;
+    readonly error?: "SELECTION_CHANGED" | "CURSOR_REQUIRED" | "WORD_WRITE_FAILED";
+  };
 };
 export type ErrorState = { readonly kind: "error"; readonly error: AppError };
 
@@ -33,14 +39,20 @@ export function copyCompletionRequest(request: CompletionRequest): CompletionReq
 export function copyCompletionResult(result: CompletionResult): CompletionResult {
   return {
     text: result.text,
+    sources: result.sources?.map((source) => ({ ...source })),
+    rawResponse: result.rawResponse,
     model: result.model,
-    usage: result.usage
-      ? {
-          inputTokens: result.usage.inputTokens,
-          outputTokens: result.usage.outputTokens,
-          totalTokens: result.usage.totalTokens,
-        }
-      : undefined,
+    usage:
+      result.usage === null
+        ? null
+        : result.usage
+          ? {
+              inputTokens: result.usage.inputTokens,
+              outputTokens: result.usage.outputTokens,
+              totalTokens: result.usage.totalTokens,
+            }
+          : undefined,
+    proposal: result.proposal ? { ...result.proposal } : result.proposal,
   };
 }
 
@@ -53,6 +65,7 @@ export function copyAppState(state: AppState): AppState {
       kind: "result",
       request: copyCompletionRequest(state.request),
       result: copyCompletionResult(state.result),
+      documentChange: state.documentChange ? { ...state.documentChange } : undefined,
     };
   }
   if (state.kind === "error") {
@@ -66,7 +79,16 @@ export function beginCapture(operationId: number): CapturingState {
 }
 
 export function beginSearch(operationId: number, request: CompletionRequest): SearchingState {
-  return { kind: "searching", operationId, request: copyCompletionRequest(request) };
+  return {
+    kind: "searching",
+    operationId,
+    request: copyCompletionRequest(request),
+    partialText: "",
+  };
+}
+
+export function appendSearchDelta(state: SearchingState, delta: string): SearchingState {
+  return { ...state, partialText: `${state.partialText}${delta}` };
 }
 
 export function completeSearch(request: CompletionRequest, result: CompletionResult): ResultState {

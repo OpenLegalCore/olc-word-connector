@@ -1,10 +1,6 @@
-/* global AbortController, Event, HTMLButtonElement, HTMLElement, HTMLInputElement, HTMLTextAreaElement, Navigator, RequestInit, Response, URL, Window, clearTimeout, navigator, setTimeout, window */
+/* global AbortController, AbortSignal, Event, HTMLButtonElement, HTMLElement, HTMLInputElement, HTMLTextAreaElement, KeyboardEvent, Navigator, RequestInit, Response, clearTimeout, globalThis, navigator, setTimeout */
 
-import {
-  TaskPaneController,
-  type DocumentContextMode,
-  type SearchInput,
-} from "../app/TaskPaneController";
+import { TaskPaneController, type SearchInput } from "../app/TaskPaneController";
 import type { AppState } from "../app/state";
 import type { ChatGateway } from "../chat/ChatGateway";
 import { ChatGatewayError } from "../chat/ChatGatewayError";
@@ -12,143 +8,63 @@ import {
   OpenAICompatibleAdapter,
   type OpenAICompatibleFetch,
 } from "../chat/OpenAICompatibleAdapter";
-import { OpenWebUIAdapter, type OpenWebUIFetch } from "../chat/OpenWebUIAdapter";
-import type { WordAdapter } from "../office/WordAdapter";
+import {
+  WordAdapterError,
+  type SelectionSnapshot,
+  type WordAdapter,
+  type WordAdapterErrorCode,
+} from "../office/WordAdapter";
 import { applyDocumentLocale, messagesFor, type MessageCatalog, type UiLocale } from "./i18n";
 import { TaskPaneView } from "./TaskPaneView";
-import type { TaskPaneEnvironment, TaskPaneViewModel } from "./taskPaneViewModel";
+import type {
+  ConnectionCheckStatus,
+  TaskPaneEnvironment,
+  TaskPaneViewModel,
+} from "./taskPaneViewModel";
+import type { SecureSignIn, SignInOutcome } from "./OfficeSignInDialog";
+import { WordSessionClient } from "./WordSessionClient";
+import type { MicrosoftTokenSource } from "./MicrosoftAccess";
 
-export const DEFAULT_WORD_MODEL_ID = "olc-engine";
-export const SECURE_SIGN_IN_PATH = "/api/session";
+export const OLC_ENGINE_MODEL_ID = "lexai-engine-local";
+export const SECURE_SIGN_IN_PATH = "/word-auth/authorize";
 export const LEGAL_QUESTION_PLACEHOLDER = messagesFor("en-US").ready.questionPlaceholder;
 
 const COPY_CONFIRMATION_DURATION_MS = 2_000;
 
-type WindowOpen = (url: string, target: string) => Window | null;
-
-export function secureSignInUrlForOrigin(origin: string): string {
-  let parsedOrigin: URL;
-  try {
-    parsedOrigin = new URL(origin);
-  } catch {
-    throw new Error("Invalid secure sign-in origin.");
-  }
-  if (
-    parsedOrigin.origin !== origin ||
-    parsedOrigin.protocol !== "https:" ||
-    parsedOrigin.username !== "" ||
-    parsedOrigin.password !== "" ||
-    parsedOrigin.port !== ""
-  ) {
-    throw new Error("Unsafe secure sign-in origin.");
-  }
-  return new URL(SECURE_SIGN_IN_PATH, parsedOrigin.origin).href;
-}
-
-export function openSecureSignInWindow(
-  origin: string,
-  openWindow: WindowOpen = (url, target) => window.open(url, target)
-): boolean {
-  let popup: Window | null = null;
-  try {
-    const targetUrl = secureSignInUrlForOrigin(origin);
-    popup = openWindow("", "_blank");
-    if (!popup) {
-      return false;
-    }
-    popup.opener = null;
-    const link = popup.document.createElement("a");
-    link.href = targetUrl;
-    link.target = "_self";
-    link.rel = "noopener noreferrer";
-    link.referrerPolicy = "no-referrer";
-    popup.document.documentElement.append(link);
-    link.click();
-    link.remove();
-    return true;
-  } catch {
-    try {
-      popup?.close();
-    } catch {
-      // A failed sign-in popup is reported in the task pane below.
-    }
-    return false;
-  }
-}
-
-export type RuntimeBackend = "open-webui" | "olc-engine";
+export type RuntimeBackend = "olc-engine";
 
 type RuntimeGateway = ChatGateway & { disconnect(): void };
 type CopyFeedback = "copied" | "failed";
-type SignInFeedback = "idle" | "opened" | "failed";
+type SignInFeedback =
+  "idle" | "opened" | "closed" | "failed" | "completed" | "pane-rejected" | "denied" | "expired";
 
 export interface ProductionGateways {
-  readonly openWebUI: RuntimeGateway;
   readonly olcEngine: RuntimeGateway;
 }
 
 export interface ProductionGatewayDependencies {
   readonly fetch?: (input: string, init?: RequestInit) => Promise<Response>;
-  readonly uuidV4?: () => string;
   readonly initialLocale?: UiLocale;
-  readonly modelId?: string;
+  readonly signIn?: SecureSignIn;
+  readonly microsoft?: MicrosoftTokenSource;
 }
 
 const backendLabels: Readonly<Record<RuntimeBackend, string>> = {
-  "open-webui": "Open WebUI",
   "olc-engine": "OLC Engine",
 };
 
 export function createSameOriginProductionGateways(
   dependencies: ProductionGatewayDependencies = {}
 ): ProductionGateways {
-  const modelId = dependencies.modelId ?? DEFAULT_WORD_MODEL_ID;
   return {
-    openWebUI: new OpenWebUIAdapter(
-      { transport: "same-origin", modelId },
-      {
-        fetch: dependencies.fetch as OpenWebUIFetch | undefined,
-        uuidV4: dependencies.uuidV4,
-      }
-    ),
     olcEngine: new OpenAICompatibleAdapter(
-      { transport: "same-origin", modelId },
+      {
+        transport: "same-origin",
+        modelId: OLC_ENGINE_MODEL_ID,
+        responseProfile: "document-review",
+      },
       { fetch: dependencies.fetch as OpenAICompatibleFetch | undefined }
     ),
-  };
-}
-
-function backendSelectionModel(
-  messages: MessageCatalog,
-  environment?: TaskPaneEnvironment
-): TaskPaneViewModel {
-  return {
-    id: "backend-selection",
-    environment,
-    status: {
-      label: messages.providerSelection.statusLabel,
-      detail: messages.providerSelection.statusDetail,
-      tone: "success",
-    },
-    eyebrow: messages.providerSelection.eyebrow,
-    heading: messages.providerSelection.heading,
-    description: messages.providerSelection.description,
-    actions: [
-      {
-        id: "select-open-webui",
-        label: messages.providerSelection.useOpenWebUI,
-        variant: "primary",
-      },
-      {
-        id: "select-olc-engine",
-        label: messages.providerSelection.useOlcEngine,
-        variant: "secondary",
-      },
-    ],
-    footer: {
-      eyebrow: messages.providerSelection.footerEyebrow,
-      message: messages.providerSelection.footerMessage,
-    },
   };
 }
 
@@ -183,11 +99,12 @@ function readyModel(
   messages: MessageCatalog,
   backend: RuntimeBackend,
   question: string,
-  contextMode: DocumentContextMode,
+  selection: SelectionSnapshot | undefined,
+  selectionError: WordAdapterErrorCode | undefined,
   environment?: TaskPaneEnvironment,
   notice?: TaskPaneViewModel["notice"]
 ): TaskPaneViewModel {
-  const usesSelection = contextMode === "selected-text";
+  const preview = selection?.text.replace(/\s+/g, " ").trim();
   return {
     id: "ready",
     environment,
@@ -195,19 +112,10 @@ function readyModel(
       label: messages.ready.connectedStatus(backendLabels[backend]),
       detail: messages.ready.statusDetail,
       tone: "success",
-      action: { id: "change-backend", label: messages.ready.changeProvider, variant: "quiet" },
     },
-    eyebrow: messages.ready.eyebrow,
+    eyebrow: undefined,
     heading: messages.ready.heading,
     description: messages.ready.description,
-    choiceGroup: {
-      name: "runtime-context",
-      label: messages.ready.contextLegend,
-      choices: [
-        { value: "none", label: messages.ready.noDocumentContext, checked: !usesSelection },
-        { value: "selected-text", label: messages.ready.selectedText, checked: usesSelection },
-      ],
-    },
     fields: [
       {
         id: "runtime-legal-question",
@@ -216,15 +124,38 @@ function readyModel(
         kind: "textarea",
         readOnly: false,
         placeholder: messages.ready.questionPlaceholder,
+        visuallyHiddenLabel: true,
       },
     ],
-    notice,
-    actions: [{ id: "search", label: messages.ready.searchAction, variant: "primary" }],
+    attachment:
+      selection && preview
+        ? {
+            label: messages.ready.selectedText,
+            preview: preview.length > 180 ? `${preview.slice(0, 177)}…` : preview,
+            removeLabel: messages.ready.removeSelectedText,
+          }
+        : undefined,
+    notice:
+      notice ??
+      (selectionError
+        ? {
+            title: messages.ready.selectionUnavailableTitle,
+            message: messages.ready.selectionUnavailableMessage,
+            tone: "warning",
+            role: "alert",
+          }
+        : undefined),
+    actions: [
+      {
+        id: "send",
+        label: messages.ready.sendAction,
+        variant: "primary",
+        disabled: selectionError !== undefined,
+      },
+    ],
     footer: {
       eyebrow: messages.ready.footerEyebrow,
-      message: usesSelection
-        ? messages.ready.selectedTextBoundary
-        : messages.ready.noDocumentBoundary,
+      message: selection ? messages.ready.selectedTextBoundary : messages.ready.noDocumentBoundary,
     },
   };
 }
@@ -234,14 +165,16 @@ function controllerModel(
   state: AppState,
   backend: RuntimeBackend,
   question: string,
-  contextMode: DocumentContextMode,
+  selection: SelectionSnapshot | undefined,
+  selectionError: WordAdapterErrorCode | undefined,
   environment?: TaskPaneEnvironment,
   copyFeedback?: CopyFeedback
 ): TaskPaneViewModel {
   if (state.kind === "ready") {
-    return readyModel(messages, backend, question, contextMode, environment);
+    return readyModel(messages, backend, question, selection, selectionError, environment);
   }
   if (state.kind === "capturing" || state.kind === "searching") {
+    const partialText = state.kind === "searching" ? state.partialText : "";
     return {
       id: state.kind,
       environment,
@@ -252,8 +185,11 @@ function controllerModel(
         tone: "info",
       },
       eyebrow: messages.searching.eyebrow,
-      heading: messages.searching.heading,
+      heading:
+        partialText.length > 0 ? messages.searching.streamingHeading : messages.searching.heading,
       description: messages.searching.description,
+      legalAnswer: partialText.length > 0 ? partialText : undefined,
+      legalAnswerLive: partialText.length > 0,
       footer: {
         eyebrow: messages.searching.footerEyebrow,
         message: messages.searching.footerMessage,
@@ -262,6 +198,32 @@ function controllerModel(
     };
   }
   if (state.kind === "result") {
+    const documentChange = state.documentChange;
+    const applying = documentChange?.status === "applying";
+    const proposal = state.result.proposal;
+    const proposalCopy = messages.proposal;
+    const proposalFeedback =
+      documentChange?.status === "applied"
+        ? proposalCopy.applied
+        : applying
+          ? proposalCopy.applying
+          : documentChange?.error === "SELECTION_CHANGED"
+            ? proposalCopy.selectionChanged
+            : documentChange?.error === "CURSOR_REQUIRED"
+              ? proposalCopy.cursorRequired
+              : documentChange?.error === "WORD_WRITE_FAILED"
+                ? proposalCopy.writeUnconfirmed
+                : proposalCopy.ready;
+    const usage = state.result.usage;
+    const usageText =
+      usage === null
+        ? messages.result.usageUnavailable
+        : usage &&
+            usage.inputTokens !== undefined &&
+            usage.outputTokens !== undefined &&
+            usage.totalTokens !== undefined
+          ? messages.result.usage(usage.inputTokens, usage.outputTokens, usage.totalTokens)
+          : undefined;
     return {
       id: "result",
       environment,
@@ -269,15 +231,37 @@ function controllerModel(
         label: messages.result.statusLabel,
         detail: backendLabels[backend].toUpperCase(),
         tone: "success",
-        action: {
-          id: "change-backend",
-          label: messages.result.changeProvider,
-          variant: "quiet",
-        },
       },
       eyebrow: messages.result.eyebrow,
       heading: messages.result.heading,
       legalAnswer: state.result.text,
+      legalSources: state.result.sources,
+      legalAnswerMeta: usageText,
+      proposal: proposal
+        ? {
+            heading: proposalCopy.heading,
+            text: proposal.text,
+            summary: proposal.changeSummary,
+            feedback: proposalFeedback,
+            failed: documentChange?.status === "failed",
+            actions: documentChange
+              ? [
+                  {
+                    id: "replace-proposal",
+                    label: proposalCopy.replaceSelection,
+                    variant: "primary",
+                    disabled: documentChange.status !== "ready" || !documentChange.canReplace,
+                  },
+                  {
+                    id: "insert-proposal",
+                    label: proposalCopy.insertAtCursor,
+                    variant: "secondary",
+                    disabled: documentChange.status !== "ready",
+                  },
+                ]
+              : [],
+          }
+        : undefined,
       notice:
         copyFeedback === "copied"
           ? {
@@ -297,18 +281,28 @@ function controllerModel(
       actions: [
         {
           id: "copy-answer",
+          disabled: applying,
           label:
             copyFeedback === "copied" ? messages.result.copiedAction : messages.result.copyAction,
           variant: "primary",
         },
         {
           id: "refine-question",
+          disabled: applying,
           label: messages.result.refineQuestion,
           variant: "secondary",
         },
-        { id: "new-search", label: messages.result.newSearch, variant: "quiet" },
+        {
+          id: "new-search",
+          label: messages.result.newSearch,
+          variant: "quiet",
+          disabled: applying,
+        },
       ],
-      footer: { eyebrow: messages.result.footerEyebrow, message: messages.result.footerMessage },
+      footer: {
+        eyebrow: messages.result.footerEyebrow,
+        message: proposal ? proposalFeedback : messages.result.footerMessage,
+      },
     };
   }
   if (state.error.code === "SESSION_EXPIRED") {
@@ -317,7 +311,7 @@ function controllerModel(
   return {
     id: "error",
     environment,
-    status: { label: messages.error.statusLabel, detail: state.error.code, tone: "danger" },
+    status: { label: messages.error.statusLabel, detail: "", tone: "danger" },
     eyebrow: messages.error.eyebrow,
     heading: messages.error.heading,
     description: messages.error.description,
@@ -341,7 +335,18 @@ function sessionExpiredModel(
   environment: TaskPaneEnvironment | undefined,
   signInFeedback: SignInFeedback
 ): TaskPaneViewModel {
-  const opened = signInFeedback === "opened";
+  const notices = {
+    expired: [messages.session.expiredTitle, messages.session.expiredMessage],
+    closed: [messages.session.closedTitle, messages.session.closedMessage],
+    completed: [messages.session.completedTitle, messages.session.completedMessage],
+    "pane-rejected": [messages.session.paneRejectedTitle, messages.session.paneRejectedMessage],
+    denied: [
+      messages.connectionError.deniedHeading,
+      messages.connectionError.descriptionFor("ACCESS_DENIED"),
+    ],
+  };
+  const feedback =
+    signInFeedback in notices ? notices[signInFeedback as keyof typeof notices] : undefined;
   return {
     id: "session-expired",
     environment,
@@ -353,8 +358,9 @@ function sessionExpiredModel(
     eyebrow: messages.session.eyebrow,
     heading: messages.session.heading,
     description: messages.session.description,
-    notice:
-      signInFeedback === "opened"
+    notice: feedback
+      ? { title: feedback[0], message: feedback[1], tone: "warning", role: "status" }
+      : signInFeedback === "opened"
         ? {
             title: messages.session.signInOpenedTitle,
             message: messages.session.signInOpenedMessage,
@@ -369,54 +375,65 @@ function sessionExpiredModel(
               role: "alert",
             }
           : undefined,
-    actions: opened
-      ? [
-          { id: "retry-search", label: messages.session.retrySearch, variant: "primary" },
-          {
-            id: "open-secure-sign-in",
-            label: messages.session.openSecureSignIn,
-            variant: "quiet",
-          },
-        ]
-      : [
-          {
-            id: "open-secure-sign-in",
-            label: messages.session.openSecureSignIn,
-            variant: "primary",
-          },
-        ],
+    actions: [
+      {
+        id: "open-secure-sign-in",
+        label: messages.session.openSecureSignIn,
+        variant: "primary",
+      },
+    ],
     footer: { eyebrow: messages.session.footerEyebrow, message: messages.session.footerMessage },
   };
 }
 
 export class ProductionTaskPaneRuntime {
-  private selectedBackend?: RuntimeBackend;
+  private readonly selectedBackend: RuntimeBackend = "olc-engine";
   private controller?: TaskPaneController;
   private unsubscribe?: () => void;
+  private unsubscribeSelectionChanges?: () => void;
   private connectionAbort?: AbortController;
   private connectionId = 0;
+  private connectionCheck: ConnectionCheckStatus = { phase: "idle" };
+  private connectionRecoveryFromSettings = false;
+  private selectionReadId = 0;
   private lastInput?: SearchInput;
   private question = "";
-  private contextMode: DocumentContextMode = "none";
+  private displayedSelection?: SelectionSnapshot;
+  private selectionError?: WordAdapterErrorCode;
+  private selectionRemoved = false;
   private signInFeedback: SignInFeedback = "idle";
+  private signInAttempt = 0;
+  private signInPending = false;
+  private signInLandingReached = false;
   private copyFeedback?: CopyFeedback;
   private copyFeedbackTimeout?: ReturnType<typeof setTimeout>;
   private copyOperationId = 0;
   private disposed = false;
   private locale: UiLocale;
   private currentRender?: () => void;
-  private readonly contextModeChangeHandler = (event: Event): void => {
+  private readonly formInputHandler = (event: Event): void => {
+    const target = event.target;
+    if (target instanceof HTMLTextAreaElement && target.id === "runtime-legal-question") {
+      this.question = target.value;
+    }
+  };
+  private readonly keydownHandler = (event: Event): void => {
+    if (!(event instanceof KeyboardEvent)) {
+      return;
+    }
     const target = event.target;
     if (
-      !(target instanceof HTMLInputElement) ||
-      target.name !== "runtime-context" ||
-      !target.checked ||
-      this.controller?.getState().kind !== "ready"
+      !(target instanceof HTMLTextAreaElement) ||
+      target.id !== "runtime-legal-question" ||
+      event.key !== "Enter" ||
+      event.shiftKey ||
+      event.isComposing ||
+      event.keyCode === 229
     ) {
       return;
     }
-    this.captureFormState();
-    this.renderControllerState();
+    event.preventDefault();
+    void this.search().catch(() => undefined);
   };
 
   constructor(
@@ -426,9 +443,12 @@ export class ProductionTaskPaneRuntime {
     private readonly gateways: ProductionGateways,
     private readonly environment?: TaskPaneEnvironment,
     private readonly clipboard?: Pick<Navigator["clipboard"], "writeText">,
-    private readonly openSecureSignIn: () => boolean = () =>
-      openSecureSignInWindow(window.location.origin),
-    initialLocale: UiLocale = "en-US"
+    private readonly openSecureSignIn: () => boolean | Promise<SignInOutcome> = () => false,
+    initialLocale: UiLocale = "en-US",
+    private readonly closeSecureSignIn: () => void = () => undefined,
+    private readonly checkSession?: (signal?: AbortSignal) => Promise<void>,
+    private readonly clearSession: () => void = () => undefined,
+    private readonly prepareAccess?: (signal: AbortSignal) => Promise<void>
   ) {
     this.locale = initialLocale;
   }
@@ -436,38 +456,54 @@ export class ProductionTaskPaneRuntime {
   start(): void {
     this.disposed = false;
     this.resetCopyFeedback();
-    this.root.removeEventListener("change", this.contextModeChangeHandler);
-    this.root.addEventListener("change", this.contextModeChangeHandler);
+    this.root.removeEventListener("input", this.formInputHandler);
+    this.root.addEventListener("input", this.formInputHandler);
+    this.root.removeEventListener("keydown", this.keydownHandler);
+    this.root.addEventListener("keydown", this.keydownHandler);
     this.view.setActionHandler((actionId) => {
       void this.handleAction(actionId).catch(() => undefined);
     });
     this.view.configureLocale(this.locale, (locale) => this.changeLocale(locale));
     applyDocumentLocale(this.root.ownerDocument, this.locale);
-    this.renderView((messages) => backendSelectionModel(messages, this.environment));
+    void this.connect(this.selectedBackend);
   }
 
   dispose(): void {
     this.disposed = true;
+    this.clearSession();
+    this.signInAttempt++;
+    this.closeSecureSignIn();
     this.signInFeedback = "idle";
     this.resetCopyFeedback();
-    this.root.removeEventListener("change", this.contextModeChangeHandler);
+    this.root.removeEventListener("input", this.formInputHandler);
+    this.root.removeEventListener("keydown", this.keydownHandler);
+    this.unsubscribeSelectionChanges?.();
+    this.unsubscribeSelectionChanges = undefined;
+    const selection = this.displayedSelection;
+    this.displayedSelection = undefined;
+    if (selection) {
+      void this.word.releaseSelection(selection).catch(() => undefined);
+    }
     this.connectionId++;
     this.connectionAbort?.abort();
-    void this.controller?.cancel();
+    this.connectionAbort = undefined;
+    this.controller?.dispose();
     this.unsubscribe?.();
-    this.gateways.openWebUI.disconnect();
     this.gateways.olcEngine.disconnect();
     this.view.setActionHandler(undefined);
     this.view.configureLocale(this.locale);
     this.currentRender = undefined;
   }
 
-  private gateway(backend: RuntimeBackend): RuntimeGateway {
-    return backend === "open-webui" ? this.gateways.openWebUI : this.gateways.olcEngine;
+  private gateway(): RuntimeGateway {
+    return this.gateways.olcEngine;
   }
 
   private renderView(createModel: (messages: MessageCatalog) => TaskPaneViewModel): void {
-    this.currentRender = () => this.view.render(createModel(messagesFor(this.locale)));
+    this.currentRender = () => {
+      this.view.render(createModel(messagesFor(this.locale)));
+      this.updateConnectionControls();
+    };
     this.currentRender();
   }
 
@@ -494,13 +530,22 @@ export class ProductionTaskPaneRuntime {
   }
 
   private renderControllerState(state = this.controller?.getState()): void {
-    if (!state || !this.selectedBackend) {
+    if (this.connectionRecoveryFromSettings) {
+      if (this.connectionCheck.code === "SESSION_EXPIRED") {
+        this.renderView((messages) =>
+          sessionExpiredModel(messages, this.selectedBackend, this.environment, this.signInFeedback)
+        );
+      }
+      return;
+    }
+    if (!state) {
       return;
     }
     if (state.kind === "error" && state.error.code === "SESSION_EXPIRED") {
       this.resetCopyFeedback();
+      if (this.connectionCheck.phase === "success") this.connectionCheck = { phase: "idle" };
       this.renderView((messages) =>
-        sessionExpiredModel(messages, this.selectedBackend!, this.environment, this.signInFeedback)
+        sessionExpiredModel(messages, this.selectedBackend, this.environment, this.signInFeedback)
       );
       return;
     }
@@ -511,9 +556,10 @@ export class ProductionTaskPaneRuntime {
       controllerModel(
         messages,
         state,
-        this.selectedBackend!,
+        this.selectedBackend,
         this.question,
-        this.contextMode,
+        this.displayedSelection,
+        this.selectionError,
         this.environment,
         this.copyFeedback
       )
@@ -671,54 +717,102 @@ export class ProductionTaskPaneRuntime {
     }
   }
 
-  private async connect(backend: RuntimeBackend): Promise<void> {
+  private connectionWorkBusy(): boolean {
+    const state = this.controller?.getState();
+    return (
+      state?.kind === "capturing" ||
+      state?.kind === "searching" ||
+      (state?.kind === "result" && state.documentChange?.status === "applying")
+    );
+  }
+
+  private updateConnectionControls(): void {
+    this.view.configureConnectionCheck({
+      ...this.connectionCheck,
+      disabled:
+        this.disposed ||
+        Boolean(this.connectionAbort) ||
+        this.signInPending ||
+        this.connectionWorkBusy(),
+    });
+  }
+
+  private async connect(backend: RuntimeBackend, fromSettings = false): Promise<void> {
+    if (this.disposed || this.connectionAbort || this.connectionWorkBusy() || this.signInPending)
+      return;
+    const restoreWorkspace = this.connectionRecoveryFromSettings;
+    const preserveWorkspace = fromSettings || restoreWorkspace;
+    this.captureFormState();
+    this.selectionReadId++;
+    this.signInAttempt++;
+    this.closeSecureSignIn();
+    this.signInPending = false;
     const connectionId = ++this.connectionId;
-    this.connectionAbort?.abort();
-    this.connectionAbort = new AbortController();
-    this.renderView((messages) => connectingModel(messages, backend, this.environment));
+    const abort = new AbortController();
+    this.connectionAbort = abort;
+    this.connectionCheck = { phase: "checking" };
+    if (preserveWorkspace) this.updateConnectionControls();
+    else this.renderView((messages) => connectingModel(messages, backend, this.environment));
     try {
-      await this.gateway(backend).checkConnection(this.connectionAbort.signal);
-      if (connectionId !== this.connectionId) {
+      if (connectionId !== this.connectionId || this.disposed || abort.signal.aborted) return;
+      await this.checkSession?.(abort.signal);
+      if (connectionId !== this.connectionId || this.disposed) return;
+      await this.gateway().checkConnection(abort.signal);
+      if (connectionId !== this.connectionId || this.disposed || abort.signal.aborted) {
         return;
       }
-      this.unsubscribe?.();
-      this.selectedBackend = backend;
+      this.connectionCheck = { phase: "success", checkedAt: Date.now() };
+      this.connectionRecoveryFromSettings = false;
       this.signInFeedback = "idle";
-      this.controller = new TaskPaneController(this.word, this.gateway(backend));
-      this.unsubscribe = this.controller.subscribe((state) => this.renderControllerState(state));
+      this.signInLandingReached = false;
+      if (preserveWorkspace && this.controller) {
+        const state = this.controller.getState();
+        if (state.kind === "error" && state.error.code === "SESSION_EXPIRED")
+          this.controller.reset();
+        else if (restoreWorkspace) this.renderControllerState();
+      } else {
+        this.unsubscribe?.();
+        this.controller?.dispose();
+        this.controller = new TaskPaneController(this.word, this.gateway());
+        this.unsubscribe = this.controller.subscribe((state) => this.renderControllerState(state));
+        await this.startSelectionMonitoring();
+      }
     } catch (error) {
-      if (connectionId !== this.connectionId) {
+      if (connectionId !== this.connectionId || this.disposed || abort.signal.aborted) {
         return;
       }
+      this.captureFormState();
       const code = error instanceof ChatGatewayError ? error.code : "CONNECTION_FAILED";
+      this.connectionCheck = { phase: "failure", checkedAt: Date.now(), code };
+      this.connectionRecoveryFromSettings = preserveWorkspace;
       if (code === "SESSION_EXPIRED") {
-        this.selectedBackend = backend;
-        this.signInFeedback = "idle";
+        this.signInFeedback = this.signInLandingReached ? "pane-rejected" : "idle";
         this.renderView((messages) =>
-          sessionExpiredModel(messages, backend, this.environment, "idle")
+          sessionExpiredModel(messages, backend, this.environment, this.signInFeedback)
         );
       } else {
         this.renderView((messages) => ({
           id: "connection-error",
           environment: this.environment,
           status: {
-            label: messages.connectionError.statusLabel(backendLabels[backend]),
-            detail: code,
+            label:
+              code === "ACCESS_DENIED"
+                ? messages.connectionError.deniedHeading
+                : messages.connectionError.statusLabel(backendLabels[backend]),
+            detail: "",
             tone: "danger",
           },
           eyebrow: messages.connectionError.eyebrow,
-          heading: messages.connectionError.heading,
-          description: messages.connectionError.description,
+          heading:
+            code === "ACCESS_DENIED"
+              ? messages.connectionError.deniedHeading
+              : messages.connectionError.heading,
+          description: messages.connectionError.descriptionFor(code),
           actions: [
             {
-              id: `select-${backend}`,
+              id: "retry-connection",
               label: messages.connectionError.tryAgain,
               variant: "primary",
-            },
-            {
-              id: "change-backend",
-              label: messages.connectionError.chooseService,
-              variant: "secondary",
             },
           ],
           footer: {
@@ -730,35 +824,117 @@ export class ProductionTaskPaneRuntime {
     } finally {
       if (connectionId === this.connectionId) {
         this.connectionAbort = undefined;
+        this.updateConnectionControls();
       }
     }
+  }
+
+  private taskPaneInputHasFocus(): boolean {
+    const active = this.root.ownerDocument.activeElement;
+    return (
+      active instanceof HTMLTextAreaElement ||
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLButtonElement
+    );
+  }
+
+  private async startSelectionMonitoring(): Promise<void> {
+    if (!this.unsubscribeSelectionChanges) {
+      try {
+        this.unsubscribeSelectionChanges = await this.word.subscribeToSelectionChanges(() => {
+          if (!this.taskPaneInputHasFocus()) {
+            void this.refreshDisplayedSelection(true);
+          }
+        });
+      } catch {
+        // The message-only flow remains available if Word cannot register document events.
+      }
+    }
+    await this.refreshDisplayedSelection(false);
+  }
+
+  private async releaseDisplayedSelection(): Promise<void> {
+    const selection = this.displayedSelection;
+    this.displayedSelection = undefined;
+    if (selection) {
+      try {
+        await this.word.releaseSelection(selection);
+      } catch {
+        // Selection cleanup never changes the form or document.
+      }
+    }
+  }
+
+  private async refreshDisplayedSelection(fromWordEvent: boolean): Promise<void> {
+    if (
+      this.disposed ||
+      this.connectionRecoveryFromSettings ||
+      this.connectionCheck.phase === "checking" ||
+      this.controller?.getState().kind !== "ready"
+    ) {
+      return;
+    }
+    if (fromWordEvent) {
+      this.selectionRemoved = false;
+    } else if (this.selectionRemoved) {
+      return;
+    }
+    const readId = ++this.selectionReadId;
+    let nextSelection: SelectionSnapshot | undefined;
+    let nextSelectionError: WordAdapterErrorCode | undefined;
+    try {
+      nextSelection = await this.word.captureSelection();
+    } catch (error) {
+      if (error instanceof WordAdapterError && error.code !== "NO_SELECTION") {
+        nextSelectionError = error.code;
+      } else if (!(error instanceof WordAdapterError)) {
+        nextSelectionError = "WORD_READ_FAILED";
+      }
+    }
+    if (this.disposed || readId !== this.selectionReadId) {
+      if (nextSelection) {
+        await this.word.releaseSelection(nextSelection).catch(() => undefined);
+      }
+      return;
+    }
+    const previous = this.displayedSelection;
+    this.displayedSelection = nextSelection;
+    this.selectionError = nextSelectionError;
+    if (previous && previous.snapshotId !== nextSelection?.snapshotId) {
+      await this.word.releaseSelection(previous).catch(() => undefined);
+    }
+    this.renderControllerState();
   }
 
   private captureFormState(): void {
     this.question =
       this.root.querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value ??
       this.question;
-    const context = this.root.querySelector<HTMLInputElement>(
-      'input[name="runtime-context"]:checked'
-    )?.value;
-    if (context === "selected-text" || context === "none") {
-      this.contextMode = context;
-    }
   }
 
   private async search(input?: SearchInput): Promise<void> {
-    if (!this.controller || !this.selectedBackend) {
+    if (
+      !this.controller ||
+      this.disposed ||
+      this.connectionAbort ||
+      this.connectionRecoveryFromSettings
+    ) {
       return;
     }
     if (!input) {
       this.captureFormState();
+      if (this.selectionError) {
+        this.renderControllerState();
+        return;
+      }
       if (this.question.trim().length === 0 || this.question.length > 4_000) {
         this.renderView((messages) =>
           readyModel(
             messages,
-            this.selectedBackend!,
+            this.selectedBackend,
             this.question,
-            this.contextMode,
+            this.displayedSelection,
+            this.selectionError,
             this.environment,
             {
               title: messages.ready.validationTitle,
@@ -770,37 +946,93 @@ export class ProductionTaskPaneRuntime {
         );
         return;
       }
-      input = { question: this.question, contextMode: this.contextMode, uiLocale: "en-US" };
+      input = {
+        question: this.question,
+        selection: this.displayedSelection ? { ...this.displayedSelection } : undefined,
+        uiLocale: this.locale,
+      };
+    }
+    if (this.prepareAccess) {
+      // Establish access before handing the displayed selection to the controller.
+      // A consent/login interruption must not consume or recapture that attachment.
+      const abort = new AbortController();
+      const preparationId = ++this.connectionId;
+      this.connectionAbort = abort;
+      this.connectionCheck = { phase: "checking" };
+      this.renderView((messages) =>
+        connectingModel(messages, this.selectedBackend, this.environment)
+      );
+      try {
+        await this.prepareAccess(abort.signal);
+        if (abort.signal.aborted || this.disposed || preparationId !== this.connectionId) return;
+        this.connectionCheck = { phase: "success", checkedAt: Date.now() };
+      } catch (error) {
+        if (this.disposed || preparationId !== this.connectionId) return;
+        const code = error instanceof ChatGatewayError ? error.code : "NETWORK_ERROR";
+        this.connectionCheck = { phase: "failure", code };
+        if (code === "SESSION_EXPIRED") {
+          this.connectionRecoveryFromSettings = true;
+          this.renderView((messages) =>
+            sessionExpiredModel(messages, this.selectedBackend, this.environment, "idle")
+          );
+        } else {
+          this.renderView((messages) =>
+            readyModel(
+              messages,
+              this.selectedBackend,
+              this.question,
+              this.displayedSelection,
+              this.selectionError,
+              this.environment,
+              {
+                title: messages.connectionError.heading,
+                message: messages.connectionError.descriptionFor(code),
+                tone: "warning",
+                role: "alert",
+              }
+            )
+          );
+        }
+        return;
+      } finally {
+        if (this.connectionAbort === abort) this.connectionAbort = undefined;
+        if (!this.disposed && preparationId === this.connectionId) this.updateConnectionControls();
+      }
     }
     this.resetCopyFeedback();
-    this.lastInput = { ...input };
+    this.lastInput = {
+      ...input,
+      selection: input.selection ? { ...input.selection } : undefined,
+    };
+    if (input.selection?.snapshotId === this.displayedSelection?.snapshotId) {
+      this.displayedSelection = undefined;
+    }
     this.signInFeedback = "idle";
     await this.controller.search(input);
   }
 
-  private resetToBackendSelection(): void {
-    this.resetCopyFeedback();
-    this.connectionId++;
-    this.connectionAbort?.abort();
-    this.connectionAbort = undefined;
-    void this.controller?.cancel();
-    this.unsubscribe?.();
-    this.unsubscribe = undefined;
-    if (this.selectedBackend) {
-      this.gateway(this.selectedBackend).disconnect();
-    }
-    this.selectedBackend = undefined;
-    this.controller = undefined;
-    this.lastInput = undefined;
-    this.renderView((messages) => backendSelectionModel(messages, this.environment));
-  }
-
   private async handleAction(actionId: string): Promise<void> {
-    if (actionId === "select-open-webui") {
-      await this.connect("open-webui");
+    if (this.disposed) return;
+    if (actionId === "check-connection") {
+      await this.connect(this.selectedBackend, true);
       return;
     }
-    if (actionId === "select-olc-engine") {
+    if (this.connectionAbort && actionId !== "cancel-connection" && actionId !== "remove-selection")
+      return;
+    if (
+      this.connectionRecoveryFromSettings &&
+      (actionId === "retry-search" || actionId === "retry-connection")
+    ) {
+      await this.connect(this.selectedBackend, true);
+      return;
+    }
+    if (actionId === "replace-proposal" || actionId === "insert-proposal") {
+      await this.controller?.applyProposal(actionId === "replace-proposal" ? "replace" : "insert");
+      return;
+    }
+    const state = this.controller?.getState();
+    if (state?.kind === "result" && state.documentChange?.status === "applying") return;
+    if (actionId === "retry-connection") {
       await this.connect("olc-engine");
       return;
     }
@@ -808,51 +1040,95 @@ export class ProductionTaskPaneRuntime {
       this.connectionId++;
       this.connectionAbort?.abort();
       this.connectionAbort = undefined;
-      this.renderView((messages) => backendSelectionModel(messages, this.environment));
+      this.connectionCheck = { phase: "idle" };
+      this.connectionRecoveryFromSettings = false;
+      if (this.controller) this.renderControllerState();
+      else
+        this.renderView((messages) =>
+          sessionExpiredModel(messages, this.selectedBackend, this.environment, "closed")
+        );
       return;
     }
-    if (actionId === "change-backend") {
-      this.captureFormState();
-      this.resetToBackendSelection();
-      return;
-    }
-    if (actionId === "search") {
+    if (actionId === "send") {
       await this.search();
       return;
     }
+    if (actionId === "remove-selection") {
+      this.captureFormState();
+      this.selectionRemoved = true;
+      this.selectionReadId++;
+      const release = this.releaseDisplayedSelection();
+      this.renderControllerState();
+      await release;
+      return;
+    }
     if (actionId === "open-secure-sign-in") {
-      let opened = false;
+      if (this.signInPending || this.connectionWorkBusy()) return;
+      const attempt = ++this.signInAttempt;
+      this.signInPending = true;
+      this.signInFeedback = "opened";
+      this.renderControllerState();
+      let outcome: boolean | SignInOutcome = false;
       try {
-        opened = this.openSecureSignIn();
+        const result = this.openSecureSignIn();
+        if (!this.controller)
+          this.renderView((messages) =>
+            sessionExpiredModel(messages, this.selectedBackend, this.environment, "opened")
+          );
+        outcome = await result;
       } catch {
-        opened = false;
+        outcome = false;
       }
-      if (this.disposed) {
+      if (this.disposed || attempt !== this.signInAttempt) {
         return;
       }
-      this.signInFeedback = opened ? "opened" : "failed";
+      this.signInPending = false;
+      this.signInLandingReached = outcome === "completed";
+      this.signInFeedback =
+        outcome === "completed"
+          ? "completed"
+          : outcome === "expired"
+            ? "expired"
+            : outcome === "denied"
+              ? "denied"
+              : outcome === "closed"
+                ? "closed"
+                : outcome === true
+                  ? "opened"
+                  : "failed";
       this.renderControllerState();
-      if (!this.controller && this.selectedBackend) {
+      if (!this.controller) {
         this.renderView((messages) =>
-          sessionExpiredModel(
-            messages,
-            this.selectedBackend!,
-            this.environment,
-            this.signInFeedback
-          )
+          sessionExpiredModel(messages, this.selectedBackend, this.environment, this.signInFeedback)
         );
+      }
+      if (outcome === "completed") {
+        // Landing is not pane authentication. Verify only the two safe GETs.
+        await this.connect(this.selectedBackend, Boolean(this.controller));
       }
       return;
     }
-    if (actionId === "retry-search" && !this.controller && this.selectedBackend) {
+    if (actionId === "retry-search" && !this.controller) {
       await this.connect(this.selectedBackend);
       return;
     }
     if (!this.controller) {
       return;
     }
-    if (actionId === "cancel") {
+    const controllerState = this.controller.getState();
+    if (
+      actionId === "retry-search" &&
+      controllerState.kind === "error" &&
+      controllerState.error.code === "SESSION_EXPIRED"
+    ) {
+      this.unsubscribe?.();
+      this.unsubscribe = undefined;
+      this.controller.dispose();
+      this.controller = undefined;
+      await this.connect(this.selectedBackend);
+    } else if (actionId === "cancel") {
       await this.controller.cancel();
+      await this.refreshDisplayedSelection(false);
     } else if (actionId === "copy-answer") {
       const state = this.controller.getState();
       if (state.kind === "result") {
@@ -861,15 +1137,15 @@ export class ProductionTaskPaneRuntime {
     } else if (actionId === "refine-question") {
       this.resetCopyFeedback();
       this.controller.reset();
+      await this.refreshDisplayedSelection(false);
     } else if (actionId === "new-search") {
       this.resetCopyFeedback();
       this.question = "";
-      this.contextMode = "none";
       this.lastInput = undefined;
       this.controller.reset();
+      await this.refreshDisplayedSelection(false);
     } else if (actionId === "retry-search" && this.lastInput) {
       this.question = this.lastInput.question;
-      this.contextMode = this.lastInput.contextMode;
       this.controller.reset();
       await this.search(this.lastInput);
     }
@@ -891,14 +1167,38 @@ export function createProductionTaskPaneRuntime(
   } catch {
     clipboard = undefined;
   }
+  const session = new WordSessionClient(
+    dependencies.fetch ?? ((url, init) => globalThis.fetch(url, init)),
+    dependencies.microsoft
+  );
   return new ProductionTaskPaneRuntime(
     root,
     view,
     word,
-    createSameOriginProductionGateways(dependencies),
+    createSameOriginProductionGateways({ ...dependencies, fetch: session.fetch }),
     environment,
     clipboard,
-    undefined,
-    dependencies.initialLocale
+    () =>
+      dependencies.microsoft
+        ? session
+            .authenticate(true)
+            .then(() => "completed" as const)
+            .catch((error: unknown) =>
+              error instanceof ChatGatewayError && error.code === "CANCELLED"
+                ? ("closed" as const)
+                : error instanceof ChatGatewayError && error.code === "ACCESS_DENIED"
+                  ? ("denied" as const)
+                  : ("failed" as const)
+            )
+        : (dependencies.signIn?.open((code, verifier, state, signal) =>
+            session.exchange(code, verifier, state, signal)
+          ) ?? false),
+    dependencies.initialLocale,
+    () => {
+      dependencies.signIn?.close();
+    },
+    (signal) => session.check(signal),
+    () => session.clear(),
+    dependencies.microsoft ? (signal) => session.prepare(signal) : undefined
   );
 }

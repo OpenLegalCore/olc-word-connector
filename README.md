@@ -13,9 +13,9 @@ reviewing in Microsoft Word.**
 
 OpenLegalCore Word Connector is an Apache-2.0 task-pane add-in for researching
 Slovenian legislation and case law from Microsoft Word. The user asks a legal
-question, chooses whether to include no document content or only the current
-selection, and receives an answer with source references without changing the
-document.
+question or instruction. The task pane automatically attaches only the current
+Word selection when one exists, and receives an answer with source references
+without changing the document.
 
 > [!IMPORTANT]
 > `v0.1.0-beta.1` is a source-only beta, not a hosted legal-research service.
@@ -26,24 +26,56 @@ document.
 
 ## Public record
 
-| | |
-| --- | --- |
-| **Component status** | Public source-only beta |
-| **Current release** | [v0.1.0-beta.1](https://github.com/OpenLegalCore/olc-word-connector/releases/tag/v0.1.0-beta.1) |
-| **Licence** | [Apache-2.0](LICENSE) |
-| **Project component record** | [OpenLegalCore Word Connector](https://openlegalcore.org/components/word-connector/) |
-| **Wider system map** | [OpenLegalCore component register](https://openlegalcore.org/components/) |
+|                              |                                                                                                 |
+| ---------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Component status**         | Public source-only beta                                                                         |
+| **Current release**          | [v0.1.0-beta.1](https://github.com/OpenLegalCore/olc-word-connector/releases/tag/v0.1.0-beta.1) |
+| **Licence**                  | [Apache-2.0](LICENSE)                                                                           |
+| **Project component record** | [OpenLegalCore Word Connector](https://openlegalcore.org/components/word-connector/)            |
+| **Wider system map**         | [OpenLegalCore component register](https://openlegalcore.org/components/)                       |
 
 ## At a glance
 
-| | |
-| --- | --- |
-| **Word host** | Word for the web is verified; Windows and Mac are not yet tested |
-| **Legal sources** | Slovenian legislation and case law supplied by the configured backend |
-| **Backend paths** | Explicitly selected Open WebUI or OpenAI-compatible OLC Engine |
-| **Document context** | No document content, or only the exact selected text |
-| **Interface languages** | English (`en-US`) and Slovenian (`sl-SI`) |
-| **License** | Apache License 2.0, subject to third-party notices and trademark policy |
+The OLC-72 draft adds an [explicit document-review proposal with guarded
+user-clicked writes](docs/WORD_DOCUMENT_PROPOSAL.md). Its owner-accepted visual
+design is preserved; native Word Web write qualification and
+[production access recovery](docs/WORD_WEB_ACCESS_RECOVERY.md) remain open.
+Word for Mac is backlog. This candidate is not a released editing capability.
+
+The draft includes **Settings → Check connection**: fresh protected-session and
+model-discovery GETs without reloading the pane or sending a message. The draft,
+language and selection attachment survive the check and explicit sign-in recovery.
+See [current qualification status](docs/STATUS.md); retained input alone does not
+establish that access or authentication recovery works in Word.
+
+The current OLC-72 candidate implements [Microsoft identity through MSAL/NAA](docs/MICROSOFT_SSO.md)
+to remove repeated Cloudflare user sign-ins after idle time or reopening the pane.
+It acquires/renews our API access token silently and obtains a short Word
+capability without a Cloudflare login. Required Microsoft interaction is explicit;
+older hosts use a Microsoft Office-dialog fallback. Staging authorization remains
+restricted to the configured verified owner. Draft, language and attachment choice
+survive recovery in an open pane, with no automatic message replay or Word write.
+
+Microsoft SSO pane-reopen and post-idle access checks have **MANUAL PASS** owner
+acceptance for the reported scenarios. This is not automated evidence or proof
+of a specific internal recovery mechanism; draft/language/attachment preservation
+and other unrun scenarios remain open. The separate document-proposal acceptance
+is tracked under OLC-74. This candidate remains **IN REVIEW; Microsoft SSO staging
+is activated**. The dedicated registrations and cryptographically verified owner
+authorization are configured. Actual API issuance, session/model discovery,
+revocation and delivered asset/header checks pass. The aa5 rollback is retained.
+Tunnel, DNS, local Engine and server-only credentials are unchanged. See [actual
+delivery evidence](docs/evidence/olc72-microsoft-delivery-20261025/README.md)
+and [rollback](docs/MICROSOFT_SSO_STAGING.md).
+
+|                         |                                                                         |
+| ----------------------- | ----------------------------------------------------------------------- |
+| **Word host**           | Microsoft SSO reopen and post-idle access checks: manual pass; Windows/Mac not tested           |
+| **Legal sources**       | Slovenian legislation and case law supplied by the configured backend   |
+| **Backend path**        | OLC Engine through the dedicated same-origin `/word-api/v1/*` boundary               |
+| **Document context**    | No document content, or only the exact selected text                    |
+| **Interface languages** | English (`en-US`) and Slovenian (`sl-SI`)                               |
+| **License**             | Apache License 2.0, subject to third-party notices and trademark policy |
 
 ## Why this project exists
 
@@ -57,7 +89,7 @@ being reviewed while making the boundary around document content explicit.
 - **Developers** get a strict TypeScript codebase, provider-neutral controller,
   isolated Office.js boundary, hardened renderer and deterministic verification
   suite.
-- **Partners and operators** can connect an explicitly selected provider while
+- **Partners and operators** can connect OLC Engine while
   retaining control over identity, hosting, credentials, legal corpora,
   retention and operational policy.
 
@@ -67,12 +99,17 @@ answer quality depend on the configured backend and its data.
 
 ## How the workflow works
 
-1. Choose **Open WebUI** or **OLC Engine**.
-2. Choose **No document context** or **Selected text**.
-3. Enter a legal question and select **Search legal sources**.
-4. Review the safely rendered answer and its `Z*` legislation or `S*` case-law
+1. Open the task pane; it checks the protected OLC Engine connection automatically.
+2. Optionally select text in Word and review or remove the compact **Selected text** attachment.
+3. Enter a question or instruction and select **Send** (or press Enter).
+4. Review the safely rendered answer and any `Z*` legislation or `S*` case-law
    references.
-5. Use **Copy answer**, **Refine question** or **New search**.
+5. Use **Copy answer**, **Edit message** or **New message**.
+
+OLC Engine SSE answers are rendered incrementally as untrusted text. Result
+actions become available only after a valid completion terminal. **Edit message** preserves
+the form for a new independent request; it does not continue a stored
+conversation.
 
 See the [English user guide](docs/USER_GUIDE.md),
 [Slovenian user guide](docs/USER_GUIDE.sl-SI.md) and
@@ -80,16 +117,17 @@ See the [English user guide](docs/USER_GUIDE.md),
 
 ## Document and trust boundary
 
-- **No document context** never calls the Word selection API and sends no
-  document content.
-- **Selected text** captures only the exact current selection when the user
-  starts the search. The question and quoted selection remain separate fields.
-- The beta does not expose or perform document editing, replacement, redlining
-  or tracked changes.
+- With no selection, the connector sends only the message.
+- A valid Word selection appears automatically as a removable **Selected text**
+  attachment. **Send** freezes the displayed attachment and interface language;
+  the message and quoted selection remain separate fields.
+- The deployed basic answer flow does not edit Word. A local OLC-72 candidate
+  adds explicit proposal preview and guarded, user-clicked replacement/insertion;
+  [the documented Engine profile is integrated locally; native Word qualification and activation remain pending](docs/WORD_DOCUMENT_PROPOSAL.md).
+  Redlining and tracked-change management are not included.
 - Cancellation, timeout, session expiry, backend failure and late responses
   leave the Word document unchanged.
-- Provider selection is explicit. There is no automatic fallback or sharing of
-  credentials between providers.
+- OLC Engine is the only backend. Requests are never retried automatically.
 - Model output is untrusted text. Only credential-free HTTPS links on the exact
   approved PISRS and Slovenian case-law hosts can become clickable.
 
@@ -98,17 +136,17 @@ before evaluating the connector with a real document.
 
 ## Choose your starting point
 
-| Goal | Start here | What you need |
-| --- | --- | --- |
-| Use the connector | [User guide](docs/USER_GUIDE.md) or [slovenski priročnik](docs/USER_GUIDE.sl-SI.md) | Installed add-in and operator-provided access |
-| Browse the interface | [Bilingual product gallery](docs/SCREENSHOTS.md) | No installation |
-| Preview the UI locally | [Local UI preview](docs/INSTALLATION.md#path-a-local-ui-preview) | Git and Node.js 24 |
-| Load the add-in in Word for the web | [Word Web sideload](docs/INSTALLATION.md#path-b-word-for-the-web-development-sideload) | Microsoft 365, Git and Node.js 24 |
-| Connect Open WebUI or OLC Engine | [Integration guide](docs/INTEGRATION.md) | Compatible backend and secure same-origin gateway |
-| Deploy a connected build | [Connected deployment](docs/INSTALLATION.md#path-c-connected-self-hosted-deployment) | HTTPS hosting, identity and operator infrastructure |
-| Review or change the code | [Technical guide](docs/TECHNICAL_GUIDE.md) and [contribution guide](CONTRIBUTING.md) | Development environment |
-| Evaluate support claims | [Compatibility and limitations](docs/COMPATIBILITY_AND_LIMITATIONS.md) | No installation |
-| Understand future direction | [Roadmap](ROADMAP.md) | No installation |
+| Goal                                | Start here                                                                             | What you need                                       |
+| ----------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Use the connector                   | [User guide](docs/USER_GUIDE.md) or [slovenski priročnik](docs/USER_GUIDE.sl-SI.md)    | Installed add-in and operator-provided access       |
+| Browse the interface                | [Bilingual product gallery](docs/SCREENSHOTS.md)                                       | No installation                                     |
+| Preview the UI locally              | [Local UI preview](docs/INSTALLATION.md#path-a-local-ui-preview)                       | Git and Node.js 24                                  |
+| Load the add-in in Word for the web | [Word Web sideload](docs/INSTALLATION.md#path-b-word-for-the-web-development-sideload) | Microsoft 365, Git and Node.js 24                   |
+| Connect OLC Engine                  | [Integration guide](docs/INTEGRATION.md)                                               | Compatible Engine and secure same-origin gateway    |
+| Deploy a connected build            | [Connected deployment](docs/INSTALLATION.md#path-c-connected-self-hosted-deployment)   | HTTPS hosting, identity and operator infrastructure |
+| Review or change the code           | [Technical guide](docs/TECHNICAL_GUIDE.md) and [contribution guide](CONTRIBUTING.md)   | Development environment                             |
+| Evaluate support claims             | [Compatibility and limitations](docs/COMPATIBILITY_AND_LIMITATIONS.md)                 | No installation                                     |
+| Understand future direction         | [Roadmap](ROADMAP.md)                                                                  | No installation                                     |
 
 ## Quick local UI preview
 
@@ -133,12 +171,11 @@ for a non-local host.
 flowchart LR
     Word["Microsoft Word"] --> AddIn["Word Connector"]
     AddIn --> Gateway["Same-origin gateway"]
-    Gateway --> OWUI["Open WebUI"]
     Gateway --> Engine["OLC Engine"]
 ```
 
-The Office adapter owns Word access, the controller owns orchestration, each
-gateway adapter owns its provider protocol and the view owns safe presentation.
+The Office adapter owns Word access, the controller owns orchestration, the
+Engine adapter owns the HTTP protocol and the view owns safe presentation.
 Office proxy objects never enter the HTTP layer, and provider adapters never
 mutate Word or the DOM.
 
@@ -155,9 +192,16 @@ contracts.
 ## Verification
 
 The Word for the web release-gate walkthrough was accepted on 5 September 2026.
-It covered both provider paths, both document-context modes, answer and source
+It covered the then-current two-provider release paths, both document-context modes, answer and source
 rendering, result actions, cancellation with late-response suppression, secure
 session recovery with an explicit retry, and an unchanged Word document.
+
+The owner subsequently confirmed the Engine-only Word Web path with an answer,
+sources and reported usage. On 23 October 2026 the owner accepted the simplified
+Slovenian form in the actual local runtime harness: working logo, one heading,
+automatic removable selection attachment and **Send**. That visual review did
+not repeat a completion request; the broader simplified-form Word Web
+walkthrough remains a separate pre-merge gate.
 
 Windows and Mac remain untested and carry no support claim. Detailed evidence,
 limitations and excluded capabilities are recorded in
@@ -176,24 +220,24 @@ npm run verify:bundle
 ```
 
 The included CI workflow validates manifests and audits production dependencies
-at high severity. `verify:bundle` rejects test, harness, fake, mutation,
+at high severity. `verify:bundle` rejects test, harness, fake, unsafe mutation,
 credential-storage, service-token, private-origin and source-map artifacts from
 the production bundle. Protected live tests are opt-in and are not part of
 ordinary CI.
 
 ## Repository map
 
-| Path | Responsibility |
-| --- | --- |
-| `src/app/` | Provider-neutral workflow, state and cancellation |
-| `src/office/` | The only production boundary that uses Office.js |
-| `src/chat/` | Open WebUI and OLC Engine protocol adapters |
-| `src/taskpane/` | Composition, localization, view models and safe rendering |
-| `manifests/` | Development, staging and reserved production Office manifests |
-| `infrastructure/cloudflare/` | Generic hardened same-origin gateway example |
-| `test/` | Deterministic unit, contract, manifest, harness and opt-in live tests |
-| `docs/` | Public user, installation, integration, technical, compatibility and release guides |
-| `ROADMAP.md` | Current boundary, validation priorities and non-binding future directions |
+| Path                         | Responsibility                                                                      |
+| ---------------------------- | ----------------------------------------------------------------------------------- |
+| `src/app/`                   | Provider-neutral workflow, state and cancellation                                   |
+| `src/office/`                | The only production boundary that uses Office.js                                    |
+| `src/chat/`                  | OLC Engine protocol adapter and provider-neutral gateway contract                   |
+| `src/taskpane/`              | Composition, localization, view models and safe rendering                           |
+| `manifests/`                 | Development, staging and reserved production Office manifests                       |
+| `infrastructure/cloudflare/` | Generic hardened same-origin gateway example                                        |
+| `test/`                      | Deterministic unit, contract, manifest, harness and opt-in live tests               |
+| `docs/`                      | Public user, installation, integration, technical, compatibility and release guides |
+| `ROADMAP.md`                 | Current boundary, validation priorities and non-binding future directions           |
 
 ## Documentation
 

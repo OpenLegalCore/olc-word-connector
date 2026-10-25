@@ -5,10 +5,8 @@ const path = require("path");
 const devCerts = require("office-addin-dev-certs");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const webpack = require("webpack");
 
 const OFFICE_ASSET_VERSION = "1.0.0.2";
-const DEFAULT_WORD_MODEL_ID = "olc-engine";
 const BUILD_TARGETS = Object.freeze({
   development: {
     outputDirectory: "dev",
@@ -45,16 +43,6 @@ async function getHttpsOptions() {
   return { ca: httpsOptions.ca, key: httpsOptions.key, cert: httpsOptions.cert };
 }
 
-function resolveWordModelId(value) {
-  if (value === undefined) {
-    return DEFAULT_WORD_MODEL_ID;
-  }
-  if (typeof value !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:/+-]{0,199}$/.test(value)) {
-    throw new Error("OLC_WORD_MODEL_ID must be a non-empty printable model identifier.");
-  }
-  return value;
-}
-
 function resolveBuildTarget(env, options = {}) {
   const target = env && env.target;
   if (typeof target !== "string" || !Object.hasOwn(BUILD_TARGETS, target)) {
@@ -79,6 +67,7 @@ function staticPatterns(target) {
   }));
   const patterns = [
     ...iconPatterns,
+    { from: "node_modules/@azure/msal-browser/LICENSE", to: "MSAL-LICENSE.txt" },
     {
       from: "assets/icon-128.png",
       to: "assets/[name][ext]",
@@ -104,7 +93,6 @@ function staticPatterns(target) {
 
 async function webpackConfig(env, options) {
   const target = resolveBuildTarget(env, options);
-  const wordModelId = resolveWordModelId(process.env.OLC_WORD_MODEL_ID);
   const moduleRules = [
     {
       test: /\.ts$/,
@@ -178,16 +166,36 @@ async function webpackConfig(env, options) {
         ? ["./test/word-harness/wordHarness.ts", "./test/word-harness/taskpane.html"]
         : ["./src/taskpane/taskpane.ts", "./src/taskpane/taskpane.html"],
       commands: "./src/commands/commands.ts",
+      signin: "./src/taskpane/signin.ts",
+      "microsoft-signin": "./src/taskpane/microsoft-signin.ts",
+      "microsoft-redirect": "./src/taskpane/microsoft-redirect.ts",
     },
     output,
+    optimization: {
+      splitChunks: {
+        cacheGroups: {
+          microsoft: {
+            test: /[\\/]node_modules[\\/]@azure[\\/]msal-(?:browser|common)[\\/]/,
+            name: "microsoft-auth",
+            chunks: "all",
+            enforce: true,
+          },
+        },
+      },
+    },
     resolve: {
       extensions: [".ts", ".html", ".js"],
     },
     module: { rules: moduleRules },
     plugins: [
-      new webpack.DefinePlugin({
-        __OLC_WORD_MODEL_ID__: JSON.stringify(wordModelId),
-      }),
+      ...["microsoft-signin", "microsoft-redirect"].map(
+        (name) =>
+          new HtmlWebpackPlugin({
+            filename: `${name}.html`,
+            template: `./src/taskpane/${name}.html`,
+            chunks: [name],
+          })
+      ),
       new HtmlWebpackPlugin({
         filename: "taskpane.html",
         template: target.wordHarness
@@ -201,14 +209,17 @@ async function webpackConfig(env, options) {
         template: "./src/commands/commands.html",
         chunks: ["polyfill", "commands"],
       }),
+      new HtmlWebpackPlugin({
+        filename: "signin.html",
+        template: "./src/taskpane/signin.html",
+        chunks: ["polyfill", "signin"],
+      }),
     ],
     devServer,
   };
 }
 
 webpackConfig.BUILD_TARGETS = BUILD_TARGETS;
-webpackConfig.DEFAULT_WORD_MODEL_ID = DEFAULT_WORD_MODEL_ID;
 webpackConfig.OFFICE_ASSET_VERSION = OFFICE_ASSET_VERSION;
 webpackConfig.resolveBuildTarget = resolveBuildTarget;
-webpackConfig.resolveWordModelId = resolveWordModelId;
 module.exports = webpackConfig;

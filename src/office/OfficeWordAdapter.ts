@@ -1,7 +1,7 @@
-/* global DOMParser, OfficeExtension, Word */
+/* global DOMParser, Office, OfficeExtension, TextEncoder, Word */
 
 import { WordAdapterError, type SelectionSnapshot, type WordAdapter } from "./WordAdapter";
-import { validateSelection, type SelectionFacts } from "./selectionPolicy";
+import { validateInsertionCursor, validateSelection, type SelectionFacts } from "./selectionPolicy";
 
 export interface OfficeWordRuntime {
   run<T>(batch: (context: Word.RequestContext) => Promise<T>): Promise<T>;
@@ -24,6 +24,7 @@ export interface QueuedSelectionFacts {
 export interface TrackedSelection {
   readonly snapshot: SelectionSnapshot;
   readonly range: Word.Range;
+  readonly originalOoxml: string;
   lifecycle: "active" | "consumed";
   cleanupPromise?: Promise<void>;
 }
@@ -108,11 +109,36 @@ function controlledReadError(error: unknown): WordAdapterError {
   return error instanceof WordAdapterError ? error : new WordAdapterError("WORD_READ_FAILED");
 }
 
+function snapshotsMatch(left: SelectionSnapshot, right: SelectionSnapshot): boolean {
+  return (
+    left.snapshotId === right.snapshotId &&
+    left.text === right.text &&
+    left.characterCount === right.characterCount &&
+    left.context === right.context &&
+    left.capturedAt === right.capturedAt
+  );
+}
+
+function validateWriteText(text: string): void {
+  if (
+    typeof text !== "string" ||
+    !text.trim() ||
+    text.includes("\u0000") ||
+    new TextEncoder().encode(text).byteLength > 32_768
+  ) {
+    throw new WordAdapterError("WORD_WRITE_FAILED");
+  }
+}
+
 export class OfficeWordAdapter implements WordAdapter {
   protected readonly trackedSelections = new Map<string, TrackedSelection>();
   private snapshotSequence = 0;
 
   constructor(protected readonly runtime: OfficeWordRuntime = productionRuntime) {}
+
+  get documentWriter(): OfficeWordAdapter {
+    return this;
+  }
 
   async captureSelection(): Promise<SelectionSnapshot> {
     await this.drainPendingCleanup();
@@ -143,6 +169,7 @@ export class OfficeWordAdapter implements WordAdapter {
         this.trackedSelections.set(snapshot.snapshotId, {
           snapshot: copySnapshot(snapshot),
           range: retainedLocator,
+          originalOoxml: queuedFacts.ooxml.value,
           lifecycle: "active",
         });
         return copySnapshot(snapshot);
@@ -167,6 +194,105 @@ export class OfficeWordAdapter implements WordAdapter {
     } catch (error) {
       throw controlledReadError(error);
     }
+  }
+
+  async applyReplacement(snapshot: SelectionSnapshot, proposedText: string): Promise<void> {
+    const tracked = this.trackedSelections.get(snapshot.snapshotId);
+    if (!tracked || tracked.lifecycle !== "active") throw new WordAdapterError("SELECTION_CHANGED");
+    tracked.lifecycle = "consumed";
+    let mutationCommitted = false;
+    try {
+      if (!snapshotsMatch(snapshot, tracked.snapshot))
+        throw new WordAdapterError("SELECTION_CHANGED");
+      validateWriteText(proposedText);
+      await this.runtime.runWithRange(tracked.range, async (context) => {
+        const current = context.document.getSelection();
+        const target = tracked.range.getRange("Whole");
+        const currentFacts = queueSelectionFacts(current);
+        const targetFacts = queueSelectionFacts(target);
+        const location = current.compareLocationWith(target);
+        await context.sync();
+        try {
+          const currentRead = readSelectionFacts(currentFacts);
+          const targetRead = readSelectionFacts(targetFacts);
+          if (
+            location.value !== "Equal" ||
+            validateSelection(currentRead) !== snapshot.context ||
+            validateSelection(targetRead) !== snapshot.context ||
+            currentRead.text !== snapshot.text ||
+            targetRead.text !== snapshot.text ||
+            currentFacts.ooxml.value !== tracked.originalOoxml ||
+            targetFacts.ooxml.value !== tracked.originalOoxml
+          ) {
+            throw new WordAdapterError("SELECTION_CHANGED");
+          }
+        } catch {
+          throw new WordAdapterError("SELECTION_CHANGED");
+        }
+        if (proposedText === snapshot.text) return;
+        // Only the exact retained range is writable. No search or whole-body fallback.
+        const inserted = target.insertText(proposedText, "Replace");
+        await context.sync();
+        mutationCommitted = true;
+        try {
+          inserted.select("Select");
+          await context.sync();
+        } catch {
+          // A post-write selection failure does not justify repeating the write.
+        }
+      });
+    } catch (error) {
+      if (!mutationCommitted) {
+        throw error instanceof WordAdapterError ? error : new WordAdapterError("WORD_WRITE_FAILED");
+      }
+    } finally {
+      await this.tryReleaseTrackedSelection(snapshot.snapshotId, tracked);
+    }
+  }
+
+  async insertAtCursor(proposedText: string): Promise<void> {
+    validateWriteText(proposedText);
+    try {
+      await this.runtime.run(async (context) => {
+        // Clone the click-time position before inspecting it; never Replace a live selection.
+        const cursor = context.document.getSelection().getRange("Whole");
+        const facts = queueSelectionFacts(cursor);
+        await context.sync();
+        validateInsertionCursor(readSelectionFacts(facts));
+        cursor.insertText(proposedText, "Start");
+        await context.sync();
+      });
+    } catch (error) {
+      throw error instanceof WordAdapterError ? error : new WordAdapterError("WORD_WRITE_FAILED");
+    }
+  }
+
+  async subscribeToSelectionChanges(listener: () => void): Promise<() => void> {
+    const document = Office.context.document;
+    const handler = (): void => listener();
+
+    await new Promise<void>((resolve, reject) => {
+      document.addHandlerAsync(Office.EventType.DocumentSelectionChanged, handler, (result) => {
+        if (result.status === Office.AsyncResultStatus.Succeeded) {
+          resolve();
+        } else {
+          reject(new WordAdapterError("WORD_READ_FAILED"));
+        }
+      });
+    });
+
+    let active = true;
+    return () => {
+      if (!active) {
+        return;
+      }
+      active = false;
+      try {
+        document.removeHandlerAsync(Office.EventType.DocumentSelectionChanged, { handler });
+      } catch {
+        // Event cleanup is best-effort during task-pane disposal.
+      }
+    };
   }
 
   private releaseTrackedSelection(snapshotId: string, tracked: TrackedSelection): Promise<void> {

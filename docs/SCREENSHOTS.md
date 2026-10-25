@@ -12,6 +12,12 @@ illustrates the interface; it does not claim public-service availability,
 exhaustive retrieval, legal correctness or support beyond the documented
 compatibility boundary.
 
+> [!NOTE]
+> These images preserve the `v0.1.0-beta.1` historical interface. The current
+> OLC-72 candidate connects automatically, replaces the manual context choice
+> with a removable selection attachment, and uses the neutral Send/Stop flow.
+> Run the local harness for the current production task-pane runtime.
+
 ## 1. No document context
 
 Word content remains outside the request even when text is visible in the

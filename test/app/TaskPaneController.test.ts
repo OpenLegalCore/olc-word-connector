@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { TaskPaneController, type SearchInput } from "../../src/app/TaskPaneController";
-import type { ChatGateway, CompletionRequest, CompletionResult } from "../../src/chat/ChatGateway";
+import type {
+  ChatGateway,
+  CompletionObserver,
+  CompletionRequest,
+  CompletionResult,
+} from "../../src/chat/ChatGateway";
 import { ChatGatewayError } from "../../src/chat/ChatGatewayError";
-import { WordAdapterError, type SelectionSnapshot } from "../../src/office/WordAdapter";
+import type { SelectionSnapshot } from "../../src/office/WordAdapter";
 import { FakeChatGateway } from "../fakes/FakeChatGateway";
 import { FakeWordAdapter } from "../fakes/FakeWordAdapter";
 
@@ -17,13 +22,12 @@ const snapshot: SelectionSnapshot = {
 
 const noContextInput: SearchInput = {
   question: "Kateri zakon velja za ta primer?",
-  contextMode: "none",
   uiLocale: "sl-SI",
 };
 
 const selectedTextInput: SearchInput = {
   ...noContextInput,
-  contextMode: "selected-text",
+  selection: snapshot,
 };
 
 function setup(result: CompletionResult = { text: "Odgovor [Z1]\n\n## Sources\n- [Z1] Vir" }) {
@@ -55,13 +59,13 @@ describe("TaskPaneController legal-source contract", () => {
     expect(controller.getState()).toMatchObject({ kind: "result" });
   });
 
-  it("captures only after an explicit selected-text search and sends quoted context", async () => {
+  it("sends the exact already displayed selection as quoted context", async () => {
     const { word, chat, controller } = setup();
     expect(word.captureCalls).toBe(0);
 
     expect(await controller.search(selectedTextInput)).toBe(true);
 
-    expect(word.captureCalls).toBe(1);
+    expect(word.captureCalls).toBe(0);
     expect(word.releaseCalls).toEqual([snapshot]);
     expect(chat.requests).toEqual([
       {
@@ -109,15 +113,31 @@ describe("TaskPaneController legal-source contract", () => {
     });
   });
 
-  it("contains capture and completion failures without mutating Word", async () => {
-    const capture = setup();
-    capture.word.captureError = new WordAdapterError("NO_SELECTION");
-    expect(await capture.controller.search(selectedTextInput)).toBe(false);
-    expect(capture.controller.getState()).toEqual({
-      kind: "error",
-      error: { code: "NO_SELECTION" },
+  it("publishes ordered partial text before the validated terminal result", async () => {
+    const { chat, controller } = setup({ text: "Prvi drugi", usage: null });
+    chat.deltas = ["Prvi ", "drugi"];
+    const observed: string[] = [];
+    controller.subscribe((state) => {
+      if (state.kind === "searching") {
+        observed.push(state.partialText);
+      }
     });
 
+    expect(await controller.search(noContextInput)).toBe(true);
+
+    expect(observed).toEqual(["", "Prvi ", "Prvi drugi"]);
+    expect(controller.getState()).toEqual({
+      kind: "result",
+      request: {
+        question: noContextInput.question,
+        context: { type: "none" },
+        uiLocale: "sl-SI",
+      },
+      result: { text: "Prvi drugi", model: undefined, usage: null },
+    });
+  });
+
+  it("contains completion failures without mutating Word", async () => {
     for (const code of ["SESSION_EXPIRED", "TIMEOUT", "SERVICE_UNAVAILABLE"] as const) {
       const completion = setup();
       completion.chat.error = new ChatGatewayError(code);
@@ -145,11 +165,13 @@ describe("TaskPaneController legal-source contract", () => {
 
   it("ignores a late completion after cancellation", async () => {
     let resolveCompletion: (result: CompletionResult) => void = () => undefined;
+    let completionObserver: CompletionObserver | undefined;
     const requests: CompletionRequest[] = [];
     const chat: ChatGateway = {
       async checkConnection() {},
-      complete(request) {
+      complete(request, _signal, observer) {
         requests.push(request);
+        completionObserver = observer;
         return new Promise((resolve) => {
           resolveCompletion = resolve;
         });
@@ -160,7 +182,14 @@ describe("TaskPaneController legal-source contract", () => {
     const search = controller.search(noContextInput);
     await settle();
 
+    completionObserver?.onTextDelta?.("Visible before cancel");
+    expect(controller.getState()).toMatchObject({
+      kind: "searching",
+      partialText: "Visible before cancel",
+    });
+
     await controller.cancel();
+    completionObserver?.onTextDelta?.(" must be ignored");
     resolveCompletion({ text: "Late answer" });
 
     expect(await search).toBe(false);

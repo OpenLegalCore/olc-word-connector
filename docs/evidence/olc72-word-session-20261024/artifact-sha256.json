@@ -1,0 +1,27 @@
+{
+  "sourceTemplateManifestSha256": "45f81beb454902c8206d350bcf06a24fede74fa3586e24476595b96e7d1ad665",
+  "preparedManifestOrigin": "preserved approved bytes from last delivered ded891c",
+  "artifacts": {
+    "pages/_headers": "f33ae15cf18f806b2a6e0fc32fb01a389dd854651f71d5e1f2e69a92d01e944d",
+    "pages/assets/icon-128.png": "8b1413f73e63b7ad079b4cd735b89bd854933326da505fee6e45613527fa96ce",
+    "pages/assets/office/1.0.0.2/openlegalcore-mark-16.png": "71bf906b86e19ef6660af72dcae7fcb16b72d8b99d34319bf7154f7afac5c57b",
+    "pages/assets/office/1.0.0.2/openlegalcore-mark-32.png": "0a605930e9605de57ac66431d5241862b82be1f5b72378a3c77fa056dff543e2",
+    "pages/assets/office/1.0.0.2/openlegalcore-mark-64.png": "72415b81615fa6026db2b4affc8e22de26f490e36d020f517fecc26893ec5769",
+    "pages/assets/office/1.0.0.2/openlegalcore-mark-80.png": "54c5cde1c8af4565f373108793729704e79fc5ce9083739769cb5896c2749736",
+    "pages/commands.7ecfbe69559036f859a7.js": "827934507dc9ef32819cdcfbba8cde20a10448efc4a69824fa866dbe2787b6b9",
+    "pages/commands.html": "1f3f6c3acaf9d227405a9f161eecc2aa08421aabdb1f7be921da61b6ae2cc999",
+    "pages/f801043f68c0679f8271.css": "73b0ae18f9499c6b869223adbc826b7e9d022d54cca4501de9f3ca3761b9289c",
+    "pages/manifest.xml": "2ce9617367832ec2bb3b141e28e8ce87467030210ec62a7db37bb597950d200e",
+    "pages/polyfill.5f53caeebcc124812129.js": "43ed416b27bded9208218535ad0b2fe9c33476dfad7a70b9e793a594f811e6e0",
+    "pages/signin.9179a61cd92a01bb2e3f.js": "ee31786cdc45585452a4abed9b856e1793544ab900216f23c3220cec9e352cf4",
+    "pages/signin.html": "baeed5a06fe1014c73993c0902addf42af9e5526c28237f82555a7106f32ae03",
+    "pages/taskpane.2f7fc98ac85b2c1282f1.js": "a995ab47ebaf01854aa3e08dd0eaf5537282658d299392a26987339d1b6576c3",
+    "pages/taskpane.2f7fc98ac85b2c1282f1.js.LICENSE.txt": "8c9946dfc859a2bfb26cc541125631cd96e7110fa20a702eb19275c9d1658805",
+    "pages/taskpane.html": "74d183bfd570926cc195bdd49ac466c1a6c190238369bf2c8e9e8aa3a2f514a6",
+    "workers/JOSE-LICENSE.txt": "8078b0829d6c3e9ecde2f003e1966e4cad3efc6e7a640efbab0313cc166b1af1",
+    "workers/api-worker.mjs": "2fb319f6c61c7d1a642b156ab2d56c0b94e10806b64c8f2c71d1e458f000c96e",
+    "workers/api.wrangler.toml": "618962688e4988fc7500e5c9c6df4555a3732f68b9f0eb1d64f80bef3b2ae0aa",
+    "workers/auth-worker.mjs": "254fe80ba5377c88a4068e178048459f293fddaed31e847c816b27b361bbc2e2",
+    "workers/auth.wrangler.toml": "80f6fad30d3792226622b204bab7265546e14f227279b3ec3652892d19ff6ff6"
+  }
+}

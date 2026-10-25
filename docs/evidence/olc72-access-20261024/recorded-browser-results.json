@@ -1,0 +1,171 @@
+{
+  "evidence_type": "sanitized historical synthetic results; NOT real Word/identity",
+  "code_commit": "ded891c22b735ca323bfede552e5219683d24841",
+  "actual_word": "NOT_RUN",
+  "source_alias": "B1: retained delivery runtime replay; B2/B3: retained preparation fixtures",
+  "delivery_replay": {
+    "event_time_utc": null,
+    "retained_file_mtime_utc": "2026-10-24T03:58:52.651888+00:00",
+    "time_basis": "retention/copy time only, not a verified execution timestamp",
+    "browser": "157.0",
+    "environment": "isolated headless Firefox; downloaded production files replayed over local HTTPS; synthetic Office and identity; automated test storage permission",
+    "results": {
+      "initialChallenge": true,
+      "restoredWithoutAnotherDialog": true,
+      "expiry_stops_before_models": true,
+      "multiline_draft_preserved": true,
+      "removed_attachment_preserved": true,
+      "language_preserved": true,
+      "reopen_ready_without_dialog": true,
+      "blocked_sandbox_fails_closed": true,
+      "blocked_sandbox_no_false_success": true
+    },
+    "observed_methods": [
+      "GET"
+    ],
+    "calls": [
+      {
+        "path": "/api/session",
+        "method": "GET",
+        "synthetic_session_accepted": false
+      },
+      {
+        "path": "/api/session",
+        "method": "GET",
+        "synthetic_session_accepted": true
+      },
+      {
+        "path": "/v1/models",
+        "method": "GET",
+        "synthetic_session_accepted": true
+      },
+      {
+        "path": "/api/session",
+        "method": "GET",
+        "synthetic_session_accepted": false
+      },
+      {
+        "path": "/api/session",
+        "method": "GET",
+        "synthetic_session_accepted": true
+      },
+      {
+        "path": "/v1/models",
+        "method": "GET",
+        "synthetic_session_accepted": true
+      },
+      {
+        "path": "/api/session",
+        "method": "GET",
+        "synthetic_session_accepted": true
+      },
+      {
+        "path": "/v1/models",
+        "method": "GET",
+        "synthetic_session_accepted": true
+      },
+      {
+        "path": "/api/session",
+        "method": "GET",
+        "synthetic_session_accepted": false
+      }
+    ]
+  },
+  "firefox_cookie_fixture": {
+    "event_time_utc": null,
+    "retained_file_mtime_utc": "2026-10-24T03:43:04.392334+00:00",
+    "time_basis": "file mtime only",
+    "browser": "157.0",
+    "fixture_only": true,
+    "candidate_binding": "collected during ded891c review; generic cookie mechanics fixture, not add-in execution",
+    "observations": {
+      "initial": {
+        "status": 401,
+        "has": false,
+        "permission": "prompt"
+      },
+      "afterDialog": {
+        "status": 401,
+        "has": false,
+        "permission": "prompt"
+      },
+      "granted": {
+        "grant": true
+      },
+      "afterGrant": {
+        "status": 200,
+        "has": true,
+        "permission": "granted"
+      },
+      "reopened": {
+        "status": 401,
+        "has": false,
+        "permission": "granted"
+      },
+      "restored": {
+        "called": true,
+        "status": 200,
+        "has": true,
+        "permission": "granted"
+      },
+      "expiredSession": {
+        "status": 401,
+        "has": true,
+        "permission": "granted"
+      },
+      "reauthenticated": {
+        "status": 200,
+        "has": true,
+        "permission": "granted"
+      }
+    }
+  },
+  "chromium_comparison": {
+    "event_time_utc": null,
+    "retained_file_mtime_utc": "2026-10-24T03:38:52.448818+00:00",
+    "time_basis": "file mtime only",
+    "browser": "153.0.8010.36",
+    "fixture_only": true,
+    "observations": {
+      "initial": {
+        "status": 401,
+        "has": false,
+        "permission": "prompt"
+      },
+      "afterDialog": {
+        "status": 200,
+        "has": false,
+        "permission": "prompt"
+      },
+      "granted": {
+        "grant": false
+      },
+      "afterGrant": {
+        "status": 200,
+        "has": false,
+        "permission": "prompt"
+      },
+      "reopened": {
+        "status": 200,
+        "has": false,
+        "permission": "prompt"
+      },
+      "restored": {
+        "called": false,
+        "status": 200,
+        "has": false,
+        "permission": "prompt"
+      }
+    },
+    "limitation": "This setup sent its synthetic cookie after first-party login without SAA; it did not reproduce the owner failure. hasStorageAccess is not authentication proof."
+  },
+  "screenshot": {
+    "file": "synthetic-runtime-280px.png",
+    "dimensions": "280x820",
+    "event_time_utc": null,
+    "retained_file_mtime_utc": "2026-10-24T03:58:52.652001+00:00",
+    "meaning": "synthetic Office/identity replay, DEVELOPMENT badge, invented selection; not Word or proof of login",
+    "candidate_binding": "associated by retained delivery record; commit identity not embedded in pixels"
+  },
+  "root_cause": "No conclusion about owner browser or actual Access session"
+}

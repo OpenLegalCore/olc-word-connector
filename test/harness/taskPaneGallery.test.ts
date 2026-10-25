@@ -58,24 +58,22 @@ describe("development-only beta state gallery", () => {
     const state = document.getElementById("gallery-state") as HTMLSelectElement;
     const pane = document.getElementById("gallery-pane")!;
 
-    for (const [fixtureId, contextValue, boundaryMessage] of [
-      ["connected-no-context", "none", "No document content will be read or sent."],
+    for (const [fixtureId, hasAttachment, boundaryMessage] of [
+      ["connected-no-context", false, "No document content will be read or sent."],
       [
         "connected-selected-text",
-        "selected-text",
-        "Only the exact selection will be read and sent when you start the search.",
+        true,
+        "Only the attached selection will be sent with your message.",
       ],
     ] as const) {
       state.value = fixtureId;
       state.dispatchEvent(new Event("change"));
       expect(pane.dataset.fixtureState).toBe(fixtureId);
-      expect(pane.querySelector(".olc-workspace-title")?.textContent).toBe("Search legal sources");
-      expect(pane.querySelector<HTMLInputElement>(`input[value="${contextValue}"]`)?.checked).toBe(
-        true
-      );
+      expect(pane.querySelector(".olc-workspace-title")?.textContent).toBe("Ask OpenLegalCore");
+      expect(Boolean(pane.querySelector(".olc-selection-attachment"))).toBe(hasAttachment);
       expect(pane.querySelector(".olc-action-region-message")?.textContent).toBe(boundaryMessage);
       expect(pane.querySelector(".olc-environment")?.textContent).toBe("STAGING");
-      expect(pane.querySelector("[data-action-id='search']")).not.toBeNull();
+      expect(pane.querySelector("[data-action-id='send']")).not.toBeNull();
     }
     expect(fetch).not.toHaveBeenCalled();
     expect((globalThis as { Office?: unknown }).Office).toBeUndefined();

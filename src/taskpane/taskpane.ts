@@ -1,4 +1,5 @@
-/* global document, location, navigator, Office */
+/* global document, location, navigator, Office, URLSearchParams */
+import { broadcastResponseToMainFrame } from "@azure/msal-browser/redirect-bridge";
 
 import { OfficeWordAdapter } from "../office/OfficeWordAdapter";
 import type { WordAdapter } from "../office/WordAdapter";
@@ -13,8 +14,7 @@ import {
 } from "./ProductionTaskPaneRuntime";
 import { applyDocumentLocale, messagesFor, resolveUiLocale, type UiLocale } from "./i18n";
 import { TaskPaneView } from "./TaskPaneView";
-
-declare const __OLC_WORD_MODEL_ID__: string;
+import { createOfficeMicrosoftAccess } from "./MicrosoftAccess";
 
 let productionWordAdapter: WordAdapter | undefined;
 let productionTaskPaneRuntime: ProductionTaskPaneRuntime | undefined;
@@ -47,10 +47,6 @@ function navigatorLanguage(): string | undefined {
   } catch {
     return undefined;
   }
-}
-
-function configuredModelId(): string | undefined {
-  return typeof __OLC_WORD_MODEL_ID__ === "string" ? __OLC_WORD_MODEL_ID__ : undefined;
 }
 
 function officeDisplayLanguage(): string | undefined {
@@ -110,7 +106,10 @@ function handleOfficeReady(info: { host: Office.HostType; platform: Office.Platf
       productionWordAdapter,
       environment,
       view,
-      { initialLocale: locale, modelId: configuredModelId() }
+      {
+        initialLocale: locale,
+        microsoft: createOfficeMicrosoftAccess(location.origin),
+      }
     );
     productionTaskPaneRuntime.start();
     officeReadyHandled = true;
@@ -152,4 +151,11 @@ function registerOfficeReady(): void {
   }
 }
 
-registerOfficeReady();
+// Word Web NAA registers this page as its SPA return URI. On an auth return,
+// run only Microsoft's bridge; never bootstrap Word, read selection or call our API.
+const authParameters = new URLSearchParams(location.hash?.replace(/^#/, "") || location.search);
+if (authParameters.has("state") && (authParameters.has("code") || authParameters.has("error"))) {
+  void broadcastResponseToMainFrame().catch(() => undefined);
+} else {
+  registerOfficeReady();
+}

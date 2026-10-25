@@ -1,0 +1,186 @@
+{
+  "kind": "LOCAL_OFFLINE_VALIDATION",
+  "liveProviderTests": "EXPLICITLY_DISABLED",
+  "commands": [
+    {
+      "command": [
+        "npm",
+        "ci"
+      ],
+      "exitCode": 0,
+      "seconds": 9.19
+    },
+    {
+      "command": [
+        "npm",
+        "audit",
+        "--omit=dev",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "seconds": 0.64
+    },
+    {
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run"
+      ],
+      "exitCode": 0,
+      "note": "Full suite rerun after adding signing-key rollover: 628 PASS, 1 protected-live SKIP; exit 0. Parent live flag verified disabled."
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "exitCode": 0,
+      "seconds": 1.97
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "exitCode": 0,
+      "seconds": 1.28
+    },
+    {
+      "command": [
+        "npx",
+        "--no-install",
+        "prettier",
+        "--check",
+        ".github/workflows/ci.yml",
+        "src/**/*.ts",
+        "src/**/*.css",
+        "src/taskpane/*.html",
+        "infrastructure/**/*.js",
+        "test/**/*.ts",
+        "test/**/*.css",
+        "test/harness/harness.html",
+        "scripts/**/*.js",
+        "*.{js,json,mts}"
+      ],
+      "exitCode": 0,
+      "seconds": 1.3
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "validate"
+      ],
+      "exitCode": 0,
+      "seconds": 0.56
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "validate:dev"
+      ],
+      "exitCode": 0,
+      "seconds": 0.56
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "validate:stage"
+      ],
+      "exitCode": 0,
+      "seconds": 0.55
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "validate:prod"
+      ],
+      "exitCode": 0,
+      "seconds": 0.54
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build:harness"
+      ],
+      "exitCode": 0,
+      "seconds": 1.3
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build:word-harness"
+      ],
+      "exitCode": 0,
+      "seconds": 2.03
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build:dev"
+      ],
+      "exitCode": 0,
+      "seconds": 1.81
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build:stage"
+      ],
+      "exitCode": 0,
+      "seconds": 3.36
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exitCode": 0,
+      "seconds": 3.33
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build:word-session"
+      ],
+      "exitCode": 0,
+      "seconds": 0.2
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "verify:bundle"
+      ],
+      "exitCode": 0,
+      "seconds": 0.11
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exitCode": 0,
+      "seconds": 0.01
+    }
+  ],
+  "suite": {
+    "passed": 628,
+    "skippedProtectedLive": 1,
+    "passingFiles": 39,
+    "skippedFiles": 1
+  }
+}

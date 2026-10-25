@@ -94,7 +94,48 @@ Their required notices are reproduced in
 
 ## Verification summary
 
+### Engine protocol compatibility (OLC-72)
+
+The independently implemented Word client uses the documented
+`lexai_document_review_v1` API definition at private Engine source
+`9753ad104853ce0fc4e23db9c9165e3c2abd073d`, checked against
+`8eb44dd9bbbb4c81f272dcbd738d09e756f4fe22` and
+`aa52aa19d068d53c9e9d1ad58a2c04f94d4a901f`. The owning document is
+`docs/contracts/DOCUMENT-REVIEW-1.md`; the canonical schema is in
+`docs/examples/document-review/request-sl.json`. Its fingerprint and direct
+offline admission evidence are recorded in [the Word contract](WORD_DOCUMENT_PROPOSAL.md).
+
+The Engine `LICENSE` at those pins is proprietary, not Apache-2.0. No Engine
+implementation, Python reference adapter, recorded incident content or fixture
+was copied into Word. The TypeScript protocol definition/validator, incremental
+reader and synthetic fixtures are independently written Word code. Referencing
+that interface does not distribute Engine or grant a license to it.
+
 The recorded Git commits, tag targets, upstream license texts, source asset
 blob and committed raster-asset blobs were rechecked for this documentation
 review. The production package versions and license identifiers match the
 committed npm lockfile.
+
+## Word authorization dependency
+
+`jose@6.2.13` (MIT), upstream commit
+`316b7f2cb41b8377515d9cc2e81e03f8e50ee935`, is an exact locked npm dependency
+for server-only Access JWT verification. No third-party implementation is manually
+copied or adapted. Miniflare/workerd and esbuild are exact development dependencies
+for local strongly consistent storage tests and Worker packaging. See
+[notices](../THIRD_PARTY_NOTICES.md) and [session architecture](WORD_SCOPED_SESSION.md).
+
+Miniflare-only dependency overrides pin `undici@7.30.1` and `sharp@0.35.5`
+to avoid known vulnerable transitive versions. These test-tool overrides do not
+change the browser or authorization Worker dependency set.
+
+## Microsoft identity — OLC-72
+
+Production MSAL Browser 5.26.0 and MSAL Common 16.14.3 are MIT; both exact release
+tags resolve to `16a4714f38ba2844f34d154dd59dd8f1402457c9`. Verified by
+`git ls-remote --tags` on Microsoft's upstream repository. The npm versions,
+resolved package URLs and integrity values are pinned in the lockfile. These are
+bundled dependencies, not copied samples; custom orchestration, policy and UI
+code are original connector code. Complete license text is retained in
+[third-party notices](../THIRD_PARTY_NOTICES.md#microsoft-authentication-library-for-javascript)
+and emitted as `MSAL-LICENSE.txt`.

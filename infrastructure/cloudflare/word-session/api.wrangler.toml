@@ -1,0 +1,25 @@
+name = "olc-word-session-api"
+main = "api-worker.js"
+compatibility_date = "2026-07-30"
+workers_dev = false
+preview_urls = false
+
+[vars]
+PUBLIC_ORIGIN = "https://word.example.invalid"
+ENGINE_ORIGIN = "https://private-upstream.example.invalid"
+# Inert default preserves the deployed Cloudflare flow until reviewed activation.
+# Set true only with the registered Microsoft SPA/API and explicit owner authorization.
+MICROSOFT_AUTH_ENABLED = "false"
+# MICROSOFT_CLIENT_ID = "<actual SPA application client ID>"
+# MICROSOFT_API_AUDIENCE = "<different actual API application client ID>"
+# MICROSOFT_ALLOWED_IDENTITIES = '["<verified tenant GUID>:<verified owner object GUID>"]'
+# Secrets: ENGINE_API_KEY, CF_ACCESS_CLIENT_ID, CF_ACCESS_CLIENT_SECRET.
+# Provision from the approved private originals; never export deployed secrets.
+
+[[durable_objects.bindings]]
+name = "WORD_SESSIONS"
+class_name = "WordSessionStore"
+script_name = "olc-word-session-auth"
+
+[observability]
+enabled = false

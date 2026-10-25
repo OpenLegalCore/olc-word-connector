@@ -55,19 +55,19 @@ it("binds a no-context beta search without Office.js or HTTP", async () => {
   unsubscribe();
 });
 
-it("captures selected context only when explicitly checked and recovers from an error", async () => {
+it("uses displayed selected context only when explicitly checked and recovers from an error", async () => {
   const { word, controller, unsubscribe } = setupHarness();
   (document.getElementById("selected-context") as HTMLInputElement).checked = true;
   (document.getElementById("gateway-error") as HTMLInputElement).checked = true;
   document.getElementById("search")!.click();
   await vi.waitFor(() => expect(controller.getState().kind).toBe("error"));
-  expect(word.captureCalls).toBe(1);
+  expect(word.captureCalls).toBe(0);
 
   (document.getElementById("gateway-error") as HTMLInputElement).checked = false;
   document.getElementById("reset")!.click();
   document.getElementById("search")!.click();
   await vi.waitFor(() => expect(controller.getState().kind).toBe("result"));
-  expect(word.captureCalls).toBe(2);
+  expect(word.captureCalls).toBe(0);
   expect(word.applyCalls).toHaveLength(0);
   unsubscribe();
 });

@@ -1,0 +1,30 @@
+{
+  "source": "edfaf1dc3367cdd76c24ee9e176efb6bff2cedf8",
+  "tree": "04b1239750e514b3ed3ab203b2794cd67a6e4b49",
+  "ci": {
+    "run": 40161303969,
+    "job": 121073254396,
+    "conclusion": "success",
+    "allSteps": "success"
+  },
+  "pages": "7e4bcdfe-11ff-4d61-9789-80962046e5b1",
+  "authWorker": "0ea8304d-3a08-4a4c-af7e-83aa2e2f6dff",
+  "apiWorker": "da36e666-89d1-4a59-b7b8-6fec4ad88807",
+  "workerSource": "4c99928ff33beda18bb55f09808ff270af2460c2",
+  "taskpaneAsset": "taskpane.f0c0f90aebbb54b836d8.js",
+  "staticMatches": 69,
+  "publicConfigMatches": true,
+  "canonicalAuthHeaders": "PASS",
+  "actualOwnerApiProbe": "PASS",
+  "actualWordAcceptance": "PENDING_OWNER",
+  "completionRequests": 0,
+  "wordWrites": 0,
+  "merge": false,
+  "rollback": {
+    "source": "aa5d369f3e99067e8059a50fdd99f22535ca9810",
+    "pages": "e133e092-9679-4734-9ad6-9ae1ae71394d",
+    "authWorker": "cef30f73-3f81-41aa-9782-bad6360fb1a0",
+    "apiWorker": "3f5511b5-cd03-494f-853c-211b8d22a81e",
+    "retained": true
+  }
+}

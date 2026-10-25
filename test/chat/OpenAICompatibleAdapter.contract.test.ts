@@ -46,9 +46,15 @@ function jsonResponse(payload: unknown, status = 200): Response {
 }
 
 function completionResponse(content: string): Response {
-  return jsonResponse({
-    model: MODEL_ID,
-    choices: [{ message: { role: "assistant", content } }],
+  const stream = [
+    `data: ${JSON.stringify({ model: MODEL_ID, choices: [{ delta: { content }, finish_reason: null }] })}\n\n`,
+    `data: ${JSON.stringify({ model: MODEL_ID, choices: [{ delta: {}, finish_reason: "stop" }] })}\n\n`,
+    `data: ${JSON.stringify({ model: MODEL_ID, choices: [], usage: null })}\n\n`,
+    "data: [DONE]\n\n",
+  ].join("");
+  return new Response(stream, {
+    status: 200,
+    headers: { "Content-Type": "text/event-stream" },
   });
 }
 
@@ -116,7 +122,7 @@ function createFailure(
     const fetch = expectedFetch(
       observations,
       "/v1/models",
-      async () => new Response("Access", { status: 200, headers: { "Content-Type": "text/html" } })
+      async () => new Response(null, { status: 302, headers: { Location: "/login" } })
     );
     const adapter = new OpenAICompatibleAdapter(
       { transport: "same-origin", modelId: MODEL_ID },
@@ -207,7 +213,7 @@ function createPending(): ChatGatewayPendingHarness {
 
 runChatGatewayContract({
   name: "OpenAICompatibleAdapter",
-  expectedResult: { text: EXPECTED_TEXT, model: MODEL_ID },
+  expectedResult: { text: EXPECTED_TEXT, model: MODEL_ID, usage: null },
   sensitiveValues: [CREDENTIAL, PRIVATE_BACKEND_CONTENT],
   createSuccess,
   createFailure,

@@ -1,0 +1,74 @@
+[
+  {
+    "command": "npm ci",
+    "exitCode": 0
+  },
+  {
+    "command": "npm audit --omit=dev --audit-level=high",
+    "exitCode": 0
+  },
+  {
+    "command": "npm test -- --run",
+    "exitCode": 0
+  },
+  {
+    "command": "npm run typecheck",
+    "exitCode": 0
+  },
+  {
+    "command": "npm run lint",
+    "exitCode": 0
+  },
+  {
+    "command": "npx --no-install prettier --check \".github/workflows/ci.yml\" \"src/**/*.ts\" \"src/**/*.css\" \"src/taskpane/*.html\" \"infrastructure/**/*.js\" \"test/**/*.ts\" \"test/**/*.css\" \"test/harness/harness.html\" \"scripts/**/*.js\" \"scripts/**/*.ts\" \"*.{js,json,mts}\"",
+    "exitCode": 0
+  },
+  {
+    "command": "npm run validate",
+    "exitCode": 0
+  },
+  {
+    "command": "npm run validate:dev",
+    "exitCode": 0
+  },
+  {
+    "command": "npm run validate:stage",
+    "exitCode": 0
+  },
+  {
+    "command": "npm run validate:prod",
+    "exitCode": 0
+  },
+  {
+    "command": "npm run build:harness",
+    "exitCode": 0
+  },
+  {
+    "command": "npm run build:word-harness",
+    "exitCode": 0
+  },
+  {
+    "command": "npm run build:dev",
+    "exitCode": 0
+  },
+  {
+    "command": "npm run build:stage",
+    "exitCode": 0
+  },
+  {
+    "command": "npm run build",
+    "exitCode": 0
+  },
+  {
+    "command": "npm run build:word-session",
+    "exitCode": 0
+  },
+  {
+    "command": "npm run verify:bundle",
+    "exitCode": 0
+  },
+  {
+    "command": "git diff --check",
+    "exitCode": 0
+  }
+]

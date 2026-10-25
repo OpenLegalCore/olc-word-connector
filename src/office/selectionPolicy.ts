@@ -22,6 +22,17 @@ export function validateSelection(facts: SelectionFacts): SelectionSnapshot["con
     throw new WordAdapterError("SELECTION_TOO_LARGE");
   }
 
+  return validateStructure(facts);
+}
+
+export function validateInsertionCursor(facts: SelectionFacts): void {
+  if (!facts.isEmpty || facts.text.length !== 0) {
+    throw new WordAdapterError("CURSOR_REQUIRED");
+  }
+  validateStructure(facts);
+}
+
+function validateStructure(facts: SelectionFacts): SelectionSnapshot["context"] {
   if (
     facts.text.includes("\u0007") ||
     facts.containedTableCount > 0 ||

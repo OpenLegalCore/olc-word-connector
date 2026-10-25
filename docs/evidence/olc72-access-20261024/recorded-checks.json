@@ -1,0 +1,135 @@
+{
+  "evidence_type": "sanitized historical record projection; not a new service check",
+  "source_alias": "D3: retained ded891c delivery record",
+  "code_commit": "ded891c22b735ca323bfede552e5219683d24841",
+  "observed_at_utc": "2026-10-24T03:56:50.495Z",
+  "delivery": {
+    "id": "e1f2788f-5a48-4a00-ae8b-665f6ecadd3d",
+    "status": "success",
+    "url": "https://e1f2788f.olc-word-staging.pages.dev",
+    "rollback_id": "a9527b86-69d8-4633-9aba-002993305d3b",
+    "rollback_commit": "a7562740902ee230bf754e8a993fb75dc439e295"
+  },
+  "public_assets": {
+    "checked_at_utc": "2026-10-24T03:56:53.445196+00:00",
+    "request_count": 45,
+    "all_status_200": true,
+    "all_byte_equal": true,
+    "host_classes": [
+      "immutable deployment",
+      "canonical Pages domain",
+      "custom domain"
+    ],
+    "assets": [
+      {
+        "path": "/assets/icon-128.png",
+        "sha256": "8b1413f73e63b7ad079b4cd735b89bd854933326da505fee6e45613527fa96ce"
+      },
+      {
+        "path": "/assets/office/1.0.0.2/openlegalcore-mark-16.png",
+        "sha256": "71bf906b86e19ef6660af72dcae7fcb16b72d8b99d34319bf7154f7afac5c57b"
+      },
+      {
+        "path": "/assets/office/1.0.0.2/openlegalcore-mark-32.png",
+        "sha256": "0a605930e9605de57ac66431d5241862b82be1f5b72378a3c77fa056dff543e2"
+      },
+      {
+        "path": "/assets/office/1.0.0.2/openlegalcore-mark-64.png",
+        "sha256": "72415b81615fa6026db2b4affc8e22de26f490e36d020f517fecc26893ec5769"
+      },
+      {
+        "path": "/assets/office/1.0.0.2/openlegalcore-mark-80.png",
+        "sha256": "54c5cde1c8af4565f373108793729704e79fc5ce9083739769cb5896c2749736"
+      },
+      {
+        "path": "/commands.7ecfbe69559036f859a7.js",
+        "sha256": "827934507dc9ef32819cdcfbba8cde20a10448efc4a69824fa866dbe2787b6b9"
+      },
+      {
+        "path": "/commands.html",
+        "sha256": "da8a949eeae7f5740dc78219b70c14c9184e28fc000be71ce6a0e25fe6a3020e"
+      },
+      {
+        "path": "/f801043f68c0679f8271.css",
+        "sha256": "73b0ae18f9499c6b869223adbc826b7e9d022d54cca4501de9f3ca3761b9289c"
+      },
+      {
+        "path": "/manifest.xml",
+        "sha256": "2ce9617367832ec2bb3b141e28e8ce87467030210ec62a7db37bb597950d200e"
+      },
+      {
+        "path": "/polyfill.58353e6c37062a8d5902.js",
+        "sha256": "73b3c7e346155369c1be1f18d9f97b360778c230b04dd61dab24637e8582adcf"
+      },
+      {
+        "path": "/signin.7e956e8d0bdb78439f23.js",
+        "sha256": "c9a9ed5ef5131eb2166902d869addc506bf8bbfb1687d1f7ee1cfa55e1bb1236"
+      },
+      {
+        "path": "/signin.html",
+        "sha256": "e2ae07d61d22d59e5444ade538ef340f366c3294ca1669f0fbe671a92977a0d9"
+      },
+      {
+        "path": "/taskpane.2d8e00eab4af17d0b8f6.js",
+        "sha256": "32263527a6fe6cb7cfd48f0a6e3c014ae749abeb687f35356d403e65cad43f1b"
+      },
+      {
+        "path": "/taskpane.2d8e00eab4af17d0b8f6.js.LICENSE.txt",
+        "sha256": "8c9946dfc859a2bfb26cc541125631cd96e7110fa20a702eb19275c9d1658805"
+      },
+      {
+        "path": "/taskpane.html",
+        "sha256": "c336b9b9cdad488b993840a72b3a919963267c410f4003555649f3a1950b67fb"
+      }
+    ]
+  },
+  "active_javascript": [
+    {
+      "path": "polyfill.58353e6c37062a8d5902.js",
+      "sha256": "73b3c7e346155369c1be1f18d9f97b360778c230b04dd61dab24637e8582adcf",
+      "bytes": 241216
+    },
+    {
+      "path": "taskpane.2d8e00eab4af17d0b8f6.js",
+      "sha256": "32263527a6fe6cb7cfd48f0a6e3c014ae749abeb687f35356d403e65cad43f1b",
+      "bytes": 153238
+    }
+  ],
+  "manifest_sha256": "2ce9617367832ec2bb3b141e28e8ce87467030210ec62a7db37bb597950d200e",
+  "anonymous_access": {
+    "checked_at_utc": "2026-10-24T03:56:53.621457+00:00",
+    "requests": [
+      {
+        "path": "/api/session",
+        "status": 302,
+        "expected_access_audience_matches": true
+      },
+      {
+        "path": "/v1/models",
+        "status": 302,
+        "expected_access_audience_matches": true
+      }
+    ],
+    "authenticated_word_access": "NOT_RUN",
+    "meaning": "Anonymous protection only; not proof of authenticated iframe access or expiry recovery"
+  },
+  "unchanged_categories_as_recorded": {
+    "worker": true,
+    "app": true,
+    "policies": true,
+    "dns": true,
+    "routes": true
+  },
+  "actual_word": "NOT_RUN",
+  "root_cause": "UNDETERMINED",
+  "provider_completion_calls_in_recorded_delivery": 0,
+  "synchronization_performs_live_service_checks": false,
+  "redactions": [
+    "account/zone/app/policy/worker identifiers",
+    "identity details",
+    "login redirect URLs and parameters",
+    "cookies and credentials",
+    "private paths and origins",
+    "raw headers and logs"
+  ]
+}

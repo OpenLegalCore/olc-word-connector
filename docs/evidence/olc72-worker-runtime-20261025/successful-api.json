@@ -1,0 +1,48 @@
+{
+  "result": "PASS",
+  "checks": [
+    {
+      "path": "/word-api/session",
+      "method": "GET",
+      "status": 401,
+      "expected": 401
+    },
+    {
+      "path": "/word-api/session/microsoft",
+      "method": "POST",
+      "status": 401,
+      "expected": 401
+    },
+    {
+      "path": "/word-api/session/microsoft",
+      "method": "POST",
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "path": "/word-api/session",
+      "method": "GET",
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "path": "/word-api/v1/models",
+      "method": "GET",
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "path": "/word-api/session/revoke",
+      "method": "POST",
+      "status": 200,
+      "expected": 200
+    },
+    {
+      "path": "/word-api/session",
+      "method": "GET",
+      "status": 401,
+      "expected": 401
+    }
+  ],
+  "completionRequests": 0
+}

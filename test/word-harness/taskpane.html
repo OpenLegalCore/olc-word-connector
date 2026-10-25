@@ -10,6 +10,7 @@
       src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"
     ></script>
     <link rel="stylesheet" href="../harness/harness.css" />
+    <link rel="stylesheet" href="../../src/taskpane/taskpane.css" />
   </head>
   <body>
     <main>
@@ -17,6 +18,12 @@
       <p>This harness uses real Word selection capture with a local fake legal-source answer.</p>
       <p>Office bootstrap: <strong id="bootstrap-status"></strong></p>
       <p id="bootstrap-error" role="alert"></p>
+      <p>
+        For the explicit synthetic proposal, open this harness with <code>?proposal=explicit</code>.
+        Use a disposable synthetic document only. The two proposal buttons make real Word edits;
+        native Word Undo/Redo must be checked manually. There is no provider call.
+      </p>
+      <div id="word-proposal-runtime" class="word-proposal-runtime" hidden></div>
 
       <section id="harness-content" hidden>
         <p>Select text in the disposable Word document only when testing selected context.</p>

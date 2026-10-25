@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createHash } from "node:crypto";
+import { runInNewContext } from "node:vm";
 
 import { handleRequest } from "../../infrastructure/cloudflare/word-gateway-example/worker.js";
 
@@ -7,10 +9,9 @@ const maxRequestBytes = 64 * 1024;
 const maxResponseBytes = 1024 * 1024;
 const environment = {
   PUBLIC_HOST: "word.example.invalid",
-  OWUI_API_KEY: "synthetic-owui-secret",
+  ENGINE_API_KEY: "synthetic-engine-secret",
   CF_ACCESS_CLIENT_ID: "synthetic-client-id",
   CF_ACCESS_CLIENT_SECRET: "synthetic-client-secret",
-  OWUI_ORIGIN: "https://open-webui.example.invalid",
   ENGINE_ORIGIN: "https://olc-engine.example.invalid",
 };
 
@@ -33,16 +34,16 @@ async function errorCode(result: Response): Promise<string> {
 const sessionCopy = {
   "en-US": [
     '<html lang="en-US">',
-    "<title>Sign-in complete</title>",
-    "<h1>Sign-in complete</h1>",
-    "Return to Word and select “Retry search”.",
+    "<title>Sign-in return page</title>",
+    "<h1>Sign-in return page</h1>",
+    "Return to Word, check the connection, review the form, then select “Send”.",
     "You can close this tab.",
   ],
   "sl-SI": [
     '<html lang="sl-SI">',
-    "<title>Prijava je končana</title>",
-    "<h1>Prijava je končana</h1>",
-    "Vrnite se v Word in izberite »Ponovi iskanje«.",
+    "<title>Povratna stran prijave</title>",
+    "<h1>Povratna stran prijave</h1>",
+    "Vrnite se v Word, preverite povezavo in obrazec ter nato izberite »Pošlji«.",
     "Ta zavihek lahko zaprete.",
   ],
 } as const;
@@ -67,8 +68,11 @@ async function expectSessionPage(
   expect(result.headers.get("Referrer-Policy")).toBe("no-referrer");
   expect(result.headers.get("X-Content-Type-Options")).toBe("nosniff");
   expect(result.headers.get("Access-Control-Allow-Origin")).toBeNull();
+  const script = body.match(/<script>([\s\S]+?)<\/script>/)?.[1];
+  expect(script).toBeTruthy();
+  const digest = createHash("sha256").update(script!).digest("base64");
   expect(result.headers.get("Content-Security-Policy")).toBe(
-    "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    `default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; script-src https://appsforoffice.microsoft.com 'sha256-${digest}'`
   );
   for (const text of sessionCopy[expectedLocale]) {
     expect(body).toContain(text);
@@ -77,20 +81,61 @@ async function expectSessionPage(
   for (const text of sessionCopy[otherLocale]) {
     expect(body).not.toContain(text);
   }
-  expect(body).not.toMatch(
-    /<script|<form|https?:\/\/|synthetic-|OWUI_|ENGINE_|CF_ACCESS_|credential|exception/i
-  );
+  expect(body).not.toMatch(/<form|synthetic-|OWUI_|ENGINE_|CF_ACCESS_|credential|exception/i);
   expect(fetchMock).not.toHaveBeenCalled();
 }
 
 afterEach(() => vi.restoreAllMocks());
 
 describe("Word gateway example routing", () => {
+  it("sends only a same-origin, nonce-bound landing message, never an identity/token or provider call", async () => {
+    const fetch = vi.fn();
+    const page = await handleRequest(request("/api/session"), environment, fetch);
+    const script = (await page.text()).match(/<script>([\s\S]+?)<\/script>/)![1];
+    const messageParent = vi.fn();
+    let receive!: (event: unknown) => void;
+    runInNewContext(script, {
+      location: { origin: publicOrigin, hash: "" },
+      Office: {
+        onReady: async () => undefined,
+        EventType: { DialogParentMessageReceived: "parent" },
+        AsyncResultStatus: { Succeeded: "succeeded" },
+        context: {
+          ui: {
+            messageParent,
+            addHandlerAsync: (
+              _type: string,
+              handler: (event: unknown) => void,
+              done: (result: unknown) => void
+            ) => {
+              receive = handler;
+              done({ status: "succeeded" });
+            },
+          },
+        },
+      },
+    });
+    await Promise.resolve();
+    const payload = JSON.stringify({ type: "olc-word-session-challenge", nonce: "ab".repeat(16) });
+    receive({ origin: "https://other.example.invalid", message: payload });
+    receive({ message: payload });
+    receive({ origin: publicOrigin, message: "null" });
+    receive({
+      origin: publicOrigin,
+      message: JSON.stringify({ type: "olc-word-session-challenge", nonce: "bad" }),
+    });
+    expect(messageParent).not.toHaveBeenCalled();
+    receive({ origin: publicOrigin, message: payload });
+    expect(messageParent).toHaveBeenCalledTimes(1);
+    expect(messageParent).toHaveBeenCalledWith(
+      JSON.stringify({ type: "olc-word-session-landing", nonce: "ab".repeat(16) }),
+      { targetOrigin: publicOrigin }
+    );
+    expect(fetch).not.toHaveBeenCalled();
+  });
   it.each([
-    ["GET", "/api/models", "application/json", "open-webui.example.invalid"],
-    ["POST", "/api/chat/completions", "text/event-stream", "open-webui.example.invalid"],
     ["GET", "/v1/models", "application/json", "olc-engine.example.invalid"],
-    ["POST", "/v1/chat/completions", "application/json", "olc-engine.example.invalid"],
+    ["POST", "/v1/chat/completions", "text/event-stream", "olc-engine.example.invalid"],
   ] as const)("allows only %s %s", async (method, path, contentType, hostname) => {
     const fetchMock = vi.fn(async (upstream: Request) => {
       expect(new URL(upstream.url)).toMatchObject({ hostname, pathname: path });
@@ -181,9 +226,19 @@ describe("Word gateway example routing", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it.each(["/api/models", "/api/chat/completions"])(
+    "does not expose the retired Open WebUI route %s",
+    async (path) => {
+      const fetchMock = vi.fn();
+      const result = await handleRequest(request(path), environment, fetchMock);
+
+      expect(result.status).toBe(404);
+      expect(await errorCode(result)).toBe("ROUTE_NOT_FOUND");
+      expect(fetchMock).not.toHaveBeenCalled();
+    }
+  );
+
   it.each([
-    ["POST", "/api/models", "GET"],
-    ["GET", "/api/chat/completions", "POST"],
     ["DELETE", "/v1/models", "GET"],
     ["PUT", "/v1/chat/completions", "POST"],
   ])("rejects %s %s with Allow: %s", async (method, path, allow) => {
@@ -193,7 +248,7 @@ describe("Word gateway example routing", () => {
     expect(await errorCode(result)).toBe("METHOD_NOT_ALLOWED");
   });
 
-  it.each(["/api/models?destination=elsewhere", "/api/session?lang=sl-SI"])(
+  it.each(["/v1/models?destination=elsewhere", "/api/session?lang=sl-SI"])(
     "rejects query strings on %s",
     async (path) => {
       const fetchMock = vi.fn();
@@ -205,9 +260,9 @@ describe("Word gateway example routing", () => {
   );
 
   it.each([
-    "http://word.example.invalid/api/models",
-    "https://other.example.invalid/api/models",
-    "https://word.example.invalid:444/api/models",
+    "http://word.example.invalid/v1/models",
+    "https://other.example.invalid/v1/models",
+    "https://word.example.invalid:444/v1/models",
   ])("rejects a request outside the configured public host", async (url) => {
     const fetchMock = vi.fn();
     const result = await handleRequest(new Request(url), environment, fetchMock);
@@ -224,7 +279,7 @@ describe("Word gateway example request boundary", () => {
     ["application/json", "[]", 400, "JSON_OBJECT_REQUIRED"],
   ])("rejects an invalid completion body", async (contentType, body, status, code) => {
     const result = await handleRequest(
-      request("/api/chat/completions", {
+      request("/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": contentType },
         body,
@@ -238,7 +293,7 @@ describe("Word gateway example request boundary", () => {
 
   it("rejects declared and measured oversized bodies", async () => {
     const declared = await handleRequest(
-      request("/api/chat/completions", {
+      request("/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -250,7 +305,7 @@ describe("Word gateway example request boundary", () => {
       vi.fn()
     );
     const measured = await handleRequest(
-      request("/api/chat/completions", {
+      request("/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: "x".repeat(maxRequestBytes) }),
@@ -268,7 +323,7 @@ describe("Word gateway example request boundary", () => {
     for (const key of Object.keys(environment) as (keyof typeof environment)[]) {
       const fetchMock = vi.fn();
       const result = await handleRequest(
-        request("/api/models"),
+        request("/v1/models"),
         { ...environment, [key]: "" },
         fetchMock
       );
@@ -281,8 +336,6 @@ describe("Word gateway example request boundary", () => {
       { PUBLIC_HOST: "https://word.example.invalid" },
       { PUBLIC_HOST: "word.example.invalid." },
       { PUBLIC_HOST: "WORD.example.invalid" },
-      { OWUI_ORIGIN: "http://open-webui.example.invalid" },
-      { OWUI_ORIGIN: "https://user@open-webui.example.invalid" },
       { ENGINE_ORIGIN: "https://olc-engine.example.invalid/path" },
       { ENGINE_ORIGIN: "https://olc-engine.example.invalid:443" },
     ]) {
@@ -298,69 +351,37 @@ describe("Word gateway example request boundary", () => {
 });
 
 describe("Word gateway example credential and response boundary", () => {
-  it("rebuilds OWUI headers from trusted bindings", async () => {
+  it("sends only the server-side Engine bearer to the Engine", async () => {
     const fetchMock = vi.fn(async (upstream: Request) => {
-      expect(upstream.headers.get("Authorization")).toBe("Bearer synthetic-owui-secret");
+      expect(upstream.headers.get("Authorization")).toBe("Bearer synthetic-engine-secret");
       expect(upstream.headers.get("CF-Access-Client-ID")).toBe("synthetic-client-id");
       expect(upstream.headers.get("CF-Access-Client-Secret")).toBe("synthetic-client-secret");
       expect(upstream.headers.get("Cookie")).toBeNull();
-      expect(upstream.headers.get("X-Untrusted")).toBeNull();
       return response("application/json", "{}");
     });
-    const result = await handleRequest(
-      request("/api/models", {
+    await handleRequest(
+      request("/v1/models", {
         headers: {
           Authorization: "Bearer browser-supplied",
           Cookie: "browser-cookie=forbidden",
           "CF-Access-Client-ID": "browser-client",
           "CF-Access-Client-Secret": "browser-secret",
-          "X-Untrusted": "forbidden",
         },
       }),
       environment,
       fetchMock as typeof fetch
     );
-    expect(result.status).toBe(200);
-  });
-
-  it("never sends the OWUI credential to the Engine", async () => {
-    const fetchMock = vi.fn(async (upstream: Request) => {
-      expect(upstream.headers.get("Authorization")).toBeNull();
-      expect(upstream.headers.get("CF-Access-Client-ID")).toBe("synthetic-client-id");
-      expect(upstream.headers.get("CF-Access-Client-Secret")).toBe("synthetic-client-secret");
-      return response("application/json", "{}");
-    });
-    await handleRequest(request("/v1/models"), environment, fetchMock as typeof fetch);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("passes SSE through while stripping upstream metadata", async () => {
+  it("streams Engine SSE through while stripping upstream metadata", async () => {
     const stream = new ReadableStream({
       start(controller) {
+        controller.enqueue(new TextEncoder().encode('data: {"choices":[]}\n\n'));
         controller.enqueue(new TextEncoder().encode("data: [DONE]\n\n"));
         controller.close();
       },
     });
-    const result = await handleRequest(
-      request("/api/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      }),
-      environment,
-      vi.fn(async () =>
-        response("text/event-stream; charset=utf-8", stream, {
-          headers: { "Set-Cookie": "forbidden", Server: "private-origin" },
-        })
-      )
-    );
-    expect(result.status).toBe(200);
-    expect(await result.text()).toBe("data: [DONE]\n\n");
-    expect(result.headers.get("Set-Cookie")).toBeNull();
-    expect(result.headers.get("Server")).toBeNull();
-  });
-
-  it("passes Engine JSON through while stripping upstream metadata", async () => {
     const result = await handleRequest(
       request("/v1/chat/completions", {
         method: "POST",
@@ -369,14 +390,43 @@ describe("Word gateway example credential and response boundary", () => {
       }),
       environment,
       vi.fn(async () =>
-        response("application/json", '{"choices":[]}', {
+        response("text/event-stream", stream, {
           headers: { "Set-Cookie": "forbidden", "X-Origin-ID": "private" },
         })
       )
     );
-    expect(await result.json()).toEqual({ choices: [] });
+    expect(await result.text()).toBe('data: {"choices":[]}\n\ndata: [DONE]\n\n');
     expect(result.headers.get("Set-Cookie")).toBeNull();
     expect(result.headers.get("X-Origin-ID")).toBeNull();
+  });
+
+  it("cancels the Engine upstream body when the downstream stream is cancelled", async () => {
+    const upstreamCancel = vi.fn(async () => undefined);
+    let delivered = false;
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (!delivered) {
+          delivered = true;
+          controller.enqueue(new TextEncoder().encode('data: {"choices":[]}\n\n'));
+        }
+      },
+      cancel: upstreamCancel,
+    });
+    const result = await handleRequest(
+      request("/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      }),
+      environment,
+      vi.fn(async () => response("text/event-stream", stream))
+    );
+    const reader = result.body!.getReader();
+
+    await expect(reader.read()).resolves.toMatchObject({ done: false });
+    await reader.cancel("downstream-cancelled");
+
+    expect(upstreamCancel).toHaveBeenCalledWith("downstream-cancelled");
   });
 
   it("bounds declared and measured upstream response bodies", async () => {
@@ -402,16 +452,24 @@ describe("Word gateway example credential and response boundary", () => {
     expect(measured.status).toBe(502);
     expect(await errorCode(measured)).toBe("UPSTREAM_RESPONSE_TOO_LARGE");
 
+    const upstreamCancel = vi.fn(async () => undefined);
+    const oversizedStream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(maxResponseBytes + 1));
+      },
+      cancel: upstreamCancel,
+    });
     const streamed = await handleRequest(
-      request("/api/chat/completions", {
+      request("/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: "{}",
       }),
       environment,
-      vi.fn(async () => response("text/event-stream", "x".repeat(maxResponseBytes + 1)))
+      vi.fn(async () => response("text/event-stream", oversizedStream))
     );
     await expect(streamed.text()).rejects.toThrow();
+    expect(upstreamCancel).toHaveBeenCalledTimes(1);
   });
 
   it.each([
@@ -420,7 +478,7 @@ describe("Word gateway example credential and response boundary", () => {
     [response("application/json", "{"), "UPSTREAM_PROTOCOL_ERROR"],
   ])("normalizes an upstream response failure", async (upstream, code) => {
     const result = await handleRequest(
-      request("/api/models"),
+      request("/v1/models"),
       environment,
       vi.fn(async () => upstream)
     );
@@ -433,7 +491,7 @@ describe("Word gateway example credential and response boundary", () => {
       vi.spyOn(console, name as "log").mockImplementation(() => undefined)
     );
     const result = await handleRequest(
-      request("/api/chat/completions", {
+      request("/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: '{"selectedText":"synthetic-sensitive-fixture"}',

@@ -1,0 +1,22 @@
+name = "olc-word-session-auth"
+main = "auth-worker.js"
+compatibility_date = "2026-07-30"
+workers_dev = false
+preview_urls = false
+
+# Inert placeholders. The reviewed private activation plan supplies exact values/routes.
+[vars]
+PUBLIC_ORIGIN = "https://word.example.invalid"
+ACCESS_ISSUER = "https://team.cloudflareaccess.com"
+ACCESS_AUDIENCE = "REPLACE_WITH_EXISTING_HUMAN_APPLICATION_AUDIENCE"
+
+[[durable_objects.bindings]]
+name = "WORD_SESSIONS"
+class_name = "WordSessionStore"
+
+[[migrations]]
+tag = "word-session-v1"
+new_sqlite_classes = ["WordSessionStore"]
+
+[observability]
+enabled = false

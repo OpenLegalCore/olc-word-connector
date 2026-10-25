@@ -1,4 +1,9 @@
-import type { ChatGateway, CompletionRequest, CompletionResult } from "../../src/chat/ChatGateway";
+import type {
+  ChatGateway,
+  CompletionObserver,
+  CompletionRequest,
+  CompletionResult,
+} from "../../src/chat/ChatGateway";
 
 function abortError(): DOMException {
   return new DOMException("The operation was aborted", "AbortError");
@@ -34,6 +39,7 @@ export class FakeChatGateway implements ChatGateway {
   connectionChecks = 0;
   delayMs = 0;
   error?: Error;
+  deltas: string[] = [];
 
   constructor(public result: CompletionResult) {}
 
@@ -45,12 +51,19 @@ export class FakeChatGateway implements ChatGateway {
     }
   }
 
-  async complete(request: CompletionRequest, signal?: AbortSignal): Promise<CompletionResult> {
+  async complete(
+    request: CompletionRequest,
+    signal?: AbortSignal,
+    observer?: CompletionObserver
+  ): Promise<CompletionResult> {
     this.requests.push(request);
     this.completionSignals.push(signal);
     await wait(this.delayMs, signal);
     if (this.error) {
       throw this.error;
+    }
+    for (const delta of this.deltas) {
+      observer?.onTextDelta?.(delta);
     }
     return this.result;
   }

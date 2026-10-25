@@ -1,0 +1,42 @@
+{
+  "source": "aa5d369f3e99067e8059a50fdd99f22535ca9810",
+  "sourceTree": "b64d715a110e5c995cb6e9dba2dc8a6b17625833",
+  "at": "2026-10-24T15:33:49.952647+00:00",
+  "comparisons": 45,
+  "http200AndByteEqual": 45,
+  "htmlDocuments": 9,
+  "htmlCspMatches": true,
+  "allXFrameOptionsAbsent": true,
+  "activeJavaScript": {
+    "file": "taskpane.2f7fc98ac85b2c1282f1.js",
+    "sha256": "a995ab47ebaf01854aa3e08dd0eaf5537282658d299392a26987339d1b6576c3",
+    "referencedByTaskpane": true,
+    "newApiBoundaryPresent": true,
+    "storageAccessCallsPresent": false
+  },
+  "manifestSha256": "2ce9617367832ec2bb3b141e28e8ce87467030210ec62a7db37bb597950d200e",
+  "preparedHeadersSha256": "f33ae15cf18f806b2a6e0fc32fb01a389dd854651f71d5e1f2e69a92d01e944d",
+  "headerObservation": {
+    "path": "assets/office/1.0.0.2/openlegalcore-mark-80.png",
+    "hostRole": "custom",
+    "cfCacheStatus": "HIT",
+    "observedAgeSeconds": 101620,
+    "bytesMatch": true,
+    "cspDifference": "Cached image header omits inclient.store.office.com; immutable new/rollback image headers and final HTML include it",
+    "configurationChanged": false,
+    "cachePurgePerformed": false,
+    "gateImpact": "Not an HTML document; taskpane/signin final HTML CSP separately verified; no session/API failure observed"
+  },
+  "result": "TECHNICAL_PASS_WITH_CACHED_IMAGE_HEADER_OBSERVATION",
+  "hostRoles": [
+    "immutable deployment",
+    "canonical Pages",
+    "custom domain"
+  ],
+  "existingPolicyAndLegacyWorkerUnchanged": true,
+  "oldRoutesPreserved": true,
+  "dnsUnchanged": true,
+  "rollback": "RETAINED_NOT_NEEDED",
+  "actualWord": "NOT_RUN",
+  "noWorkerCodeVersionCreatedDuringFinalContinuation": true
+}

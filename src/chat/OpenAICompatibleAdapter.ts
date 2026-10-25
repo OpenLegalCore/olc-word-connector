@@ -1,8 +1,16 @@
-/* global AbortController, AbortSignal, RequestCredentials, RequestInit, Response, TextDecoder, URL, clearTimeout, globalThis, setTimeout */
+/* global AbortController, AbortSignal, ReadableStreamDefaultReader, RequestCredentials, RequestInit, Response, TextDecoder, URL, clearTimeout, globalThis, setTimeout */
 
-import type { ChatGateway, CompletionRequest, CompletionResult } from "./ChatGateway";
+import type {
+  ChatGateway,
+  CompletionObserver,
+  CompletionRequest,
+  CompletionResult,
+} from "./ChatGateway";
 import { ChatGatewayError, type ChatGatewayErrorCode } from "./ChatGatewayError";
+import { parseOpenAICompatibleCompletionStream } from "./openAICompatibleStream";
 import { serializePromptEnvelope } from "./promptEnvelope";
+import { adaptDocumentReview, documentReviewBody } from "./documentReview";
+import { DocumentReviewExplanationStream } from "./documentReviewStream";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 120_000;
 const DEFAULT_MAX_RESPONSE_BYTES = 1024 * 1024;
@@ -13,6 +21,7 @@ const RAW_USERINFO_AUTHORITY = /^[a-z][a-z0-9+.-]*:\/\/[^/?#]*@/i;
 const WILDCARD_HOSTS = new Set(["0.0.0.0", "[::]", "*"]);
 
 export interface OpenAICompatibleAdapterConfig {
+  readonly responseProfile?: "document-review";
   readonly baseUrl?: string;
   readonly modelId: string;
   readonly credential?: string;
@@ -31,15 +40,6 @@ export interface OpenAICompatibleAdapterDependencies {
 interface ModelsResponse {
   readonly object: "list";
   readonly data: ReadonlyArray<{ readonly id: string }>;
-}
-
-interface CompletionResponse {
-  readonly model?: string;
-  readonly choices: ReadonlyArray<{
-    readonly message: {
-      readonly content: string;
-    };
-  }>;
 }
 
 function invalidConfiguration(): never {
@@ -148,19 +148,6 @@ function isModelsResponse(value: unknown): value is ModelsResponse {
   );
 }
 
-function isCompletionResponse(value: unknown): value is CompletionResponse {
-  if (!isRecord(value) || !Array.isArray(value.choices) || value.choices.length === 0) {
-    return false;
-  }
-
-  const firstChoice = value.choices[0];
-  return (
-    isRecord(firstChoice) &&
-    isRecord(firstChoice.message) &&
-    typeof firstChoice.message.content === "string"
-  );
-}
-
 function mediaType(response: Response): string {
   return (response.headers.get("content-type") ?? "").split(";", 1)[0].trim().toLowerCase();
 }
@@ -187,6 +174,7 @@ function statusError(status: number): ChatGatewayError {
 
 export class OpenAICompatibleAdapter implements ChatGateway {
   private readonly baseUrl: string;
+  private readonly documentReview: boolean;
   private readonly modelId: string;
   private credential: string | undefined;
   private readonly requestCredentials: RequestCredentials;
@@ -201,6 +189,7 @@ export class OpenAICompatibleAdapter implements ChatGateway {
     config: OpenAICompatibleAdapterConfig,
     dependencies: OpenAICompatibleAdapterDependencies = {}
   ) {
+    this.documentReview = config.responseProfile === "document-review";
     const transport = config.transport ?? "direct";
     if (transport === "same-origin") {
       if (config.baseUrl !== undefined || config.credential !== undefined) {
@@ -227,7 +216,8 @@ export class OpenAICompatibleAdapter implements ChatGateway {
       config.maxResponseBytes ?? DEFAULT_MAX_RESPONSE_BYTES
     );
     this.maxResponseChars = requirePositiveInteger(
-      config.maxResponseChars ?? DEFAULT_MAX_RESPONSE_CHARS
+      config.maxResponseChars ??
+        (this.documentReview ? DEFAULT_MAX_RESPONSE_BYTES : DEFAULT_MAX_RESPONSE_CHARS)
     );
     this.fetchImpl = dependencies.fetch ?? defaultFetch;
   }
@@ -236,13 +226,14 @@ export class OpenAICompatibleAdapter implements ChatGateway {
     await this.withRequestBoundary(signal, async (requestSignal) => {
       const response = await this.fetchImpl(`${this.baseUrl}/v1/models`, {
         method: "GET",
+        cache: "no-store",
         headers: this.headers("application/json"),
         credentials: this.requestCredentials,
         redirect: this.requestRedirect,
         signal: requestSignal,
       });
 
-      this.requireSuccessfulJsonResponse(response);
+      this.requireSuccessfulResponse(response, "application/json");
       const payload = await this.parseJson(response);
       if (!isModelsResponse(payload)) {
         throw new ChatGatewayError("INVALID_RESPONSE");
@@ -253,45 +244,76 @@ export class OpenAICompatibleAdapter implements ChatGateway {
     });
   }
 
-  async complete(request: CompletionRequest, signal?: AbortSignal): Promise<CompletionResult> {
+  async complete(
+    request: CompletionRequest,
+    signal?: AbortSignal,
+    observer?: CompletionObserver
+  ): Promise<CompletionResult> {
     return this.withRequestBoundary(signal, async (requestSignal) => {
-      const body = JSON.stringify({
-        model: this.modelId,
-        stream: false,
-        messages: [
-          {
-            role: "user",
-            content: serializePromptEnvelope(request),
-          },
-        ],
-      });
+      const body = JSON.stringify(
+        this.documentReview
+          ? documentReviewBody(request, this.modelId)
+          : {
+              model: this.modelId,
+              stream: true,
+              stream_options: { include_usage: true },
+              response_language: request.uiLocale === "sl-SI" ? "sl" : "en",
+              messages: [
+                {
+                  role: "user",
+                  content: serializePromptEnvelope(request),
+                },
+              ],
+            }
+      );
       const response = await this.fetchImpl(`${this.baseUrl}/v1/chat/completions`, {
         method: "POST",
-        headers: this.headers("application/json", "application/json"),
+        headers: this.headers("text/event-stream", "application/json"),
         body,
         credentials: this.requestCredentials,
         redirect: this.requestRedirect,
         signal: requestSignal,
       });
 
-      this.requireSuccessfulJsonResponse(response);
-      const payload = await this.parseJson(response);
-      if (!isCompletionResponse(payload)) {
+      this.requireSuccessfulResponse(response, "text/event-stream");
+      if (!response.body || typeof response.body.getReader !== "function") {
+        this.cancelResponseBody(response);
         throw new ChatGatewayError("INVALID_RESPONSE");
       }
-
-      const text = payload.choices[0].message.content;
-      if (text.includes("\u0000")) {
+      let reader: ReadableStreamDefaultReader<Uint8Array>;
+      try {
+        reader = response.body.getReader();
+      } catch {
+        this.cancelResponseBody(response);
         throw new ChatGatewayError("INVALID_RESPONSE");
       }
-      if (text.trim().length === 0) {
-        throw new ChatGatewayError("EMPTY_RESPONSE");
+      const explanationStream = this.documentReview
+        ? new DocumentReviewExplanationStream()
+        : undefined;
+      const result = await parseOpenAICompatibleCompletionStream(
+        reader,
+        this.modelId,
+        requestSignal,
+        explanationStream
+          ? {
+              onTextDelta: (fragment) => {
+                const delta = explanationStream.feed(fragment);
+                if (delta) observer?.onTextDelta?.(delta);
+              },
+            }
+          : observer,
+        this.maxResponseChars,
+        this.maxResponseBytes
+      );
+      if (explanationStream) {
+        explanationStream.finish();
+        return {
+          ...adaptDocumentReview(result.text, request.uiLocale),
+          model: this.modelId,
+          usage: result.usage,
+        };
       }
-      if (text.length > this.maxResponseChars) {
-        throw new ChatGatewayError("INVALID_RESPONSE");
-      }
-
-      return typeof payload.model === "string" ? { text, model: payload.model } : { text };
+      return { text: result.text, model: this.modelId, usage: result.usage };
     });
   }
 
@@ -313,16 +335,23 @@ export class OpenAICompatibleAdapter implements ChatGateway {
     return headers;
   }
 
-  private requireSuccessfulJsonResponse(response: Response): void {
+  private requireSuccessfulResponse(response: Response, expectedType: string): void {
     const responseType = mediaType(response);
+    if (
+      response.status === 403 ||
+      response.status === 408 ||
+      response.status === 429 ||
+      response.status >= 500
+    ) {
+      this.cancelResponseBody(response);
+      throw statusError(response.status);
+    }
     if (
       this.requestCredentials === "same-origin" &&
       (response.type === "opaqueredirect" ||
         (response.status >= 300 && response.status < 400) ||
         response.redirected ||
-        response.status === 401 ||
-        response.status === 403 ||
-        responseType === "text/html")
+        response.status === 401)
     ) {
       this.cancelResponseBody(response);
       throw new ChatGatewayError("SESSION_EXPIRED");
@@ -331,7 +360,7 @@ export class OpenAICompatibleAdapter implements ChatGateway {
       this.cancelResponseBody(response);
       throw statusError(response.status);
     }
-    if (response.redirected || responseType !== "application/json") {
+    if (response.redirected || responseType !== expectedType) {
       this.cancelResponseBody(response);
       throw new ChatGatewayError("INVALID_RESPONSE");
     }
