@@ -35,14 +35,18 @@ The retained 48-file package was verified and a separate package rebuilt from
 identical CSS/icons and byte-identical aa5 rollback. No source/configuration,
 live Entra/Cloudflare/Engine state or document was changed by these checks.
 
-The owner reports that Entra **App registrations** is accessible in their normal
-browser. The connected in-app tab became inaccessible after interruption:
-navigation/focus commands timed out and the panel-open request was queued; the
-owner also reported that the panel would not open. No repeated browser/login
-loop is being used. Actual registration inventory and owner `tid:oid` are still
-unverified. The immediate owner step is a read-only lookup for existing
-OpenLegalCore/OLC Word staging apps in **All applications**. Actual Microsoft
-authentication and Word acceptance remain **NOT_RUN**.
+The owner has manually created the dedicated **OLC Word Connector Staging SPA**
+and **OLC Word Connector Staging API** and supplied their actual IDs, scope and
+screenshot-based configuration evidence. No duplicate registration is needed.
+API account types and the actual user's cryptographically verified `tid:oid`
+remain pending; application/directory object IDs are not owner identities.
+
+An operator-only MSAL sign-in page and loopback verifier now provide the missing
+acquisition path without copying tokens. An additive Pages overlay preserves the
+aa5 application while the owner signs in; no Worker/Engine authorization changes
+occur during enrollment. Actual overlay delivery, Microsoft verification and
+Word acceptance must be recorded separately after execution. See
+[owner enrollment](MICROSOFT_SSO.md#owner-enrollment-continuation-2026-10-25).
 
 See the [fresh preflight evidence](evidence/olc72-activation-preflight-20261025/README.md).
 

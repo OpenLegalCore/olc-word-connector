@@ -91,12 +91,12 @@ existing protected Worker/routes remain recoverable for rollback.
 
 ## Registration discovery and exact missing configuration
 
-The current PR configuration, source, manifests, package/build configuration and
-tracked documentation contain **no configured Microsoft client/API registration**.
-The environment has no Entra management connector or Azure CLI session available
-to verify registrations in the owner's directory. This is not a claim that none
-exists externally. No tenant/client IDs, directory membership or owner object IDs
-were invented, and no live Entra app, permission or auth setting was changed.
+At the original candidate review, no Microsoft registrations were configured.
+The owner has since supplied two dedicated registrations and manual evidence;
+see [the enrollment continuation](#owner-enrollment-continuation-2026-10-25).
+No Entra management connector or Azure CLI session is available in this agent
+environment. The signed-in owner identity still requires cryptographic verification.
+No app/user IDs are inferred from directory names or application object IDs.
 
 The operator must supply or prepare **two distinct app registrations** (reuse
 existing matching registrations after inspection):
@@ -180,3 +180,59 @@ See [candidate evidence](evidence/olc72-microsoft-sso-20261024/README.md).
 - [Microsoft API token and signing-key issuer validation](https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens)
 - [Microsoft token claims](https://learn.microsoft.com/en-us/entra/identity-platform/access-token-claims-reference)
 - [Pinned MSAL redirect-bridge design](https://github.com/AzureAD/microsoft-authentication-library-for-js/blob/16a4714f38ba2844f34d154dd59dd8f1402457c9/lib/msal-browser/docs/redirect-bridge.md)
+
+## Owner enrollment continuation (2026-10-25)
+
+The owner has now supplied two dedicated registrations, created manually in
+Entra; do not create replacements. These application IDs are public configuration:
+
+- SPA **OLC Word Connector Staging SPA**: `4d4318a5-0c42-4785-a5bb-179538d393de`.
+- API **OLC Word Connector Staging API**: `db0e1d38-ce26-443e-b17b-0edb7881a4cc`.
+- Scope: `api://db0e1d38-ce26-443e-b17b-0edb7881a4cc/Word.Access`;
+  scope ID `b92c4309-b620-479c-85c4-c856b09fc8e7`.
+
+Owner-reported screenshot evidence confirms the three SPA redirects, SPA account
+types, delegated permission without Graph, disabled implicit/public-client flows,
+API v2 tokens/User scope and SPA preauthorization. API account types need separate
+confirmation. Directory tenant ID and application object ID are never substituted
+for the signed-in user's identity. LexAI OpenWebUI was not changed.
+
+The previous stdin verifier lacked an actual token-acquisition handoff. The
+operator-only `scripts/owner-signin/` now supplies explicit MSAL popup sign-in
+using the existing registered HTTPS redirect; no extra registration or redirect
+is required. It is separate from all task-pane/build entry points.
+
+```sh
+node scripts/owner-signin/build.js <retained-aa5-pages> <new-overlay-directory>
+node scripts/owner-signin/run.js <new-private-identity-json>
+```
+
+After exact-head CI and artifact inspection, deploy the additive overlay on the
+existing Pages project: all aa5 files stay byte-identical except `_headers`,
+which appends narrowly scoped helper headers. The owner page removes inherited
+CSP only for its own path, replaces it with restrictive HTML CSP and adds
+`X-Frame-Options: DENY`; existing pages keep their original headers. The helper
+and redirect are no-store. Remove the helper at coordinated candidate activation
+or restore the retained Pages deployment. No Worker, route, Tunnel or DNS change
+is needed for enrollment, and Engine authorization remains unchanged.
+
+The receiver listens **only on 127.0.0.1:8766** for 30 minutes. The owner opens
+`http://127.0.0.1:8766/start` in their ordinary Chrome on the same machine and
+follows its link, selects the same Microsoft account as Word, and grants local
+connection permission if Chrome requests it. The correlation nonce travels only
+in the fragment and is immediately removed; the API token travels in a bounded
+JSON POST body, never a URL, terminal argument, chat message or persistent browser
+storage. Exact Host, Origin, nonce, content type and one-at-a-time acceptance
+checks guard the local receiver. It checks the production Microsoft verifier's
+signature/key issuer/issuer/audience/time/client/scope requirements before saving
+only the principal and app IDs, exclusively into a new mode-0600 file. This does
+not grant Engine access or update any allowlist. No token/identity is logged.
+
+The verified API token remains in local process memory until timeout/closure.
+After the operator configures the explicitly approved owner and switches the API,
+the operator can send the literal `probe` line to this process's stdin. It makes
+only fixed session/models/revoke requests, verifies absent/invalid bearer denial,
+capability issuance, authenticated safe GETs and revocation; it writes sanitized
+status-only checks beside the private identity file. No completion route exists
+in the probe. Real sign-in, activation and Word acceptance are separate outcomes;
+local synthetic tests alone do not establish any of them.

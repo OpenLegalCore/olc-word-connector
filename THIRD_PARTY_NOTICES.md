@@ -172,6 +172,8 @@ commit `16a4714f38ba2844f34d154dd59dd8f1402457c9` in
 Package integrity values are locked in `package-lock.json`. No Microsoft sample
 source was manually copied into this connector. The browser package includes
 the complete `MSAL-LICENSE.txt`, in addition to emitted copyright notices.
+The operator-only owner-enrollment overlay also bundles this same pinned MSAL
+package and includes its complete license; no new third-party source is copied.
 Both packages carry the following license:
 
 ```text
