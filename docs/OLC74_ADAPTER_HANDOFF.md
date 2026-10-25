@@ -2,6 +2,10 @@
 
 Status: **IN REVIEW; NOT DEPLOYED; NOT WORD/MODEL ACCEPTED** (2026-10-25).
 
+The later [concrete staging preparation](OLC74_STAGING_CANDIDATE.md) preserves
+this product baseline, incorporates PR #2 manual SSO acceptance and records the
+actual Engine operator delivery. Its remaining route-proof blocker is explicit.
+
 ## Pins and scope
 
 - Word development base: PR [#2](https://github.com/OpenLegalCore/olc-word-connector/pull/2),
@@ -10,7 +14,8 @@ Status: **IN REVIEW; NOT DEPLOYED; NOT WORD/MODEL ACCEPTED** (2026-10-25).
 - Isolated adapter branch: `codex/olc-74-word-adapter-offline`.
 - Engine dependency: draft PR [#54](https://github.com/OpenLegalCore/olc-engine/pull/54),
   **`eef8ed0794046922842258ce587aab722db5fcb4`**. This supersedes the
-  `8c0a51f` handoff; it is source compatibility evidence, not an installed release.
+  `8c0a51f` handoff. The initial offline pass established source compatibility;
+  the later operator-attested TEST delivery is recorded in the staging preparation.
 - [Execution handoff](https://linear.app/openlegalcore/issue/OLC-72#comment-cf706976-d31b-4a14-8b92-8fb827a34c8c).
 
 Read at the Engine pin: [canonical contract](https://github.com/OpenLegalCore/olc-engine/blob/eef8ed0794046922842258ce587aab722db5fcb4/docs/contracts/DOCUMENT-REVIEW-1.md),
@@ -115,7 +120,11 @@ installation is NOT_RUN: an existing byte-identical-lock dependency tree was
 copied into this isolated worktree without modifying its source. Fresh locked
 installation remains a separate CI gate.
 
-## Prepared later coordinated delivery and rollback
+## Original offline delivery plan and rollback checkpoint
+
+This section preserves the original offline checkpoint. The later
+[staging preparation](OLC74_STAGING_CANDIDATE.md) supplies current artifacts,
+operator delivery evidence and the remaining route-proof blocker.
 
 This is a source/artifact candidate, not permission to activate it.
 
@@ -149,7 +158,8 @@ This is a source/artifact candidate, not permission to activate it.
    after the frontend rollback. Do not revert SSO to historical Cloudflare login,
    alter Tunnel/DNS, replay UNKNOWN operations or automatically apply proposals.
 
-OLC-72 remains open: the owner accepted repeated pane close/reopen with connected
-state and a usable form; idle over 16 minutes and preservation of input, language
-and attached/removed selection remain pending. That access acceptance is separate
-from the document proposal and saved-result limitations above.
+PR #2 documentation `c2b8b63c496d34ae89688bd544b66aeb4824a6aa` now records
+MANUAL PASS for repeated pane reopen and one access check after over 16 minutes
+idle. Preservation of nonempty input, language and attached/removed selection
+remains NOT_RUN. This manual access acceptance remains separate from document
+proposal acceptance and the saved-result limitations above.

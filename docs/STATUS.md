@@ -23,6 +23,19 @@ attached/removed selection remains NOT_RUN; see the exact acceptance below. Exis
 checkpoint context. The new adapter has offline evidence only; actual model,
 Word editing and durable result reopen remain unqualified.
 
+## OLC-74 staging preparation — candidate only
+
+[Concrete preparation and evidence](OLC74_STAGING_CANDIDATE.md) retain the exact
+reviewed bacbecaa product tree and incorporate PR #2 MANUAL PASS. A 24-file
+frontend and exact current 24-file rollback are prepared; 21 non-taskpane files,
+including approved manifest/CSP/Microsoft SSO, match the active delivery. All
+27 fresh static rollback checks pass. Operator evidence confirms deployed Engine
+TEST eef8ed0 and Planner sol/high/8000, with the same current runtime PID. Fresh
+Tunnel ingress-to-listener mapping is UNVERIFIED because read scope/root access
+is unavailable, so activation remains blocked. No delivery, model call, Word
+write, browser action or Worker change occurred. Final-head CI is recorded in
+PR #3 and the review package; model/native Word acceptance remains separate.
+
 ## Owner-accepted login outcome
 
 The owner manually confirmed the active Microsoft SSO task pane reconnects to a

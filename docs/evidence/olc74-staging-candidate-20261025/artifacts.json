@@ -1,0 +1,26 @@
+{
+  "rollback_files": 24,
+  "candidate_files": 24,
+  "stable_files": 21,
+  "stable_files_all_match": true,
+  "retained_rollback_matches_published_hashes": true,
+  "fresh_stage_matches_bacbecaa_reviewed_artifacts": true,
+  "manifest_sha256": "2ce9617367832ec2bb3b141e28e8ce87467030210ec62a7db37bb597950d200e",
+  "headers_sha256": "d7ba8a562548d191cfd0d7249b5a081a37fe235efc95dd6dc7976213582c0ad5",
+  "taskpane_js": {
+    "taskpane.02aa65737465e62401a7.js": "4aa6d608de93656fe5599a1071df3c46b9402f6106d19f063e7db03981dec167"
+  },
+  "changed_same_path": [
+    "taskpane.html"
+  ],
+  "removed": [
+    "taskpane.f0c0f90aebbb54b836d8.js",
+    "taskpane.f0c0f90aebbb54b836d8.js.LICENSE.txt"
+  ],
+  "added": [
+    "taskpane.02aa65737465e62401a7.js",
+    "taskpane.02aa65737465e62401a7.js.LICENSE.txt"
+  ],
+  "worker_payload_included": false,
+  "activation": false
+}
