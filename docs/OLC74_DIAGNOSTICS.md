@@ -1,9 +1,11 @@
-# OLC-74 bounded failure diagnostics — candidate, not activated
+# OLC-74 bounded failure diagnostics — staging delivered
 
-**IN REVIEW.** This change starts at documentation HEAD
-`da7c95959b0b9c7709770811d514a01bd9d4495f`. Active staging remains source
-`e8ff0317ef699204783de90eb65b6377a95ce9cd`, Pages
-`82da70e6-53ef-409e-b6cc-7f0ee91a9dd4`. The historical Word trial remains
+**IN REVIEW / STAGING_DELIVERED; native acceptance open.** Reviewed source
+`dc3bef4a8b7adac234bb92720f97a9106179be25` is active at Pages
+`4bcc267c-62f0-461b-98af-6583436a6bc4`, with Auth/store `8ec17425…` and API `cfb80b7b…`,
+each 100%. See [actual activation, postflight and rollback](evidence/olc74-diagnostics-activation-20261025/README.md).
+The implementation started at documentation HEAD `da7c95959b0b9c7709770811d514a01bd9d4495f`.
+The historical Word trial remains
 [FAIL_OWNER_REPORTED / UNDETERMINED](evidence/olc74-word-trial-20261025/README.md).
 This diagnostic implementation supplies no missing historical request record.
 The original [SSO MANUAL PASS](evidence/olc72-microsoft-delivery-20261025/README.md)
@@ -97,8 +99,10 @@ The frontend's `validated / VALIDATED_STOP_DONE` is a distinct client result.
 adapter, session client, API gateway, SQLite store and workerd default handler.
 It proves joined IDs, accessible authenticated reads, denial without a session
 and after revocation, cross-capability isolation, retention limits, transfer
-boundaries and sanitized output. **Live availability of the new endpoint is
-NOT_RUN:** this candidate has not been activated. Effective current Cloudflare
+boundaries and sanitized output. **Staging diagnostic admission checks PASS:** unauthenticated/cross-origin/query
+requests are rejected as specified. **Successful authorized empty lookup and live
+receipt remain NOT_RUN:** no current Word capability was available through supported
+tools; no session or record was manufactured for qualification. Effective current Cloudflare
 settings return no observability configuration; console log persistence is not
 assumed. The new read path does not depend on that setting.
 
@@ -125,16 +129,16 @@ error/stop/DONE/cancellation state. That contract must exclude content, identity
 credentials and arbitrary exception strings and specify retention/access rules.
 This candidate neither claims nor implements that future Engine change.
 
-## Coordinated staging and rollback candidate
+## Reviewed package, actual activation and retained rollback
 
 The local review packet contains the exact frontend bytes, both compiled Workers,
-minimal settings-preserving upload configurations, current e8ff0317 frontend
+minimal settings-preserving upload configurations, pre-activation e8ff0317 frontend
 rollback bytes, checksums, verifier and precise APPLY/ROLLBACK instructions.
 Auth Worker changes are limited to the existing store class; API Worker adds the
 receipt/observer. Their SSO verification, issuance and owner-policy logic are
 unchanged. Both Worker payloads are required before the diagnostic frontend.
-No automatic activation, production promotion, GitHub-main change or merge is
-part of preparation/publication.
+The later owner-authorized staging activation is recorded separately above.
+No production promotion, GitHub-main change or merge occurred.
 
 The approved real-host manifest and `_headers` are byte-identical to current
 staging. MSAL vendor assets, redirect, domains, host settings and dependencies
@@ -144,7 +148,9 @@ imports the shared error class with its added safe reason field; its SSO logic
 is unchanged. All changed/added/removed paths and hashes are explicitly listed
 in the artifact map. No source maps are included.
 
-Future APPLY must reread the exact baseline, final-head CI, Engine/operator proof,
+The reviewed APPLY/ROLLBACK instructions remain in the immutable packet. The
+authorized activation has now followed that order with actual readbacks. Any
+future APPLY must reread the exact baseline, final-head CI, Engine/operator proof,
 active request state and settings; wait for the owner's work, never cancel it
 unilaterally. Use the pinned existing Wrangler with `--keep-vars`, no new vars or
 secrets, and the existing store binding/historical migration tag. Upload versions
@@ -152,18 +158,19 @@ without traffic, verify their metadata/settings, then activate store/Auth, API
 and frontend in that order only under a separate staging authorization. Preserve
 all routes, identity/access settings and project/domain configuration.
 
-Rollback restores the current e8ff0317 frontend bytes/retained deployment first,
+Rollback restores the pre-activation e8ff0317 frontend bytes/retained deployment first,
 then API version `da36e666-89d1-4a59-b7b8-6fec4ad88807`, then Auth/store version
 `0ea8304d-3a08-4a4c-af7e-83aa2e2f6dff`. Read-only version queries confirm both
 rollback versions remain available. No namespace/schema destruction or credential
 reset is needed; old generic expiry cleanup tolerates the bounded new rows.
-Worker rollback traffic switching and new live endpoint availability are NOT_RUN.
-Exact package path, commit, archive SHA-256 and final CI URL are returned in the
-PR handoff after publication.
+Worker rollback traffic switching and successful authenticated receipt lookup are
+NOT_RUN. Diagnostic GET protection is PASS. Exact package/source/checksums and
+actual delivery identities are in the linked activation evidence; the approved-source
+CI and later documentation-only publication are distinguished there.
 
 Actual Word proposal display/use, clipboard behavior in the owner's host,
 Undo/Redo, saved-result reopen, and remaining draft/language/attachment retention
 checks remain NOT_RUN. Controlled offline results do not accept a real model or
-Word session. First later diagnostic acceptance: after separately authorized
-activation, when an owner-driven trial fails, click **Kopiraj diagnostiko** once
+Word session. No new Word trial was initiated after activation. If a later owner-driven trial
+fails, click **Kopiraj diagnostiko** once
 and retain that sanitized record; do not click Send again to obtain a record.

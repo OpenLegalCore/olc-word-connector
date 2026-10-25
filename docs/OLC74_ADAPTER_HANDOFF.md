@@ -1,5 +1,11 @@
 # OLC-74 Word adapter — isolated offline candidate
 
+Latest delivery: [authorized diagnostic activation](evidence/olc74-diagnostics-activation-20261025/README.md)
+records the exact current source/versions, protected GET checks and retained
+rollback. The original offline/delivery sections below remain historical. This
+activation is not resolution of the FAIL_OWNER_REPORTED / UNDETERMINED incident
+or a new native/model acceptance.
+
 Status: **IN REVIEW; STAGING DELIVERED; OWNER-REPORTED WORD TRIAL FAILED** (2026-10-25).
 
 The later [concrete staging preparation](OLC74_STAGING_CANDIDATE.md) preserves

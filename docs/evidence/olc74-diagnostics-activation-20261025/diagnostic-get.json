@@ -1,0 +1,67 @@
+{
+  "checked_at": "2026-10-25T13:16:29.058234+00:00",
+  "result": "PASS",
+  "checks": [
+    {
+      "case": "unauthenticated",
+      "method": "GET",
+      "status": 401,
+      "error_code": "SESSION_EXPIRED",
+      "gateway_marker": "1",
+      "cache_control": "no-store",
+      "result": "PASS"
+    },
+    {
+      "case": "unauthenticated_with_attempt",
+      "method": "GET",
+      "status": 401,
+      "error_code": "SESSION_EXPIRED",
+      "gateway_marker": "1",
+      "cache_control": "no-store",
+      "result": "PASS"
+    },
+    {
+      "case": "foreign_origin",
+      "method": "GET",
+      "status": 403,
+      "error_code": "ACCESS_DENIED",
+      "gateway_marker": "1",
+      "cache_control": "no-store",
+      "result": "PASS"
+    },
+    {
+      "case": "cross_site",
+      "method": "GET",
+      "status": 403,
+      "error_code": "ACCESS_DENIED",
+      "gateway_marker": "1",
+      "cache_control": "no-store",
+      "result": "PASS"
+    },
+    {
+      "case": "query_not_allowed",
+      "method": "GET",
+      "status": 400,
+      "error_code": "QUERY_STRING_NOT_ALLOWED",
+      "gateway_marker": "1",
+      "cache_control": "no-store",
+      "result": "PASS"
+    },
+    {
+      "case": "unchanged_public_msal_config",
+      "method": "GET",
+      "status": 200,
+      "body_sha256": "082e99ea1db422c3edb8f453fc9d8d285c232188df301d06a99fb94650cdb57b",
+      "cache_control": "no-store",
+      "result": "PASS"
+    }
+  ],
+  "authenticated_empty_lookup": {
+    "result": "NOT_RUN",
+    "reason": "No existing Word capability available through supported tools; connected Word document-session inventory is empty. No session was created or credential extracted."
+  },
+  "new_completion_calls": 0,
+  "session_creations": 0,
+  "diagnostic_records_created": 0,
+  "word_actions": 0
+}

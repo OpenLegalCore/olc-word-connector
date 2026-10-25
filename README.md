@@ -68,7 +68,7 @@ Tunnel, DNS, local Engine and server-only credentials are unchanged. See [actual
 delivery evidence](docs/evidence/olc72-microsoft-delivery-20261025/README.md)
 and [rollback](docs/MICROSOFT_SSO_STAGING.md).
 
-The OLC-74 frontend at `e8ff0317` is now activated on **staging only** against
+The initial OLC-74 frontend at `e8ff0317` was activated on **staging only** against
 Engine TEST `eef8ed0`. Delivered bytes, CSP/cache and unchanged Microsoft Worker
 versions pass postflight checks. [Activation evidence and retained rollback](docs/evidence/olc74-staging-activation-20261025/README.md)
 record the delivery checkpoint. A later [owner-reported Word trial failed](docs/evidence/olc74-word-trial-20261025/README.md)
@@ -76,9 +76,11 @@ before a proposal appeared; the failing layer is unproven. Native proposal use
 and the remaining acceptance scenarios stay **NOT_RUN**.
 The earlier SSO MANUAL PASS remains historical access acceptance.
 
-PR #3 also contains a [bounded failure-diagnostics candidate](docs/OLC74_DIAGNOSTICS.md):
-a copyable sanitized attempt record and authenticated Worker receipt. It is
-**not activated**; it does not diagnose the historical trial or accept Word use.
+The [bounded diagnostics update](docs/evidence/olc74-diagnostics-activation-20261025/README.md)
+is now activated on staging: source `dc3bef4a`, Pages `4bcc267c…`, with the
+reviewed Auth/store and API versions. Delivered bytes/settings and diagnostic GET
+protection pass. Authorized lookup and Word clipboard/proposal use remain NOT_RUN;
+the historical failed Word trial remains undiagnosed.
 
 |                         |                                                                         |
 | ----------------------- | ----------------------------------------------------------------------- |

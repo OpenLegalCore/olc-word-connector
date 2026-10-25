@@ -1,5 +1,11 @@
 # OLC-74 staging delivery and retained preparation
 
+Current diagnostic delivery: [actual activation evidence](evidence/olc74-diagnostics-activation-20261025/README.md)
+records source `dc3bef4a…`, Pages `4bcc267c…`, coordinated Auth/store/API activation,
+postflight PASS and preserved rollback. The initial e8ff0317 preparation/delivery
+below is retained historical evidence, not the current deployment or the new
+candidate's APPLY. The historical Word failure remains UNDETERMINED.
+
 **IN REVIEW / STAGING DELIVERED / OWNER-REPORTED WORD TRIAL FAILED.** On 2026-10-25 the
 owner authorized frontend-only activation of `e8ff0317ef699204783de90eb65b6377a95ce9cd`.
 Canonical Pages deployment is `82da70e6-53ef-409e-b6cc-7f0ee91a9dd4`; source and
