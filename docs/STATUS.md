@@ -4,38 +4,6 @@ Updated: 2026-10-25. Microsoft SSO reopen and post-idle access checks have
 **MANUAL PASS** owner acceptance; PR #2 remains draft and under review,
 `codex/olc-72-word-native-sse`.
 
-## Isolated OLC-74 adapter candidate — 2026-10-25
-
-**IN REVIEW / NOT DEPLOYED.** Separate branch `codex/olc-74-word-adapter-offline`
-starts at Word PR #2 `69dbe682100575a6492fdf8fbfcde2b5b7eeaa45` and targets
-Engine PR54 `eef8ed0794046922842258ce587aab722db5fcb4`. It accepts validated
-proposal-only results without inventing explanation, retains legal-source
-validation, and narrowly accepts Engine-admitted content-only revision results
-with the actual frozen selection. Empty explanation no longer enables blank
-Copy answer; the proposal's separate explicit actions remain available.
-
-See [adapter contract, evidence, delivery dependencies and rollback](OLC74_ADAPTER_HANDOFF.md).
-No active SSO, Pages, Worker, Engine, Tunnel, DNS, browser or Word state was
-changed. The owner MANUAL PASS from PR #2 documentation commit
-`c2b8b63c496d34ae89688bd544b66aeb4824a6aa` covers repeated pane reopen and
-one post-idle access check. Preservation of nonempty input, language and
-attached/removed selection remains NOT_RUN; see the exact acceptance below. Existing historical entries below retain their original
-checkpoint context. The new adapter has offline evidence only; actual model,
-Word editing and durable result reopen remain unqualified.
-
-## OLC-74 staging preparation — candidate only
-
-[Concrete preparation and evidence](OLC74_STAGING_CANDIDATE.md) retain the exact
-reviewed bacbecaa product tree and incorporate PR #2 MANUAL PASS. A 24-file
-frontend and exact current 24-file rollback are prepared; 21 non-taskpane files,
-including approved manifest/CSP/Microsoft SSO, match the active delivery. All
-27 fresh static rollback checks pass. Operator evidence confirms deployed Engine
-TEST eef8ed0 and Planner sol/high/8000, with the same current runtime PID. Fresh
-Tunnel ingress-to-listener mapping is UNVERIFIED because read scope/root access
-is unavailable, so activation remains blocked. No delivery, model call, Word
-write, browser action or Worker change occurred. Final-head CI is recorded in
-PR #3 and the review package; model/native Word acceptance remains separate.
-
 ## Owner-accepted login outcome
 
 The owner manually confirmed the active Microsoft SSO task pane reconnects to a
@@ -203,3 +171,36 @@ synthetic input, without Send or a Word write.
 See [architecture and registration contract](MICROSOFT_SSO.md),
 [sanitized candidate evidence](evidence/olc72-microsoft-sso-20261024/README.md),
 and [third-party provenance](UPSTREAM_SOURCES.md#microsoft-identity--olc-72).
+
+## Isolated OLC-74 adapter candidate — 2026-10-25
+
+**IN REVIEW / NOT DEPLOYED.** Separate branch `codex/olc-74-word-adapter-offline`
+starts at Word PR #2 `69dbe682100575a6492fdf8fbfcde2b5b7eeaa45` and targets
+Engine PR54 `eef8ed0794046922842258ce587aab722db5fcb4`. It accepts validated
+proposal-only results without inventing explanation, retains legal-source
+validation, and narrowly accepts Engine-admitted content-only revision results
+with the actual frozen selection. Empty explanation no longer enables blank
+Copy answer; the proposal's separate explicit actions remain available.
+
+See [adapter contract, evidence, delivery dependencies and rollback](OLC74_ADAPTER_HANDOFF.md).
+No active SSO, Pages, Worker, Engine, Tunnel, DNS, browser or Word state was
+changed. The owner MANUAL PASS from PR #2 documentation commit
+`c2b8b63c496d34ae89688bd544b66aeb4824a6aa` covers repeated pane reopen and
+one post-idle access check. Preservation of nonempty input, language and
+attached/removed selection remains NOT_RUN; see the exact acceptance above.
+Historical entries retain their original checkpoint context. The new adapter has
+offline evidence only; actual model, Word editing and durable result reopen remain
+unqualified.
+
+## OLC-74 staging preparation — candidate only
+
+[Concrete preparation and evidence](OLC74_STAGING_CANDIDATE.md) retain the exact
+reviewed bacbecaa product tree and incorporate PR #2 MANUAL PASS. A 24-file
+frontend and exact current 24-file rollback are prepared; 21 non-taskpane files,
+including approved manifest/CSP/Microsoft SSO, match the active delivery. All
+27 fresh static rollback checks pass. Operator evidence confirms deployed Engine
+TEST eef8ed0 and Planner sol/high/8000, with the same current runtime PID. Fresh
+Tunnel ingress-to-listener mapping is UNVERIFIED because read scope/root access
+is unavailable, so activation remains blocked. No delivery, model call, Word
+write, browser action or Worker change occurred. Final-head CI is recorded in
+PR #3 and the review package; model/native Word acceptance remains separate.

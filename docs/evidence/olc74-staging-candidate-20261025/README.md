@@ -7,7 +7,7 @@ See the [candidate contract and handoff](../../OLC74_STAGING_CANDIDATE.md).
 | Check | Actual result |
 | --- | --- |
 | Product/test/infrastructure tree versus reviewed bacbecaa | PASS, unchanged |
-| PR #2 acceptance documentation | PASS, cherry-pick with one reviewed STATUS conflict; both accurate records retained |
+| PR #2 acceptance documentation | PASS, cherry-pick with one reviewed STATUS conflict; both accurate records retained; read-only three-way comparison against PR #2 is conflict-free |
 | New staging build | PASS, byte-identical to reviewed generic staging assets |
 | Real-host manifest and hosting/MSAL continuity | PASS, 21 unchanged files; manifest and headers pinned |
 | Rollback artifact | PASS, all 24 recorded hashes match; 27 fresh static HTTP checks pass |
