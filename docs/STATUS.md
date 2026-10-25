@@ -11,8 +11,9 @@ close this usability objective. The owner approved Microsoft identity from Word
 through MSAL/NAA as the replacement user authentication boundary. Engine content
 work is separate and is not part of this change.
 
-The Microsoft candidate is implemented and locally validated, **NOT ACTIVATED**.
-The currently working staging implementation remains
+The corrected Microsoft API is **ACTIVATED** and its actual owner-token safe
+probe passes. Pages source `4c99928` is delivered, with canonical-URL cache rules
+being corrected before Word acceptance. The retained rollback implementation is
 `aa5d369f3e99067e8059a50fdd99f22535ca9810`. The owner's manual-login screenshot
 showing **OLC Engine connected** and a usable form is accepted as evidence of
 that delivered flow. No repeated browser connection, Cloudflare login or new
@@ -51,7 +52,10 @@ receiver completed owner verification. The first API activation returned 503
 before capability issuance and was rolled back to aa5 Worker versions.
 A deterministic workerd regression now reproduces the unsupported `redirect:
 "error"` fetch option; `manual` plus fail-closed response checking fixes it.
-New gates/CI and reactivation are required; actual Word acceptance remains pending. See
+Correction `4c99928` passed all gates/CI and was activated: actual Microsoft
+issuance, session, models and revoke passed (200), then revoked session returned
+401. Final static checks found `.html` canonicalization bypassed the no-store
+rules; explicit extensionless rules are added. Actual Word acceptance is pending. See
 [owner enrollment](MICROSOFT_SSO.md#owner-enrollment-continuation-2026-10-25).
 
 See the [fresh preflight evidence](evidence/olc72-activation-preflight-20261025/README.md).

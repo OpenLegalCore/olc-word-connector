@@ -1,8 +1,10 @@
 # Microsoft SSO staging and rollback
 
-**First activation rolled back; corrected candidate awaiting reactivation.**
-The owner's actual Microsoft API token is cryptographically verified; the first
-attempt failed with 503 before capability issuance due to a Worker fetch option.
+**Corrected API activated; final canonical-URL cache-header check in progress.**
+The owner's actual Microsoft API token is cryptographically verified. The first
+attempt was rolled back after 503; corrected API issuance/session/models/revoke
+now pass. Pages canonicalizes `.html` to extensionless URLs, so no-store rules
+cover both spellings. Actual Word acceptance remains pending.
 See [runtime regression and rollback evidence](evidence/olc72-worker-runtime-20261025/README.md). The working delivered
 baseline is `aa5d369f3e99067e8059a50fdd99f22535ca9810`, not the older pre-session
 frontend. Its Pages bytes, both session Workers, SQLite namespace, original

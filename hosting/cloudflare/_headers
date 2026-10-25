@@ -32,3 +32,12 @@
 
 /taskpane.html
   Cache-Control: no-store
+
+/microsoft-redirect
+  Cache-Control: no-store
+
+/microsoft-signin
+  Cache-Control: no-store
+
+/taskpane
+  Cache-Control: no-store

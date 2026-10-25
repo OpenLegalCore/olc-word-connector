@@ -59,3 +59,22 @@ All 18 local project gates now exit 0 ([commands](checks.json)); full suite:
 parameter annotation in the new test was corrected after the first typecheck;
 typecheck and all remaining gates then passed. No dependency or manifest change.
 The CI for the new final commit is required before reactivation.
+
+## Corrected runtime activation
+
+[CI for 4c99928](https://github.com/OpenLegalCore/olc-word-connector/actions/runs/40160958348)
+completed successfully, including every step. The corrected API version
+`da36e666-89d1-4a59-b7b8-6fec4ad88807` retained all verified candidate bindings;
+auth `0ea8304d-3a08-4a4c-af7e-83aa2e2f6dff` is byte-identical to the first candidate.
+The **actual owner-token probe passed**: absent bearer 401, invalid bearer 401,
+Microsoft issuance 200, session 200, models 200, revoke 200, revoked session 401.
+See [status-only real API evidence](successful-api.json). No completion was called.
+
+Pages `464e292c-cf8d-4c85-a0e9-b02a4748a9d2` then delivered the reviewed candidate.
+The final header check caught another hosting contract detail: Cloudflare redirects
+`.html` to extensionless paths, where the existing exact no-store rules did not
+match. All three documents used `public, max-age=0, must-revalidate`; their CSP
+was correct and X-Frame-Options absent. Explicit extensionless no-store rules are
+added before actual Word acceptance. This is recorded as a failed header gate,
+not a Word PASS. API authorization remains active and working during this narrow
+static-header correction. The aa5 rollback remains available.
