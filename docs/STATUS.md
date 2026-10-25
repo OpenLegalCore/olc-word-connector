@@ -18,6 +18,34 @@ showing **OLC Engine connected** and a usable form is accepted as evidence of
 that delivered flow. No repeated browser connection, Cloudflare login or new
 Word test was requested or simulated as a substitute for that report.
 
+## End-to-end activation continuation (2026-10-25)
+
+The owner authorized the dedicated staging registrations and a coordinated
+activation/rollback after configuration and artifact gates. **Activation has not
+started; OLC-72 is not complete.** Reviewed code `30e6b7b` and its successful CI
+remain the source baseline. A fresh read of Pages and all three Worker versions
+matches the retained aa5 activation record; both session Workers' current plain
+variables match retained private operator configuration. A new HTTP comparison
+verified all 45 static files across the custom, canonical and immutable hosts.
+Anonymous session/models GETs return 401; the old delivery has no Microsoft
+configuration endpoint (404).
+
+The retained 48-file package was verified and a separate package rebuilt from
+`30e6b7b`, including its concurrent-401 fix, the approved real-host manifest,
+identical CSS/icons and byte-identical aa5 rollback. No source/configuration,
+live Entra/Cloudflare/Engine state or document was changed by these checks.
+
+The owner reports that Entra **App registrations** is accessible in their normal
+browser. The connected in-app tab became inaccessible after interruption:
+navigation/focus commands timed out and the panel-open request was queued; the
+owner also reported that the panel would not open. No repeated browser/login
+loop is being used. Actual registration inventory and owner `tid:oid` are still
+unverified. The immediate owner step is a read-only lookup for existing
+OpenLegalCore/OLC Word staging apps in **All applications**. Actual Microsoft
+authentication and Word acceptance remain **NOT_RUN**.
+
+See the [fresh preflight evidence](evidence/olc72-activation-preflight-20261025/README.md).
+
 ## Concurrent 401 follow-up (2026-10-25)
 
 The owner-reported race was reproduced on reviewed head
