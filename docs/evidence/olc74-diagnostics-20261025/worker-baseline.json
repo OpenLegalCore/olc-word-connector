@@ -1,0 +1,97 @@
+{
+  "checked_at": "2026-10-25T12:23:01.732878+00:00",
+  "mutations": 0,
+  "workers": {
+    "olc-word-session-auth": {
+      "deployment": "b373fe59-d785-4146-950b-d496727b4bfb",
+      "versions": [
+        {
+          "version_id": "0ea8304d-3a08-4a4c-af7e-83aa2e2f6dff",
+          "percentage": 100
+        }
+      ],
+      "rollback_version_available": true,
+      "runtime": {
+        "migration_tag": "word-session-v1",
+        "compatibility_date": "2026-07-30",
+        "usage_model": "standard"
+      },
+      "binding_names_types": [
+        {
+          "name": "ACCESS_AUDIENCE",
+          "type": "plain_text"
+        },
+        {
+          "name": "ACCESS_ISSUER",
+          "type": "plain_text"
+        },
+        {
+          "name": "PUBLIC_ORIGIN",
+          "type": "plain_text"
+        },
+        {
+          "name": "WORD_SESSIONS",
+          "type": "durable_object_namespace"
+        }
+      ]
+    },
+    "olc-word-session-api": {
+      "deployment": "56ce5a31-b8d4-4817-8781-029bd294dc4c",
+      "versions": [
+        {
+          "version_id": "da36e666-89d1-4a59-b7b8-6fec4ad88807",
+          "percentage": 100
+        }
+      ],
+      "rollback_version_available": true,
+      "runtime": {
+        "compatibility_date": "2026-07-30",
+        "usage_model": "standard"
+      },
+      "binding_names_types": [
+        {
+          "name": "CF_ACCESS_CLIENT_ID",
+          "type": "secret_text"
+        },
+        {
+          "name": "CF_ACCESS_CLIENT_SECRET",
+          "type": "secret_text"
+        },
+        {
+          "name": "ENGINE_API_KEY",
+          "type": "secret_text"
+        },
+        {
+          "name": "ENGINE_ORIGIN",
+          "type": "plain_text"
+        },
+        {
+          "name": "MICROSOFT_ALLOWED_IDENTITIES",
+          "type": "plain_text"
+        },
+        {
+          "name": "MICROSOFT_API_AUDIENCE",
+          "type": "plain_text"
+        },
+        {
+          "name": "MICROSOFT_AUTH_ENABLED",
+          "type": "plain_text"
+        },
+        {
+          "name": "MICROSOFT_CLIENT_ID",
+          "type": "plain_text"
+        },
+        {
+          "name": "PUBLIC_ORIGIN",
+          "type": "plain_text"
+        },
+        {
+          "name": "WORD_SESSIONS",
+          "type": "durable_object_namespace"
+        }
+      ],
+      "sso_enabled": true,
+      "origin_matches_reviewed_route": true
+    }
+  }
+}

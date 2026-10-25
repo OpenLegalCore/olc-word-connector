@@ -1,4 +1,5 @@
 /* global Request, Headers, URL, fetch */
+import { DiagnosticTrace, validAttemptId, validVersion } from "./diagnostics.js";
 import { handleRequest } from "../word-gateway-example/worker.js";
 import { microsoftConfiguration, verifyMicrosoft } from "./microsoft-identity.js";
 import {
@@ -14,16 +15,18 @@ const routes = new Map([
   ["/word-api/auth/config", "GET"],
   ["/word-api/session/microsoft", "POST"],
   ["/word-api/session", "GET"],
+  ["/word-api/diagnostic", "GET"],
   ["/word-api/session/revoke", "POST"],
   ["/word-api/session/exchange", "POST"],
   ["/word-api/v1/models", "GET"],
   ["/word-api/v1/chat/completions", "POST"],
 ]);
-export async function wordApi(
+async function wordApiRequest(
   request,
   env,
   fetchImpl = fetch,
-  microsoftVerifier = verifyMicrosoft
+  microsoftVerifier = verifyMicrosoft,
+  trace
 ) {
   try {
     const origin = configuredOrigin(env),
@@ -119,6 +122,21 @@ export async function wordApi(
     if (!policyAllows(sessionInfo)) return failure(403, "ACCESS_DENIED");
     if (url.pathname === "/word-api/session" || url.pathname.endsWith("/revoke"))
       return reply(200, { expiresAt: sessionInfo.expiresAt, scope: sessionInfo.scope });
+    if (url.pathname === "/word-api/diagnostic") {
+      const attemptId = request.headers.get("X-OLC-Attempt-ID");
+      if (!validAttemptId(attemptId)) return failure(400, "INVALID_REQUEST");
+      return await store(env, "diagnostic-read", { token, origin, attemptId });
+    }
+    if (
+      url.pathname === "/word-api/v1/chat/completions" &&
+      (request.headers.has("X-OLC-Attempt-ID") || request.headers.has("X-OLC-Frontend-Version"))
+    ) {
+      const attemptId = request.headers.get("X-OLC-Attempt-ID"),
+        version = request.headers.get("X-OLC-Frontend-Version");
+      if (!validAttemptId(attemptId) || !validVersion(version))
+        return failure(400, "INVALID_REQUEST");
+      trace.activate(token, origin, attemptId, version);
+    }
     // Fresh allowlisted request: Word bearer, cookies and identity never reach Engine.
     let body;
     if (method === "POST") {
@@ -162,13 +180,29 @@ export async function wordApi(
       redirect: "manual",
       duplex: "half",
     });
-    return await handleRequest(forwarded, { ...env, PUBLIC_HOST: url.hostname }, fetchImpl);
+    return await handleRequest(
+      forwarded,
+      { ...env, PUBLIC_HOST: url.hostname },
+      fetchImpl,
+      (stage, status) => trace.record(stage, status)
+    );
   } catch {
     return failure(503, "SERVICE_UNAVAILABLE");
   }
 }
+export async function wordApi(
+  request,
+  env,
+  fetchImpl = fetch,
+  microsoftVerifier = verifyMicrosoft,
+  context
+) {
+  const trace = new DiagnosticTrace(env, context);
+  const response = await wordApiRequest(request, env, fetchImpl, microsoftVerifier, trace);
+  return trace.response(response, request.signal);
+}
 export default {
-  fetch(request, env) {
-    return wordApi(request, env);
+  fetch(request, env, context) {
+    return wordApi(request, env, fetch, verifyMicrosoft, context);
   },
 };

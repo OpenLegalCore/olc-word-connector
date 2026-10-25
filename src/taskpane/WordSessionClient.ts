@@ -1,5 +1,6 @@
-/* global AbortController, AbortSignal, Headers, RequestInit, Response, TextDecoder, clearTimeout, setTimeout */
+/* global ReadableStreamDefaultReader, AbortController, AbortSignal, Headers, RequestInit, Response, TextDecoder, clearTimeout, setTimeout */
 import { ChatGatewayError } from "../chat/ChatGatewayError";
+import { diagnosticReceipt, validAttemptId, type DiagnosticReceipt } from "../chat/diagnostics";
 import type { MicrosoftTokenSource } from "./MicrosoftAccess";
 
 type Fetch = (url: string, init?: RequestInit) => Promise<Response>;
@@ -140,6 +141,65 @@ export class WordSessionClient {
     }
     return response;
   };
+
+  /** Read-only metadata lookup using the current capability; never triggers login or completion replay. */
+  async diagnostic(attemptId: string, version: string): Promise<DiagnosticReceipt | undefined> {
+    if (!validAttemptId(attemptId) || !this.token || this.expiresAt <= Date.now()) return;
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), 5000);
+    let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+    try {
+      const response = await interrupted(
+        this.send("/word-api/diagnostic", {
+          method: "GET",
+          credentials: "omit",
+          redirect: "manual",
+          cache: "no-store",
+          signal: abort.signal,
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${this.token}`,
+            "X-OLC-Attempt-ID": attemptId,
+          },
+        }).then((response) => {
+          if (abort.signal.aborted) {
+            void response.body?.cancel().catch(() => undefined);
+            throw new ChatGatewayError("CANCELLED");
+          }
+          return response;
+        }),
+        abort.signal
+      );
+      try {
+        this.requireResponse(response);
+      } catch {
+        void response.body?.cancel().catch(() => undefined);
+        return;
+      }
+      reader = response.body?.getReader();
+      if (!reader) return;
+      const decoder = new TextDecoder("utf-8", { fatal: true });
+      let text = "",
+        bytes = 0;
+      while (true) {
+        const chunk = await interrupted(reader.read(), abort.signal);
+        if (chunk.done) break;
+        bytes += chunk.value.byteLength;
+        if (bytes > 8192) return;
+        text += decoder.decode(chunk.value, { stream: true });
+      }
+      text += decoder.decode();
+      const value: unknown = JSON.parse(text);
+      if (!value || typeof value !== "object" || Object.keys(value).join(",") !== "record") return;
+      return diagnosticReceipt((value as { record: unknown }).record, attemptId, version);
+    } catch {
+      return;
+    } finally {
+      clearTimeout(timer);
+      void reader?.cancel().catch(() => undefined);
+      reader?.releaseLock();
+    }
+  }
 
   async exchange(
     code: string,

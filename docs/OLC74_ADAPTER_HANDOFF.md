@@ -167,3 +167,8 @@ MANUAL PASS for repeated pane reopen and one access check after over 16 minutes
 idle. Preservation of nonempty input, language and attached/removed selection
 remains NOT_RUN. This manual access acceptance remains separate from document
 proposal acceptance and the saved-result limitations above.
+
+
+## Later diagnostic implementation — no activation
+
+See the [bounded diagnostic contract and coordinated handoff](OLC74_DIAGNOSTICS.md). This follow-on starts from documentation HEAD `da7c959`, preserves reviewed adapter behavior and adds safe attempt/Worker receipts for future failures. It neither repairs an established cause nor changes the historical FAIL_OWNER_REPORTED / UNDETERMINED outcome. Its future rollout includes API and existing store code, so the earlier frontend-only instructions are not its APPLY procedure.

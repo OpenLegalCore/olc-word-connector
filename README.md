@@ -76,6 +76,10 @@ before a proposal appeared; the failing layer is unproven. Native proposal use
 and the remaining acceptance scenarios stay **NOT_RUN**.
 The earlier SSO MANUAL PASS remains historical access acceptance.
 
+PR #3 also contains a [bounded failure-diagnostics candidate](docs/OLC74_DIAGNOSTICS.md):
+a copyable sanitized attempt record and authenticated Worker receipt. It is
+**not activated**; it does not diagnose the historical trial or accept Word use.
+
 |                         |                                                                         |
 | ----------------------- | ----------------------------------------------------------------------- |
 | **Word host**           | Microsoft SSO reopen and post-idle access checks: manual pass; Windows/Mac not tested           |

@@ -1,0 +1,121 @@
+{
+  "base": "da7c95959b0b9c7709770811d514a01bd9d4495f",
+  "commands": [
+    {
+      "command": "npm audit --omit=dev --audit-level=high",
+      "exit_code": 0,
+      "result": "PASS, 0 vulnerabilities"
+    },
+    {
+      "command": "npm test -- --run",
+      "exit_code": 0,
+      "result": "PASS, 696 passed / 1 protected live test skipped; before the final closed-receipt and diagnostic-lifecycle guard regressions"
+    },
+    {
+      "command": "npm run typecheck",
+      "exit_code": 0,
+      "result": "PASS; rerun after the final changes"
+    },
+    {
+      "command": "npm run lint",
+      "exit_code": 0,
+      "result": "PASS; rerun after the final changes"
+    },
+    {
+      "command": "node_modules/.bin/prettier --check [exact CI patterns]",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "npm run validate",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "npm run validate:dev",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "npm run validate:stage",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "npm run validate:prod",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "npm run build:harness",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "npm run build:word-harness",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "npm run build:dev",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "npm run build:stage",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "npm run build",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "npm run build:word-session",
+      "exit_code": 0,
+      "result": "PASS; rerun after the final lifecycle guard"
+    },
+    {
+      "command": "npm run verify:bundle",
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "npm test -- --run test/chat/diagnostics.test.ts test/gateway/diagnostics.test.ts test/taskpane/ProductionTaskPaneRuntime.test.ts --reporter=default --reporter=json --outputFile=<local report>",
+      "exit_code": 0,
+      "result": "PASS, 58 passed"
+    },
+    {
+      "command": "pinned Wrangler 4.151.3 versions upload --dry-run --no-bundle --config auth.wrangler.toml --keep-vars --strict",
+      "exit_code": 0,
+      "result": "PASS, no upload"
+    },
+    {
+      "command": "pinned Wrangler 4.151.3 versions upload --dry-run --no-bundle --config api.wrangler.toml --keep-vars --strict",
+      "exit_code": 0,
+      "result": "PASS, no upload"
+    }
+  ],
+  "format_patterns": [
+    ".github/workflows/ci.yml",
+    "src/**/*.ts",
+    "src/**/*.css",
+    "src/taskpane/*.html",
+    "infrastructure/**/*.js",
+    "test/**/*.ts",
+    "test/**/*.css",
+    "test/harness/harness.html",
+    "scripts/**/*.js",
+    "*.{js,json,mts}"
+  ],
+  "full_gate_log_sha256": "0dec14e04e63219ad4b78c21cf2664874f8ea97014a30126e3b454e17cfca637",
+  "known_build_warnings": "Existing webpack size/performance warnings; no build error.",
+  "initial_environment_failure": "Unprivileged workerd hook failed with EPERM on loopback listener. Re-run with authorized local-process permissions passed; not a product failure.",
+  "initial_test_fixture_failures": "Synthetic exchange requests shared an IP rate bucket, and the new UI test used the wrong action ID. Corrected test fixtures; no product bypass.",
+  "activation": "NOT_RUN",
+  "live_worker_receipt": "NOT_RUN",
+  "real_word_or_model_acceptance": "NOT_RUN",
+  "historical_trial": "FAIL_OWNER_REPORTED / UNDETERMINED",
+  "final_head_ci": "Required; exact run/SHA published in PR handoff after commit."
+}

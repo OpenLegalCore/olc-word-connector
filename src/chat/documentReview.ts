@@ -89,8 +89,8 @@ export function documentReviewBody(request: CompletionRequest, model: string): u
   };
 }
 
-function invalid(): never {
-  throw new ChatGatewayError("INVALID_RESPONSE");
+function invalid(reason: import("./diagnostics").DiagnosticReason = "DOC_SCHEMA_KEYS"): never {
+  throw new ChatGatewayError("INVALID_RESPONSE", reason);
 }
 function record(value: unknown, keys: string[]): Record<string, unknown> {
   if (
@@ -112,7 +112,7 @@ function text(value: unknown, maxBytes: number, allowEmpty = false): string {
       (c) => c.length === 1 && c.charCodeAt(0) >= 0xd800 && c.charCodeAt(0) <= 0xdfff
     )
   )
-    invalid();
+    invalid("DOC_STRING");
   return value;
 }
 function publicText(value: unknown, maxBytes: number, allowEmpty = false): string {
@@ -123,13 +123,14 @@ function publicText(value: unknown, maxBytes: number, allowEmpty = false): strin
       result
     )
   )
-    invalid();
+    invalid("DOC_PROVENANCE");
   return result;
 }
 function labels(value: unknown, allowEmpty = false): string[] {
-  if (!Array.isArray(value) || value.length < (allowEmpty ? 0 : 1) || value.length > 16) invalid();
+  if (!Array.isArray(value) || value.length < (allowEmpty ? 0 : 1) || value.length > 16)
+    invalid("DOC_LABELS");
   const result = value.map((x) => text(x, 32));
-  if (new Set(result).size !== result.length) invalid();
+  if (new Set(result).size !== result.length) invalid("DOC_LABELS");
   return result;
 }
 
@@ -139,7 +140,7 @@ export function adaptDocumentReview(
   locale: CompletionRequest["uiLocale"],
   context?: CompletionRequest["context"]
 ): CompletionResult {
-  if (new TextEncoder().encode(raw).byteLength > 1024 * 1024) invalid();
+  if (new TextEncoder().encode(raw).byteLength > 1024 * 1024) invalid("DOC_LIMIT");
   const scanner = new DocumentReviewExplanationStream();
   scanner.feed(raw);
   scanner.finish(); // Also rejects duplicate keys at every nesting level.
@@ -147,10 +148,10 @@ export function adaptDocumentReview(
   try {
     parsed = JSON.parse(raw);
   } catch {
-    return invalid();
+    return invalid("DOC_JSON_STRUCTURE");
   }
   const result = record(parsed, ["status", "claims", "notice", "sources", "proposal"]);
-  if (!statuses.includes(result.status as string)) invalid();
+  if (!statuses.includes(result.status as string)) invalid("DOC_STATUS");
   const status = result.status as string;
   const notice = publicText(result.notice, 2048, status === "ANSWER");
   if (
@@ -159,7 +160,7 @@ export function adaptDocumentReview(
     !Array.isArray(result.sources) ||
     result.sources.length > 32
   )
-    invalid();
+    invalid("DOC_LIMIT");
   const used: string[] = [];
   const use = (value: unknown, allowEmpty = false): void => {
     for (const label of labels(value, allowEmpty)) if (!used.includes(label)) used.push(label);
@@ -179,7 +180,7 @@ export function adaptDocumentReview(
       !sourceClasses.includes(source.source_class as string) ||
       !currentness.includes(source.currentness_status as string)
     )
-      invalid();
+      invalid("DOC_SOURCE_METADATA");
     if (source.url !== "") {
       const url = source.url as string;
       if (
@@ -188,7 +189,7 @@ export function adaptDocumentReview(
           (c) => c.charCodeAt(0) < 32 || (c.charCodeAt(0) >= 127 && c.charCodeAt(0) <= 159)
         )
       )
-        invalid();
+        invalid("DOC_SOURCE_URL");
       try {
         const parsedUrl = new URL(url);
         if (
@@ -197,9 +198,9 @@ export function adaptDocumentReview(
           parsedUrl.username ||
           parsedUrl.password
         )
-          invalid();
+          invalid("DOC_SOURCE_URL");
       } catch {
-        invalid();
+        invalid("DOC_SOURCE_URL");
       }
     }
     return {
@@ -221,7 +222,8 @@ export function adaptDocumentReview(
     // content-only result has neither claims nor sources; Word additionally requires
     // the actual frozen selection. No prompt classifier or client bypass is involved.
     const contentOnly = result.claims.length === 0 && sources.length === 0;
-    if (contentOnly && (context?.type !== "selected_text" || !context.quotedText.trim())) invalid();
+    if (contentOnly && (context?.type !== "selected_text" || !context.quotedText.trim()))
+      invalid("DOC_CONTEXT");
     use(value.source_labels, contentOnly);
     proposal = validateDocumentProposal(
       {
@@ -234,8 +236,9 @@ export function adaptDocumentReview(
   }
   if (["ANSWER", "PARTIAL"].includes(status)) {
     if ((!result.claims.length && !proposal) || (result.claims.length && !sources.length))
-      invalid();
-  } else if (result.claims.length || sources.length || proposal) invalid();
-  if (JSON.stringify(used) !== JSON.stringify(sources.map((source) => source.label))) invalid();
+      invalid("DOC_STATUS_CONTENT");
+  } else if (result.claims.length || sources.length || proposal) invalid("DOC_STATUS_CONTENT");
+  if (JSON.stringify(used) !== JSON.stringify(sources.map((source) => source.label)))
+    invalid("DOC_SOURCE_PROJECTION");
   return { text: explanation.join("\n\n"), sources, proposal, rawResponse: raw };
 }

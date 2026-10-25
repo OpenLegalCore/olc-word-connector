@@ -134,3 +134,8 @@ The delivery checkpoint did not exercise Word or a model request. The later
 owner-reported trial failed before proposal display; this investigation did not
 replay it or establish its failing layer. Native apply, Undo/Redo and result reopen
 remain NOT_RUN. Historical SSO MANUAL PASS is not acceptance of this new delivery.
+
+
+## Later diagnostics candidate — separate, not activated
+
+The delivery and rollback above remain historical checkpoints. PR #3 now also prepares a [coordinated diagnostics candidate](OLC74_DIAGNOSTICS.md), including frontend, API Worker and existing store code. Its rollback baseline is the current `82da70e6-53ef-409e-b6cc-7f0ee91a9dd4` / `e8ff0317` delivery, with the same retained Auth/API versions. Do not use the original frontend-only APPLY for this coordinated candidate. New code has offline PASS; new live diagnostics and Word/model acceptance are NOT_RUN. The historical failure remains UNDETERMINED.

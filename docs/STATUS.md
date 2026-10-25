@@ -223,3 +223,12 @@ not a cause. No new completion, code fix, deployment or Word action was performe
 This failure supersedes NOT_RUN only for the owner's reported trial outcome.
 Native Apply/Undo/Redo/result reopen and the other outstanding scenarios remain
 NOT_RUN. The historical OLC-72 SSO MANUAL PASS is preserved separately.
+
+
+## OLC-74 bounded diagnostics candidate — in review, not activated
+
+The owner authorized a limited diagnostic implementation on PR #3 from `da7c959`. It adds per-attempt UUID/UTC/loaded-version metadata, fixed phase/reason codes, copy from the pane after navigation, and an authenticated bounded receipt in the existing Word session store. Frontend/API/store code must be delivered together later. All validations, no POST replay, SSO policy and explicit guarded Apply remain intact.
+
+Local full gates PASS (696 tests, one protected live SKIP); final focused regressions PASS (58). Exact-head CI and the reviewed staging/rollback packet are recorded in the publication handoff. Fresh reads confirm the existing active source/deployment and both Worker versions; 26 static rollback checks PASS. Nothing was activated. See [contract and cleaned evidence](OLC74_DIAGNOSTICS.md).
+
+The actual historical Word trial remains **FAIL_OWNER_REPORTED / UNDETERMINED**. The prior SSO **MANUAL PASS** is unchanged. Live new diagnostics, real model/Word proposal display/use, Undo/Redo, result reopen and remaining draft/language/attachment checks are **NOT_RUN**. Engine correlation is explicitly **UNSUPPORTED** at pin `eef8ed0794046922842258ce587aab722db5fcb4`; no Engine change or completion call was made.

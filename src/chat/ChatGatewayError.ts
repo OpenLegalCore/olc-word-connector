@@ -1,3 +1,5 @@
+import { diagnosticReasons, type DiagnosticReason } from "./diagnostics";
+
 export type ChatGatewayErrorCode =
   | "INVALID_CONFIGURATION"
   | "AUTH_REQUIRED"
@@ -15,9 +17,12 @@ export type ChatGatewayErrorCode =
 export class ChatGatewayError extends Error {
   readonly code: ChatGatewayErrorCode;
 
-  constructor(code: ChatGatewayErrorCode) {
+  readonly reason?: DiagnosticReason;
+
+  constructor(code: ChatGatewayErrorCode, reason?: DiagnosticReason) {
     super(code);
     this.name = "ChatGatewayError";
     this.code = code;
+    this.reason = diagnosticReasons.includes(reason as DiagnosticReason) ? reason : undefined;
   }
 }

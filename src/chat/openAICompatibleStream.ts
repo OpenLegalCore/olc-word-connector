@@ -17,8 +17,10 @@ interface ParserState {
   usage: CompletionUsage | null;
 }
 
-function invalidResponse(): ChatGatewayError {
-  return new ChatGatewayError("INVALID_RESPONSE");
+function invalidResponse(
+  reason: import("./diagnostics").DiagnosticReason = "SSE_SCHEMA"
+): ChatGatewayError {
+  return new ChatGatewayError("INVALID_RESPONSE", reason);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -27,7 +29,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function tokenCount(value: unknown): number {
   if (!Number.isSafeInteger(value) || (value as number) < 0) {
-    throw invalidResponse();
+    throw invalidResponse("SSE_USAGE");
   }
   return value as number;
 }
@@ -37,7 +39,7 @@ function parseUsage(value: unknown): CompletionUsage | null {
     return null;
   }
   if (!isRecord(value)) {
-    throw invalidResponse();
+    throw invalidResponse("SSE_USAGE");
   }
   return {
     inputTokens: tokenCount(value.prompt_tokens),
@@ -64,17 +66,18 @@ function consumeJsonEvent(
   maxResponseChars: number,
   observer?: CompletionObserver
 ): void {
-  if (!isRecord(value) || "error" in value) {
+  if (isRecord(value) && "error" in value) throw invalidResponse("SSE_ERROR_EVENT");
+  if (!isRecord(value)) {
     throw invalidResponse();
   }
   if (value.model !== undefined && value.model !== expectedModelId) {
-    throw invalidResponse();
+    throw invalidResponse("SSE_MODEL");
   }
 
   if (value.usage !== undefined) {
     const usage = parseUsage(value.usage);
     if (state.usage !== null && !sameUsage(state.usage, usage)) {
-      throw invalidResponse();
+      throw invalidResponse("SSE_USAGE");
     }
     state.usage = usage;
   }
@@ -88,7 +91,7 @@ function consumeJsonEvent(
     }
     const finishReason = choice.finish_reason;
     if (finishReason !== undefined && finishReason !== null && finishReason !== "stop") {
-      throw invalidResponse();
+      throw invalidResponse("SSE_FINISH_REASON");
     }
 
     const delta = choice.delta;
@@ -145,7 +148,7 @@ export async function parseOpenAICompatibleCompletionStream(
       onData(data) {
         if (data.trim() === "[DONE]") {
           if (!state.sawStop) {
-            throw invalidResponse();
+            throw invalidResponse("SSE_DONE_WITHOUT_STOP");
           }
           state.sawDone = true;
           return;
@@ -154,7 +157,7 @@ export async function parseOpenAICompatibleCompletionStream(
         try {
           value = JSON.parse(data) as unknown;
         } catch {
-          throw invalidResponse();
+          throw invalidResponse("SSE_JSON");
         }
         consumeJsonEvent(state, value, expectedModelId, maxResponseChars, observer);
       },
@@ -166,7 +169,7 @@ export async function parseOpenAICompatibleCompletionStream(
 
   const text = state.textParts.join("");
   if (text.trim().length === 0) {
-    throw new ChatGatewayError("EMPTY_RESPONSE");
+    throw new ChatGatewayError("EMPTY_RESPONSE", "SSE_EMPTY");
   }
   return { text, usage: state.usage };
 }

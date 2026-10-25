@@ -8,6 +8,7 @@ import type {
   CompletionRequest,
   CompletionResult,
 } from "../../src/chat/ChatGateway";
+import { OpenAICompatibleAdapter } from "../../src/chat/OpenAICompatibleAdapter";
 import { ChatGatewayError } from "../../src/chat/ChatGatewayError";
 import { WordAdapterError, type SelectionSnapshot } from "../../src/office/WordAdapter";
 import {
@@ -1019,5 +1020,66 @@ describe("secure same-origin composition", () => {
     expect(fetch.mock.calls[0][1]?.headers).not.toHaveProperty("Authorization");
     expect(fetch.mock.calls[0][1]?.headers).not.toHaveProperty("CF-Access-Client-ID");
     expect(fetch.mock.calls[0][1]?.headers).not.toHaveProperty("CF-Access-Client-Secret");
+  });
+});
+
+describe("diagnostic copy through the actual runtime and adapter", () => {
+  it("keeps a sanitized failure accessible after returning to the form and changing language, without another POST", async () => {
+    const send = vi.fn(async (url: string) =>
+      url.endsWith("/models")
+        ? Response.json({ object: "list", data: [{ id: OLC_ENGINE_MODEL_ID }] })
+        : new Response("PRIVATE_RAW_RESPONSE", { status: 503 })
+    );
+    const gateway = new OpenAICompatibleAdapter(
+      {
+        transport: "same-origin",
+        modelId: OLC_ENGINE_MODEL_ID,
+        responseProfile: "document-review",
+      },
+      { fetch: send }
+    );
+    const clipboard = { writeText: vi.fn(async (_text: string) => undefined) };
+    const word = new FakeWordAdapter(SNAPSHOT);
+    activeRuntime = new ProductionTaskPaneRuntime(
+      root(),
+      new TaskPaneView(root()),
+      word,
+      { olcEngine: gateway },
+      "STAGING",
+      clipboard,
+      undefined,
+      "sl-SI"
+    );
+    activeRuntime.start();
+    await waitForReady();
+    setQuestion("PRIVATE_QUESTION_SENTINEL");
+    click("send");
+    await vi.waitFor(() =>
+      expect(root().querySelector('[data-action-id="copy-diagnostics"]')).not.toBeNull()
+    );
+    click("copy-diagnostics");
+    await vi.waitFor(() => expect(clipboard.writeText).toHaveBeenCalledTimes(1));
+    const record = JSON.parse(clipboard.writeText.mock.calls[0][0]);
+    expect(record.frontend).toMatchObject({
+      code: "SERVICE_UNAVAILABLE",
+      phase: "http",
+      reason: "HTTP_STATUS",
+      httpStatus: 503,
+    });
+    expect(record.worker).toBe("UNAVAILABLE");
+    expect(record.engineCorrelation).toBe("UNSUPPORTED");
+    expect(JSON.stringify(record)).not.toContain("PRIVATE_");
+    expect(JSON.stringify(record)).not.toContain(SNAPSHOT.text);
+    click("refine-question");
+    await waitForReady();
+    selectLocale("en-US");
+    click("toggle-settings");
+    click("copy-diagnostics");
+    await vi.waitFor(() => expect(clipboard.writeText).toHaveBeenCalledTimes(2));
+    expect(clipboard.writeText.mock.calls[1][0]).toBe(clipboard.writeText.mock.calls[0][0]);
+    expect(send.mock.calls.filter(([url]) => url.endsWith("completions"))).toHaveLength(1);
+    expect(word.applyCalls).toHaveLength(0);
+    activeRuntime.dispose();
+    expect(gateway.diagnostics.snapshot()).toHaveLength(0);
   });
 });

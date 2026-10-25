@@ -447,7 +447,7 @@ async function streamedEventResponse(upstream, contentType) {
   });
 }
 
-export async function handleRequest(request, env, fetchImpl = fetch) {
+export async function handleRequest(request, env, fetchImpl = fetch, observe = () => {}) {
   let url;
   try {
     url = new URL(request.url);
@@ -500,12 +500,14 @@ export async function handleRequest(request, env, fetchImpl = fetch) {
       })
     );
   } catch (error) {
+    observe("upstream_unavailable");
     if (request.signal.aborted || (error && error.name === "AbortError")) {
       throw error;
     }
     return gatewayError(502, "UPSTREAM_UNAVAILABLE");
   }
 
+  observe("upstream_http", upstream.status);
   if (upstream.status !== 200 || upstream.redirected) {
     await cancelBody(upstream.body);
     return gatewayError(502, "UPSTREAM_REJECTED");

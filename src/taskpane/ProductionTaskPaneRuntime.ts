@@ -3,6 +3,7 @@
 import { TaskPaneController, type SearchInput } from "../app/TaskPaneController";
 import type { AppState } from "../app/state";
 import type { ChatGateway } from "../chat/ChatGateway";
+import type { AttemptDiagnostics, DiagnosticReceipt } from "../chat/diagnostics";
 import { ChatGatewayError } from "../chat/ChatGatewayError";
 import {
   OpenAICompatibleAdapter,
@@ -33,7 +34,14 @@ const COPY_CONFIRMATION_DURATION_MS = 2_000;
 
 export type RuntimeBackend = "olc-engine";
 
-type RuntimeGateway = ChatGateway & { disconnect(): void };
+type RuntimeGateway = ChatGateway & {
+  disconnect(): void;
+  readonly diagnostics?: AttemptDiagnostics;
+  readonly readDiagnosticReceipt?: (
+    attemptId: string,
+    version: string
+  ) => Promise<DiagnosticReceipt | undefined>;
+};
 type CopyFeedback = "copied" | "failed";
 type SignInFeedback =
   "idle" | "opened" | "closed" | "failed" | "completed" | "pane-rejected" | "denied" | "expired";
@@ -47,6 +55,10 @@ export interface ProductionGatewayDependencies {
   readonly initialLocale?: UiLocale;
   readonly signIn?: SecureSignIn;
   readonly microsoft?: MicrosoftTokenSource;
+  readonly readDiagnosticReceipt?: (
+    attemptId: string,
+    version: string
+  ) => Promise<DiagnosticReceipt | undefined>;
 }
 
 const backendLabels: Readonly<Record<RuntimeBackend, string>> = {
@@ -63,7 +75,10 @@ export function createSameOriginProductionGateways(
         modelId: OLC_ENGINE_MODEL_ID,
         responseProfile: "document-review",
       },
-      { fetch: dependencies.fetch as OpenAICompatibleFetch | undefined }
+      {
+        fetch: dependencies.fetch as OpenAICompatibleFetch | undefined,
+        readDiagnosticReceipt: dependencies.readDiagnosticReceipt,
+      }
     ),
   };
 }
@@ -490,9 +505,53 @@ export class ProductionTaskPaneRuntime {
     this.controller?.dispose();
     this.unsubscribe?.();
     this.gateways.olcEngine.disconnect();
+    this.gateways.olcEngine.diagnostics?.clear();
     this.view.setActionHandler(undefined);
     this.view.configureLocale(this.locale);
     this.currentRender = undefined;
+  }
+
+  private diagnosticFeedback?: CopyFeedback;
+  private diagnosticFeedbackAttempt?: string;
+  private diagnosticCopyPending = false;
+  private async copyDiagnostics(): Promise<void> {
+    const record = this.gateway().diagnostics?.latestFailure();
+    if (!record || this.diagnosticCopyPending) return;
+    this.diagnosticCopyPending = true;
+    try {
+      let receipt: DiagnosticReceipt | undefined;
+      try {
+        receipt = await this.gateway().readDiagnosticReceipt?.(
+          record.attemptId,
+          record.frontendVersion
+        );
+      } catch {
+        /* Local evidence remains available. */
+      }
+      if (this.disposed) return;
+      const text = JSON.stringify(
+        { frontend: record, worker: receipt ?? "UNAVAILABLE", engineCorrelation: "UNSUPPORTED" },
+        null,
+        2
+      );
+      let copied = false;
+      try {
+        if (this.clipboard) {
+          await this.clipboard.writeText(text);
+          copied = true;
+        }
+      } catch {
+        /* Use the existing browser clipboard fallback. */
+      }
+      if (!copied && !this.disposed) copied = this.copyWithDocumentFallback(text);
+      if (!this.disposed) {
+        this.diagnosticFeedbackAttempt = record.attemptId;
+        this.diagnosticFeedback = copied ? "copied" : "failed";
+        this.currentRender?.();
+      }
+    } finally {
+      this.diagnosticCopyPending = false;
+    }
   }
 
   private gateway(): RuntimeGateway {
@@ -501,7 +560,34 @@ export class ProductionTaskPaneRuntime {
 
   private renderView(createModel: (messages: MessageCatalog) => TaskPaneViewModel): void {
     this.currentRender = () => {
-      this.view.render(createModel(messagesFor(this.locale)));
+      const messages = messagesFor(this.locale);
+      const model = createModel(messages);
+      const failure = this.gateway().diagnostics?.latestFailure();
+      if (failure?.attemptId !== this.diagnosticFeedbackAttempt)
+        this.diagnosticFeedback = undefined;
+      this.view.render(
+        failure
+          ? {
+              ...model,
+              footer: {
+                ...model.footer,
+                actions: [
+                  ...(model.footer.actions ?? []),
+                  {
+                    id: "copy-diagnostics",
+                    label:
+                      this.diagnosticFeedback === "copied"
+                        ? messages.diagnostics.copied
+                        : this.diagnosticFeedback === "failed"
+                          ? messages.diagnostics.failed
+                          : messages.diagnostics.copy,
+                    variant: "secondary",
+                  },
+                ],
+              },
+            }
+          : model
+      );
       this.updateConnectionControls();
     };
     this.currentRender();
@@ -1013,6 +1099,10 @@ export class ProductionTaskPaneRuntime {
 
   private async handleAction(actionId: string): Promise<void> {
     if (this.disposed) return;
+    if (actionId === "copy-diagnostics") {
+      await this.copyDiagnostics();
+      return;
+    }
     if (actionId === "check-connection") {
       await this.connect(this.selectedBackend, true);
       return;
@@ -1175,7 +1265,11 @@ export function createProductionTaskPaneRuntime(
     root,
     view,
     word,
-    createSameOriginProductionGateways({ ...dependencies, fetch: session.fetch }),
+    createSameOriginProductionGateways({
+      ...dependencies,
+      fetch: session.fetch,
+      readDiagnosticReceipt: (id, version) => session.diagnostic(id, version),
+    }),
     environment,
     clipboard,
     () =>

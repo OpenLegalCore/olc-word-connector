@@ -1,6 +1,8 @@
 /* global Date, URL */
 import { CODE_TTL, SESSION_TTL, SCOPE, digest, random, opaque, reply, failure } from "./common.js";
 
+import { validAttemptId, validVersion, validEvent } from "./diagnostics.js";
+
 /** SQLite-backed DO; code consumption, revocation and rate limits are transactional. */
 export class WordSessionStore {
   constructor(state) {
@@ -92,7 +94,7 @@ export class WordSessionStore {
         await tx.put(tokenKey, { origin: record.origin, scope: SCOPE, expiresAt });
         return reply(200, { token, expiresAt, scope: SCOPE });
       }
-      if (operation === "/check" || operation === "/revoke") {
+      if (["/check", "/revoke", "/diagnostic-write", "/diagnostic-read"].includes(operation)) {
         const record = sessionKey ? await tx.get(sessionKey) : undefined;
         if (
           !record ||
@@ -101,6 +103,48 @@ export class WordSessionStore {
           record.scope !== SCOPE
         )
           return failure(401, "SESSION_EXPIRED");
+        if (operation === "/diagnostic-write" || operation === "/diagnostic-read") {
+          const writing = operation === "/diagnostic-write";
+          if (
+            Object.keys(input).sort().join(",") !==
+              (writing
+                ? "attemptId,event,frontendVersion,origin,token"
+                : "attemptId,origin,token") ||
+            !validAttemptId(input.attemptId) ||
+            (writing && (!validVersion(input.frontendVersion) || !validEvent(input.event)))
+          )
+            return failure(400, "INVALID_REQUEST");
+          const receiptKey = "diagnostic:" + sessionKey.slice(8) + ":" + input.attemptId;
+          let receipt = await tx.get(receiptKey);
+          if (receipt?.expiresAt <= now) {
+            await tx.delete(receiptKey);
+            receipt = undefined;
+          }
+          if (!writing) return reply(200, { record: receipt ?? null });
+          if (!receipt) {
+            // Global ceiling on persisted metadata, not an unbounded per-user log.
+            const existing = await tx.list({ prefix: "diagnostic:" });
+            const retained = [];
+            for (const [key, value] of existing) {
+              if (value.expiresAt <= now) await tx.delete(key);
+              else retained.push([key, value]);
+            }
+            retained.sort((a, b) => a[1].expiresAt - b[1].expiresAt);
+            while (retained.length >= 64) await tx.delete(retained.shift()[0]);
+            receipt = {
+              attemptId: input.attemptId,
+              frontendVersion: input.frontendVersion,
+              expiresAt: Math.min(now + 10 * 60_000, record.expiresAt),
+              events: [],
+            };
+          }
+          if (receipt.frontendVersion !== input.frontendVersion || receipt.events.length >= 5)
+            return failure(400, "INVALID_REQUEST");
+          receipt.events.push(input.event);
+          await tx.put(receiptKey, receipt);
+          if ((await tx.getAlarm()) === null) await tx.setAlarm(now + 60_000);
+          return reply(200, { stored: true });
+        }
         if (operation === "/revoke") await tx.delete(sessionKey);
         return reply(200, {
           expiresAt: record.expiresAt,

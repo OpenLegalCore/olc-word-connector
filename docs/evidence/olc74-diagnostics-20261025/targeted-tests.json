@@ -1,0 +1,240 @@
+{
+  "source": "actual Vitest JSON reporter; controlled offline responses only",
+  "passed": 58,
+  "failed": 0,
+  "pending": 0,
+  "tests": [
+    {
+      "test": "frontend failure diagnostics classifies network and copies only fixed metadata",
+      "status": "passed"
+    },
+    {
+      "test": "frontend failure diagnostics classifies HTTP and copies only fixed metadata",
+      "status": "passed"
+    },
+    {
+      "test": "frontend failure diagnostics classifies protocol and copies only fixed metadata",
+      "status": "passed"
+    },
+    {
+      "test": "frontend failure diagnostics classifies SSE JSON and copies only fixed metadata",
+      "status": "passed"
+    },
+    {
+      "test": "frontend failure diagnostics classifies stream read and copies only fixed metadata",
+      "status": "passed"
+    },
+    {
+      "test": "frontend failure diagnostics distinguishes request timeout from user cancellation after a delta, with one POST each",
+      "status": "passed"
+    },
+    {
+      "test": "frontend failure diagnostics bounds memory by count and age, rejects arbitrary error reasons, and clears explicitly",
+      "status": "passed"
+    },
+    {
+      "test": "receipt trust boundary rejects extra fields, foreign IDs/versions, expired receipts and unknown event metadata",
+      "status": "passed"
+    },
+    {
+      "test": "bounded authenticated diagnostics using actual adapters, API gateway and SQLite store joins upstream HTTP without leaking content or claiming transport/model equivalence",
+      "status": "passed"
+    },
+    {
+      "test": "bounded authenticated diagnostics using actual adapters, API gateway and SQLite store joins upstream network without leaking content or claiming transport/model equivalence",
+      "status": "passed"
+    },
+    {
+      "test": "bounded authenticated diagnostics using actual adapters, API gateway and SQLite store joins SSE error after delta without leaking content or claiming transport/model equivalence",
+      "status": "passed"
+    },
+    {
+      "test": "bounded authenticated diagnostics using actual adapters, API gateway and SQLite store joins missing DONE without leaking content or claiming transport/model equivalence",
+      "status": "passed"
+    },
+    {
+      "test": "bounded authenticated diagnostics using actual adapters, API gateway and SQLite store joins DONE without stop without leaking content or claiming transport/model equivalence",
+      "status": "passed"
+    },
+    {
+      "test": "bounded authenticated diagnostics using actual adapters, API gateway and SQLite store joins invalid result without leaking content or claiming transport/model equivalence",
+      "status": "passed"
+    },
+    {
+      "test": "bounded authenticated diagnostics using actual adapters, API gateway and SQLite store joins wrong language without leaking content or claiming transport/model equivalence",
+      "status": "passed"
+    },
+    {
+      "test": "bounded authenticated diagnostics using actual adapters, API gateway and SQLite store records validated stop/DONE success separately from the observed transport end",
+      "status": "passed"
+    },
+    {
+      "test": "bounded authenticated diagnostics using actual adapters, API gateway and SQLite store serves the metadata endpoint through the real workerd default handler, with no unauthenticated lookup",
+      "status": "passed"
+    },
+    {
+      "test": "diagnostic retention and transfer boundaries observes downstream cancellation and body read errors without persisting either error text or bytes",
+      "status": "passed"
+    },
+    {
+      "test": "diagnostic retention and transfer boundaries caps the actual SQLite receipt collection, rejects content fields, and binds reads to the capability",
+      "status": "passed"
+    },
+    {
+      "test": "contains diagnostic storage/lifecycle failures without throwing into the functional request",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime does not overlap either connection-check control with a pending sign-in dialog",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime checks access from settings in sl-SI, removed attachment false, without replacing the form",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime checks access from settings in sl-SI, removed attachment true, without replacing the form",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime checks access from settings in en-US, removed attachment false, without replacing the form",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime checks access from settings in en-US, removed attachment true, without replacing the form",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime allows typing and locale changes during a single check, blocks duplicate checks and Send, and retains the removed attachment",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime uses explicit recovery after a settings check, preserves original attachment state false, and never submits",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime uses explicit recovery after a settings check, preserves original attachment state true, and never submits",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime reports a fresh ACCESS_DENIED failure, then explicitly retries only the connection",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime reports a fresh TIMEOUT failure, then explicitly retries only the connection",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime reports a fresh NETWORK_ERROR failure, then explicitly retries only the connection",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime ignores a late settings-check response after disposal and aborts its signal",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime disables settings checks during streaming and keeps a completed answer on later successful checks",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime reports dialog close/disconnection without claiming authentication, losing the draft or retrying",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime starts unauthenticated without probing legacy cookie-protected routes",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime silently renews Microsoft access and preserves attachment choice false when consent interrupts Send",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime silently renews Microsoft access and preserves attachment choice true when consent interrupts Send",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime recovers without granted cookie permissions, retaining draft/locale/removal and never resending",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime recovers without denied cookie permissions, retaining draft/locale/removal and never resending",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime recovers without unsupported cookie permissions, retaining draft/locale/removal and never resending",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime ignores a late dialog completion after runtime disposal without a connection or submission",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime previews an exact explicit proposal separately and applies it only through a localized click",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime checks the connection automatically and opens the input without sending a message",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime sends only the message when Word has no selection",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime blocks an invalid Word selection instead of silently sending message-only",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime updates and removes the compact selection attachment without clearing the message",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime preserves the displayed selection while focus moves into the message input",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime freezes the displayed selection and language when Send is selected",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime uses Enter to send, Shift+Enter for a line break, and ignores IME composition",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime shows Stop while streaming, aborts, and ignores late deltas and completion",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime renders safe sources and exact usage after the validated SSE terminal",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime keeps sign-in explicit and returns to the form without resending a message",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime retains a draft across repeated session recovery after an idle-time rejection, without resubmitting",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime does not retry a failed completion automatically",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime localizes the neutral request flow in Slovenian and English",
+      "status": "passed"
+    },
+    {
+      "test": "production Engine-only task-pane runtime copies only the answer as plain text",
+      "status": "passed"
+    },
+    {
+      "test": "secure same-origin composition uses same-origin session credentials without exposing Engine or Access headers",
+      "status": "passed"
+    },
+    {
+      "test": "diagnostic copy through the actual runtime and adapter keeps a sanitized failure accessible after returning to the form and changing language, without another POST",
+      "status": "passed"
+    }
+  ]
+}
