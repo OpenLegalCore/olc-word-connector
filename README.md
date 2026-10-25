@@ -36,6 +36,11 @@ without changing the document.
 
 ## At a glance
 
+The [OLC-74 SSE diagnostic follow-up](docs/evidence/olc74-sse-activation-20261025/README.md)
+is delivered on staging: source `de34ecd`, Pages `6f22feb3…`. It retains only
+allowlisted upstream error codes. The reported Word failure remains undetermined;
+this improves diagnostics and does not establish incident resolution or Word acceptance.
+
 The OLC-72 draft adds an [explicit document-review proposal with guarded
 user-clicked writes](docs/WORD_DOCUMENT_PROPOSAL.md). Its owner-accepted visual
 design is preserved; native Word Web write qualification and
@@ -67,6 +72,22 @@ revocation and delivered asset/header checks pass. The aa5 rollback is retained.
 Tunnel, DNS, local Engine and server-only credentials are unchanged. See [actual
 delivery evidence](docs/evidence/olc72-microsoft-delivery-20261025/README.md)
 and [rollback](docs/MICROSOFT_SSO_STAGING.md).
+
+The initial OLC-74 frontend at `e8ff0317` was activated on **staging only** against
+Engine TEST `eef8ed0`. Delivered bytes, CSP/cache and unchanged Microsoft Worker
+versions pass postflight checks. [Activation evidence and retained rollback](docs/evidence/olc74-staging-activation-20261025/README.md)
+record the delivery checkpoint. A later [owner-reported Word trial failed](docs/evidence/olc74-word-trial-20261025/README.md)
+before a proposal appeared; the failing layer is unproven. Native proposal use
+and the remaining acceptance scenarios stay **NOT_RUN**.
+The earlier SSO MANUAL PASS remains historical access acceptance.
+
+The [bounded diagnostics update](docs/evidence/olc74-diagnostics-activation-20261025/README.md)
+was activated on staging as source `dc3bef4a`, Pages `4bcc267c…`, with the
+reviewed Auth/store and API versions. Delivered bytes/settings and diagnostic GET
+protection pass. Authorized lookup and Word clipboard/proposal use remain NOT_RUN;
+the historical failed Word trial remains undiagnosed. Its frontend is now
+superseded by the frontend-only SSE-code activation linked above; Worker versions
+and their settings remain unchanged.
 
 |                         |                                                                         |
 | ----------------------- | ----------------------------------------------------------------------- |
@@ -121,9 +142,9 @@ See the [English user guide](docs/USER_GUIDE.md),
 - A valid Word selection appears automatically as a removable **Selected text**
   attachment. **Send** freezes the displayed attachment and interface language;
   the message and quoted selection remain separate fields.
-- The deployed basic answer flow does not edit Word. A local OLC-72 candidate
-  adds explicit proposal preview and guarded, user-clicked replacement/insertion;
-  [the documented Engine profile is integrated locally; native Word qualification and activation remain pending](docs/WORD_DOCUMENT_PROPOSAL.md).
+- Receiving an answer leaves Word unchanged. The staging OLC-74 adapter offers
+  separate validated proposal preview and guarded, user-clicked replacement/insertion;
+  [proposal-only results are delivered on staging, with native Word qualification pending](docs/OLC74_ADAPTER_HANDOFF.md).
   Redlining and tracked-change management are not included.
 - Cancellation, timeout, session expiry, backend failure and late responses
   leave the Word document unchanged.

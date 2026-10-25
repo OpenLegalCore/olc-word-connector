@@ -11,7 +11,7 @@ type Frame = {
 };
 
 function invalid(): never {
-  throw new ChatGatewayError("INVALID_RESPONSE");
+  throw new ChatGatewayError("INVALID_RESPONSE", "DOC_JSON_STRUCTURE");
 }
 
 /** Incremental JSON token reader. Only claims[].text and root notice reach the UI.
@@ -83,7 +83,8 @@ export class DocumentReviewExplanationStream {
           const decoded = JSON.parse('"' + token.raw + '"') as string;
           if (token.key) {
             const frame = this.stack[this.stack.length - 1];
-            if (frame.keys.has(decoded)) invalid();
+            if (frame.keys.has(decoded))
+              throw new ChatGatewayError("INVALID_RESPONSE", "DOC_DUPLICATE_KEY");
             frame.keys.add(decoded);
             frame.key = decoded;
             frame.phase = "colon";

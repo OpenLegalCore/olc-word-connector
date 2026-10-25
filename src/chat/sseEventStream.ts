@@ -14,8 +14,10 @@ interface DecoderState {
   sawBytes: boolean;
 }
 
-function invalidResponse(): ChatGatewayError {
-  return new ChatGatewayError("INVALID_RESPONSE");
+function invalidResponse(
+  reason: import("./diagnostics").DiagnosticReason = "SSE_FRAMING"
+): ChatGatewayError {
+  return new ChatGatewayError("INVALID_RESPONSE", reason);
 }
 
 function cancelled(): ChatGatewayError {
@@ -188,7 +190,7 @@ export async function consumeSseEventStream(
         if (error instanceof ChatGatewayError) {
           throw error;
         }
-        throw new ChatGatewayError("NETWORK_ERROR");
+        throw new ChatGatewayError("NETWORK_ERROR", "STREAM_READ_FAILED");
       }
 
       if (aborted) {
@@ -205,7 +207,7 @@ export async function consumeSseEventStream(
       state.sawBytes ||= readResult.value.byteLength > 0;
       bytesRead += readResult.value.byteLength;
       if (bytesRead > maxBytes) {
-        throw invalidResponse();
+        throw invalidResponse("SSE_LIMIT");
       }
       consumeDecodedText(
         state,
@@ -216,7 +218,10 @@ export async function consumeSseEventStream(
     }
 
     if (!consumer.isComplete()) {
-      throw new ChatGatewayError(state.sawBytes ? "INVALID_RESPONSE" : "EMPTY_RESPONSE");
+      throw new ChatGatewayError(
+        state.sawBytes ? "INVALID_RESPONSE" : "EMPTY_RESPONSE",
+        state.sawBytes ? "SSE_INCOMPLETE" : "SSE_EMPTY"
+      );
     }
     cancelReader();
   } catch (error) {
@@ -227,7 +232,7 @@ export async function consumeSseEventStream(
     if (aborted || signal?.aborted) {
       throw cancelled();
     }
-    throw invalidResponse();
+    throw invalidResponse("SSE_ENCODING");
   } finally {
     signal?.removeEventListener("abort", onAbort);
   }

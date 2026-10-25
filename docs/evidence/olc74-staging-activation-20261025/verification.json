@@ -1,0 +1,60 @@
+{
+  "archive_and_all_71_internal_checksums": "PASS",
+  "extracted_package_frontend_24_and_rollback_24": "PASS before and after APPLY",
+  "pinned_wrangler_binary_hashes": "PASS",
+  "ci_exact_delivery_head": "PASS: 40180031619, validate and every step success",
+  "quiescence": {
+    "result": "PASS_SNAPSHOT",
+    "observations": [
+      {
+        "at": "2026-10-25T10:14:38.418623+00:00",
+        "established_engine_connections": 0
+      },
+      {
+        "at": "2026-10-25T10:14:40.542050+00:00",
+        "established_engine_connections": 0
+      },
+      {
+        "at": "2026-10-25T10:14:42.662717+00:00",
+        "established_engine_connections": 0
+      }
+    ],
+    "immediate_pre_apply": {
+      "at": "2026-10-25T10:15:47.813461+00:00",
+      "established_engine_connections": 0,
+      "result": "PASS_SNAPSHOT"
+    },
+    "limits": "No application admission lock; sampled TCP socket state only. No Word/browser inspection or cancellation; owner was asked to hold submissions during switch."
+  },
+  "baseline_and_control_plane": "PASS unchanged",
+  "baseline_http": "PASS 78/78 required static-byte/document-header checks",
+  "postflight_http": "PASS 78/78",
+  "rollback_retained_http": "PASS 26/26",
+  "initial_broader_header_check": {
+    "exit_code": 1,
+    "result": "FAIL: overbroad noncritical header expectations",
+    "all_78_body_hashes_matched": true,
+    "mismatches": {
+      "legacy_signin_and_commands_extensionless_default_revalidation": 6,
+      "historically_cached_CSP_on_unchanged_immutable_custom_host_assets": 9
+    },
+    "assessment": "Existing baseline behavior, not byte/control-plane drift. Critical taskpane/Microsoft signin/redirect CSP and no-store matched. Corrected helper checks all bytes, document CSP and critical no-store; no hosting rule or payload changed. Initial result retained locally."
+  },
+  "post_apply_package_check": {
+    "initial_exit_code": 1,
+    "cause": "Wrangler created only .wrangler/cache/pages.json plus empty temporary directories; no payload hash changed.",
+    "resolution": "Moved the generated CLI cache outside the retained package; removed only newly generated empty directories. First empty-dir cleanup returned 1 because an empty tmp directory remained; completed targeted cleanup.",
+    "final_exit_code": 0,
+    "archive_sha256_unchanged": true,
+    "payload_files_unchanged": 71
+  },
+  "no_new_build_or_dependency_install": true,
+  "new_local_product_test_suite": "NOT_RUN; no source/test changes, existing delivered-head CI is valid",
+  "documentation_head_ci": "Not claimed by this release CI record; merge still requires exact then-current PR head CI.",
+  "documentation_integration": {
+    "initial_commit": "036e337f1052668d65629d9c09981bfde50d8b08",
+    "initial_result": "STATUS overlap with PR #2 manual-acceptance additions; GitHub CONFLICTING",
+    "correction": "Preserve the original SSO checkpoint section byte-for-byte and retain current OLC-74 outcome in its separate end section; docs only, additive follow-up without merge/rebase/force-push.",
+    "corrected_file_preview": "PASS; full committed-tree preview verified after commit"
+  }
+}

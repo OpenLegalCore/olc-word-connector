@@ -1,4 +1,4 @@
-# Word Connector — OLC-72 review status
+# Word Connector — OLC-72 and OLC-74 review status
 
 Updated: 2026-10-25. Microsoft SSO reopen and post-idle access checks have
 **MANUAL PASS** owner acceptance; PR #2 remains draft and under review,
@@ -171,3 +171,153 @@ synthetic input, without Send or a Word write.
 See [architecture and registration contract](MICROSOFT_SSO.md),
 [sanitized candidate evidence](evidence/olc72-microsoft-sso-20261024/README.md),
 and [third-party provenance](UPSTREAM_SOURCES.md#microsoft-identity--olc-72).
+
+## OLC-74 adapter and staging activation — 2026-10-25
+
+**IN REVIEW / STAGING DELIVERED / NATIVE ACCEPTANCE NOT_RUN.** Development branch
+`codex/olc-74-word-adapter-offline` retains product baseline `bacbecaa` and delivered
+source `e8ff0317ef699204783de90eb65b6377a95ce9cd`; both Word PR #2 and #3 remain
+draft and unmerged. Engine TEST pin is `eef8ed0794046922842258ce587aab722db5fcb4`.
+The original [adapter contract and offline evidence](OLC74_ADAPTER_HANDOFF.md)
+remain valid; no source, tests, dependencies, hosting or Worker changes were made.
+
+The owner supplied the missing protected local Tunnel/process/listener read as
+owner-executed evidence. It links the current API origin to the exact operator
+Engine process with 53 checked imports and Planner sol/high/8000. It is not an
+agent automated Tunnel check or a new model call. Read-only preflight found the
+expected baseline and no established Engine connections at sampled times.
+
+The approved 24-file frontend was uploaded unchanged from the verified archive.
+Current canonical Pages deployment is `82da70e6-53ef-409e-b6cc-7f0ee91a9dd4`, source
+`e8ff0317`; all 78 delivered static-byte/critical-header checks pass. Approved
+manifest, CSP/no-store, Microsoft auth assets, domains, project settings and both
+Worker versions are preserved. The immediate previous SSO Pages deployment
+`7e4bcdfe-11ff-4d61-9789-80962046e5b1` / source `edfaf1d` and exact 24-file rollback
+remain available; 26 retained immutable-host checks pass. Rollback was not needed.
+See [delivery, owner proof, checksums and acceptance limits](evidence/olc74-staging-activation-20261025/README.md).
+
+The original SSO MANUAL PASS applies to its reported reopen/post-idle access
+scenarios only. It is not upgraded to acceptance of the new adapter delivery.
+Actual Word proposal display, explicit use, Undo/Redo, model behavior and saved
+result reopening remain NOT_RUN. Nonempty draft/language/attachment preservation
+also remains NOT_RUN. No provider/completion call, Word/browser action, Worker,
+Engine, Tunnel/DNS change, GitHub main change, production promotion or merge occurred.
+
+## OLC-74 actual Word trial — owner-reported failure, 2026-10-25
+
+**FAIL_OWNER_REPORTED / ROOT CAUSE UNDETERMINED.** The owner reports that a selected
+paragraph revision on active staging showed the generic safe-stop notice instead
+of a proposal and reported the document unchanged. The screenshot is referenced
+by name; its pixels and the owner tab's historical Network/console records were
+not available to this review. The private document link and input are not copied.
+
+The [read-only incident evidence](evidence/olc74-word-trial-20261025/README.md)
+confirms current public taskpane HTML/JS match delivered e8ff0317 and both Worker
+versions remain unchanged. Four Engine completion access entries return HTTP 200;
+one predates activation, and none has an incident correlation ID. The request's
+exact Engine reachability, browser/Worker HTTP status, terminal SSE result and
+adapter error code remain UNKNOWN. The generic UI and an HTTP 200 header record
+cannot establish a validation error or a successful stream. Missing evidence is
+not a cause. No new completion, code fix, deployment or Word action was performed.
+
+This failure supersedes NOT_RUN only for the owner's reported trial outcome.
+Native Apply/Undo/Redo/result reopen and the other outstanding scenarios remain
+NOT_RUN. The historical OLC-72 SSO MANUAL PASS is preserved separately.
+
+
+## OLC-74 bounded diagnostics candidate — in review, not activated
+
+The owner authorized a limited diagnostic implementation on PR #3 from `da7c959`. It adds per-attempt UUID/UTC/loaded-version metadata, fixed phase/reason codes, copy from the pane after navigation, and an authenticated bounded receipt in the existing Word session store. Frontend/API/store code must be delivered together later. All validations, no POST replay, SSO policy and explicit guarded Apply remain intact.
+
+Local full gates PASS (696 tests, one protected live SKIP); final focused regressions PASS (58). Exact-head CI and the reviewed staging/rollback packet are recorded in the publication handoff. Fresh reads confirm the existing active source/deployment and both Worker versions; 26 static rollback checks PASS. Nothing was activated. See [contract and cleaned evidence](OLC74_DIAGNOSTICS.md).
+
+The actual historical Word trial remains **FAIL_OWNER_REPORTED / UNDETERMINED**. The prior SSO **MANUAL PASS** is unchanged. Live new diagnostics, real model/Word proposal display/use, Undo/Redo, result reopen and remaining draft/language/attachment checks are **NOT_RUN**. Engine correlation is explicitly **UNSUPPORTED** at pin `eef8ed0794046922842258ce587aab722db5fcb4`; no Engine change or completion call was made.
+
+
+## OLC-74 diagnostic staging activation — actual delivery, 2026-10-25
+
+**STAGING_DELIVERED / POSTFLIGHT PASS; Word/model acceptance open.** The owner explicitly authorized exact reviewed source `dc3bef4a8b7adac234bb92720f97a9106179be25`. Inert Worker uploads were verified before the ordered Auth/store → API → frontend traffic switch. Current Pages is `4bcc267c-62f0-461b-98af-6583436a6bc4`; Auth/store version `8ec17425-5690-46ed-801a-fe214ebaff3b`, API `cfb80b7b-78ed-4da3-8a4a-4b9462c9deb0`, both 100%.
+
+Archive SHA-256 and all 68 internal checksums PASS; approved-source CI 40193880238 PASS. Prepared bytes were used without builds, installs or product changes. Inert Worker code hashes and settings/binding/namespace comparisons PASS; no new migration. After activation, all 78 frontend byte/security-header checks PASS, unchanged public MSAL config PASS, unauthenticated/cross-origin/query diagnostic GET protections PASS. Domains, Word routes and project/runtime settings are preserved. No secret-setting operation or provider call occurred; API-visible secret-reference equality is not a secret-value test.
+
+Authorized empty diagnostic lookup is **NOT_RUN** because supported tools expose no current Word capability/connected Word session. No session or artificial record was created. Owner Word/pane state was not inspected or reloaded, and no new Word test was initiated. Live receipt/clipboard, actual model/proposal use, Apply/Undo/Redo/reopen and the other outstanding retention scenarios remain **NOT_RUN**. The historical trial remains **FAIL_OWNER_REPORTED / UNDETERMINED** and the original login **MANUAL PASS** remains unchanged.
+
+Rollback was not needed or executed. Exact current-before-activation e8ff0317 frontend/Pages `82da70e6…` and both previous Worker versions remain available; all 26 retained rollback byte/header checks PASS. See [actual identities, ordered exit codes, cleaned evidence and limitations](evidence/olc74-diagnostics-activation-20261025/README.md). PR #3 stays draft/unmerged. Engine pin and prior owner-executed Tunnel proof remain unchanged; no GitHub-main, Engine/Tunnel/DNS/LWS/Studio or open Word/browser change.
+
+
+## OLC-74 SSE code investigation — candidate IN REVIEW, not activated
+
+Attempt `bd72b0b0-acc9-442b-b147-8c0641aaa366` (14:00:35.812–14:00:44.429 UTC)
+has owner-supplied HTTP 200 / SSE_ERROR_EVENT. Cause **UNDETERMINED**, original
+SSE code **NOT_RECOVERED**. The lone temporally adjacent Engine 200 lacks a joining
+identity/terminal and is not attributed. Complete historical request bytes and
+protected inspection records are unavailable; missing evidence is not a cause.
+
+The minimal frontend candidate preserves only 16 pinned exact upstream error
+codes, otherwise UNKNOWN, into bounded copyable diagnostics. No request-profile
+change was justified: full actual-adapter/gateway synthetic SL/EN byte vectors
+pass pure admission validators at Engine `eef8ed0794046922842258ce587aab722db5fcb4`.
+This does not validate the actual incident body or semantic model behavior.
+Local gates PASS: 732 tests, one protected live SKIP, 92 targeted PASS, all other
+required gates PASS. Exact final-head CI and source/package SHA are linked in PR #3.
+See [clean evidence, limitations and candidate](evidence/olc74-sse-code-20261025/README.md).
+
+Active staging stays `dc3bef4` / Pages `4bcc267c…`, with unchanged Auth/API versions;
+26 retained-baseline static checks PASS. No activation or provider/Word action.
+Historical SSO MANUAL PASS and earlier FAIL_OWNER_REPORTED / UNDETERMINED remain
+unchanged; real Word proposal/use and remaining acceptance remain NOT_RUN.
+
+
+## OLC-74 frontend-only SSE diagnostics activation — 2026-10-25
+
+**STAGING_DIAGNOSTICS_DELIVERED / POSTFLIGHT PASS; incident UNDETERMINED.**
+Exact owner-approved product source `de34ecdbc6d53ce756ecfc2e44b7c7ff6133339f` is now
+canonical Pages `6f22feb3-14cc-4fab-a3e0-d9b30cd55c79`. The prepared archive and all
+56 internal checksums PASS; source CI 40208491747 PASS. Only prepared Pages bytes
+were delivered, without build/install, Worker upload/switch, setting or route change.
+All 78 served-byte/security-header checks and the taskpane asset/fingerprint on
+immutable and both canonical hosts PASS. Public MSAL config is byte-identical.
+Auth/store `8ec17425-5690-46ed-801a-fe214ebaff3b` and API
+`cfb80b7b-78ed-4da3-8a4a-4b9462c9deb0` stay 100%; settings/binding/route fingerprints
+match preflight. No secret-setting operation, Engine/Studio/LWS or open Word action.
+
+Documentation correction for attempt `bd72b0b0-acc9-442b-b147-8c0641aaa366`:
+owner supplied `frontendVersion: word-e37f072f824c4a8121ed20b628b457249a52fbc0cde0a015b36b8c2fa883eedc`.
+Provenance: **podal lastnik, brez neodvisnega pregleda zavihka**. The prior claim
+that this reported fingerprint was missing is corrected in this documentation-only
+successor. Actual request body and original SSE code remain NOT_ACQUIRED; cause
+UNDETERMINED. The approved product source/archive are preserved unchanged.
+
+Rollback `4bcc267c…` / source `dc3bef4…` and its exact 24-file packet are retained;
+26 baseline byte/header checks PASS. Rollback not needed/executed. No new completion,
+provider call or independent Word test. Word clipboard/proposal display/use,
+Apply/Undo/Redo/reopen and remaining acceptance are NOT_RUN. Historical SSO MANUAL
+PASS and FAIL_OWNER_REPORTED are unchanged. See [actual cleaned delivery evidence](evidence/olc74-sse-activation-20261025/README.md).
+
+
+## OLC-74 later owner attempt and isolated capture candidate — 2026-10-25
+
+Owner supplied attempt `03deaad8-d499-4198-8399-5a0f615d0c03`,
+16:51:39.442–16:51:49.056 UTC: HTTP 200 / SSE_ERROR_EVENT,
+upstreamCode `terminal_validation_failed`, frontendVersion
+`word-b597de926a50cb988c79b8aa166b7ba4da8c986aa2afb94d2509a28b3d3c28cb`.
+Provenance: **podal lastnik, brez neodvisnega pregleda zavihka**. Concrete guard,
+Writer output and joined Engine run remain **UNDETERMINED / NOT_ACQUIRED**.
+Protected inspection is **NOT_READ** after automatic approval rejected its sudo
+authentication method before execution; not an absence claim and no retry/bypass.
+Engine metadata matches the retained eef8ed0 operator process/invocation/cwd proof;
+no new protected import/byte verification. Nearby 200 is not attributed by time.
+
+The proven code gap loses the fixed guard in private inspection. Unified work in
+this session prepared [separate Engine draft PR #56](https://github.com/OpenLegalCore/olc-engine/pull/56),
+source `1f81f126a5a70cb17fd9f5e78290c274d7f393fa`, from exact installed pin.
+It adds fixed reason/field metadata and bounded private outer-handler capture,
+without loosening validation, changing public SSE or adding a frontend notice.
+Local final suite 2578 PASS / 461 prerequisite SKIP; separate Studio/LWS contracts
+76 PASS / 37 PG SKIP, overlapping. Exact CI outcome is in the linked handoff.
+**NOT ACTIVATED; this is a diagnostic candidate, not a proven incident fix.**
+Historical reproduction is NOT_RUN because joined data are unavailable. Word UUID
+joining remains unsupported; private run ID/bodyhash requires independently
+retained actual sent bytes. No new provider/completion/replay, Word action,
+Engine/Studio/LWS runtime or infrastructure change or merge. Word source/deployment/Workers/SSO and all
+existing checkouts remain preserved. See [clean evidence and limits](evidence/olc74-terminal-failure-20261025/README.md).

@@ -10,7 +10,12 @@ import { OpenAICompatibleAdapter } from "../../src/chat/OpenAICompatibleAdapter"
 import { createSameOriginProductionGateways } from "../../src/taskpane/ProductionTaskPaneRuntime";
 import { TaskPaneController } from "../../src/app/TaskPaneController";
 import { FakeWordAdapter } from "../fakes/FakeWordAdapter";
-import { contentEvent, documentReviewFixture, successTerminal } from "../fixtures/documentReview";
+import {
+  contentEvent,
+  documentOnlyFixture,
+  documentReviewFixture,
+  successTerminal,
+} from "../fixtures/documentReview";
 
 const request = {
   question: 'Dobesedno "navodilo"\n🟤',
@@ -33,6 +38,154 @@ function sorted(value: unknown): unknown {
 }
 
 describe("pinned Engine document-review protocol", () => {
+  it.each(["sl", "en"] as const)(
+    "accepts %s legal and content-only proposals without manufacturing explanation",
+    async (language) => {
+      for (const legal of [true, false]) {
+        const value = documentOnlyFixture(language, legal);
+        const original = JSON.stringify(value);
+        const deltas: string[] = [];
+        const fetch = vi.fn(async () =>
+          response([...original].map(contentEvent).join("") + successTerminal)
+        );
+        const result = await createSameOriginProductionGateways({ fetch }).olcEngine.complete(
+          { ...request, uiLocale: language === "sl" ? "sl-SI" : "en-US" },
+          undefined,
+          { onTextDelta: (delta) => deltas.push(delta) }
+        );
+        expect(result.text).toBe("");
+        expect(deltas).toEqual([]);
+        expect(result.proposal?.text).toBe(value.proposal!.markdown);
+        expect(result.rawResponse).toBe(original);
+        expect(result.sources).toHaveLength(legal ? 1 : 0);
+        expect(fetch).toHaveBeenCalledTimes(1);
+      }
+    }
+  );
+
+  it.each(["sl", "en"] as const)(
+    "retains %s PARTIAL notice separately from the proposal",
+    (language) => {
+      const value = documentOnlyFixture(language);
+      value.status = "PARTIAL";
+      // Controlled status metadata, never an explanation manufactured by Word.
+      value.notice =
+        language === "sl" ? "Sintetično obvezno opozorilo." : "Synthetic required notice.";
+      const raw = JSON.stringify(value);
+      const parser = new DocumentReviewExplanationStream();
+      expect([...raw].map((fragment) => parser.feed(fragment)).join("")).toBe(value.notice);
+      parser.finish();
+      const result = adaptDocumentReview(
+        raw,
+        language === "sl" ? "sl-SI" : "en-US",
+        request.context
+      );
+      expect(result.text).toBe(value.notice);
+      expect(result.proposal?.text).toBe(value.proposal!.markdown);
+      expect(result.proposal?.text).not.toContain(value.notice);
+      value.notice = "";
+      expect(() => adaptDocumentReview(JSON.stringify(value), "sl-SI", request.context)).toThrow();
+    }
+  );
+
+  it("limits empty evidence to proposal-only results with a frozen selection", () => {
+    const value = documentOnlyFixture("sl", false);
+    for (const context of [
+      undefined,
+      { type: "none" as const },
+      { type: "selected_text" as const, quotedText: " " },
+    ]) {
+      expect(() => adaptDocumentReview(JSON.stringify(value), "sl-SI", context)).toThrow();
+    }
+    value.claims = documentReviewFixture().claims;
+    expect(() => adaptDocumentReview(JSON.stringify(value), "sl-SI", request.context)).toThrow();
+  });
+
+  it.each([
+    (v: ReturnType<typeof documentOnlyFixture>) => ({ ...v, proposal: null }),
+    (v: ReturnType<typeof documentOnlyFixture>) => ({
+      ...v,
+      proposal: { ...v.proposal!, markdown: "" },
+    }),
+    (v: ReturnType<typeof documentOnlyFixture>) => ({
+      ...v,
+      proposal: { ...v.proposal!, markdown: "  " },
+    }),
+    (v: ReturnType<typeof documentOnlyFixture>) => ({
+      ...v,
+      proposal: { ...v.proposal!, source_labels: [] },
+    }),
+    (v: ReturnType<typeof documentOnlyFixture>) => ({
+      ...v,
+      proposal: { ...v.proposal!, source_labels: ["Z2"] },
+    }),
+    (v: ReturnType<typeof documentOnlyFixture>) => ({
+      ...v,
+      proposal: { ...v.proposal!, source_labels: ["Z1", "Z1"] },
+    }),
+    (v: ReturnType<typeof documentOnlyFixture>) => ({
+      ...v,
+      proposal: { ...v.proposal!, language: "en" },
+    }),
+    (v: ReturnType<typeof documentOnlyFixture>) => ({
+      ...v,
+      proposal: { ...v.proposal!, markdown: "Odstavek [Z1]" },
+    }),
+    (v: ReturnType<typeof documentOnlyFixture>) => ({
+      ...v,
+      proposal: { ...v.proposal!, change_summary: "https://pisrs.si/test" },
+    }),
+    (v: ReturnType<typeof documentOnlyFixture>) => ({
+      ...v,
+      sources: [{ ...v.sources[0], source_class: "UNKNOWN" }],
+    }),
+    (v: ReturnType<typeof documentOnlyFixture>) => ({
+      ...v,
+      sources: [{ ...v.sources[0], currentness_status: "STALE" }],
+    }),
+    (v: ReturnType<typeof documentOnlyFixture>) => ({
+      ...v,
+      sources: [{ ...v.sources[0], extra: true }],
+    }),
+  ])("rejects invalid document-only results through the production adapter", async (mutate) => {
+    const fetch = vi.fn(async () =>
+      response(contentEvent(JSON.stringify(mutate(documentOnlyFixture()))) + successTerminal)
+    );
+    await expect(
+      createSameOriginProductionGateways({ fetch }).olcEngine.complete(request)
+    ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("preserves first-use source projection when only proposal labels reference legal metadata", () => {
+    const value = documentOnlyFixture();
+    const second = { ...value.sources[0], label: "S1", source_class: "SLOVENIAN_COURT_DECISION" };
+    value.sources.push(second);
+    value.proposal!.source_labels.push("S1");
+    expect(
+      adaptDocumentReview(JSON.stringify(value), "sl-SI").sources?.map((s) => s.label)
+    ).toEqual(["Z1", "S1"]);
+    value.sources.reverse();
+    expect(() => adaptDocumentReview(JSON.stringify(value), "sl-SI")).toThrow();
+  });
+
+  it("reads an unchanged saved raw result without a completion request or lost provenance", async () => {
+    const value = documentOnlyFixture("sl", false);
+    const fetch = vi.fn(async () =>
+      response(contentEvent(JSON.stringify(value)) + successTerminal)
+    );
+    const gateway = createSameOriginProductionGateways({ fetch }).olcEngine;
+    const completed = await gateway.complete(request);
+    // A serialized synthetic receipt exercises mapping on read; production storage is memory-only.
+    const stored = JSON.parse(JSON.stringify(completed)) as typeof completed;
+    expect(adaptDocumentReview(stored.rawResponse!, "sl-SI", request.context)).toMatchObject({
+      text: "",
+      proposal: stored.proposal,
+      rawResponse: stored.rawResponse,
+    });
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
   it("matches the canonical 9753/8eb schema fingerprint and preserves original text part boundaries", () => {
     expect(
       createHash("sha256")

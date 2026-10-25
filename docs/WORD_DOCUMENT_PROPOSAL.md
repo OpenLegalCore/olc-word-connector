@@ -7,7 +7,18 @@ unchanged. The 8d96dbf review was pushed to draft PR #2; its access follow-up is
 merge or native Word acceptance. See [access recovery](WORD_WEB_ACCESS_RECOVERY.md)
 for the separate production-login blocker and reviewed implementation plan.
 
-## Current contract and Engine incident handoff
+## OLC-74 successor — 2026-10-25
+
+The isolated [OLC-74 adapter candidate](OLC74_ADAPTER_HANDOFF.md) supersedes the
+historical empty-claims restriction described below. It pins Engine PR54
+`eef8ed0794046922842258ce587aab722db5fcb4`, accepts a validated proposal with
+empty explanation, preserves required notice and legal sources separately, and
+requires a frozen selection for empty-evidence content-only results. It remains
+IN REVIEW, undeployed and without actual model or Word editing acceptance.
+Current SSO delivery is preserved. The original JSON/result still live only in
+current-pane memory; durable saved-result/pane restoration is not implemented.
+
+## Historical contract and Engine incident handoff
 
 Read-only Engine source evidence at `9753ad104853ce0fc4e23db9c9165e3c2abd073d` includes
 `docs/contracts/DOCUMENT-REVIEW-1.md` and the canonical request/response examples

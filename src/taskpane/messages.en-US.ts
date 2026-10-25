@@ -1,4 +1,10 @@
 export const enUSMessages = {
+  diagnostics: {
+    copy: "Copy diagnostics",
+    copied: "Diagnostics copied",
+    failed: "Copy diagnostics failed. Try again.",
+  },
+
   chrome: {
     documentTitle: "OpenLegalCore for Word",
     brandName: "OpenLegalCore",

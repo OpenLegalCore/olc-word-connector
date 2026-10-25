@@ -1,0 +1,21 @@
+{
+  "exit": 0,
+  "access": [
+    {
+      "utc": "2026-10-25T14:00:43.308961+00:00",
+      "method": "POST",
+      "route": "/v1/chat/completions",
+      "status": 200
+    }
+  ],
+  "matching_attempt_id_rows": 0,
+  "stderr_present": false,
+  "window_utc": [
+    "2026-10-25T13:59:30Z",
+    "2026-10-25T14:02:00Z"
+  ],
+  "attribution": "UNPROVEN: timestamp proximity is not correlation; no attempt ID, request hash or SSE terminal code",
+  "same_operator_process_and_invocation": true,
+  "original_sse_code": "NOT_RECOVERED",
+  "raw_messages_exported": false
+}

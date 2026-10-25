@@ -1,0 +1,17 @@
+{
+  "exit": 0,
+  "window": [
+    "2026-10-25T16:50:30Z",
+    "2026-10-25T16:53:00Z"
+  ],
+  "completion_access": [
+    {
+      "utc": "2026-10-25T16:51:47.643476+00:00",
+      "status": 200,
+      "attempt_id_present": false
+    }
+  ],
+  "other_rows_not_exported": 1,
+  "attribution": "UNPROVEN; no UUID/body hash/response identity joined",
+  "raw_messages_exported": false
+}

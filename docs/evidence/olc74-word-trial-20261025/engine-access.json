@@ -1,0 +1,55 @@
+{
+  "scope": "current Engine service invocation only; extended window to include both plausible screenshot clock interpretations",
+  "since_utc": "2026-10-25T08:00:00Z",
+  "until_utc": "2026-10-25T11:35:12.252630+00:00",
+  "journal_exit": 0,
+  "journal_json_lines": 39,
+  "other_entries_not_exported": 35,
+  "completion_access_entries": [
+    {
+      "event_ref": "engine-candidate-1",
+      "at_utc": "2026-10-25T10:14:31.849178+00:00",
+      "at_cet": "2026-10-25T11:14:31.849178+01:00",
+      "method": "POST",
+      "route": "/v1/chat/completions",
+      "http_status": 200,
+      "correlation_id_present": false,
+      "relation_to_activation": "before_activation"
+    },
+    {
+      "event_ref": "engine-candidate-2",
+      "at_utc": "2026-10-25T11:15:50.639378+00:00",
+      "at_cet": "2026-10-25T12:15:50.639378+01:00",
+      "method": "POST",
+      "route": "/v1/chat/completions",
+      "http_status": 200,
+      "correlation_id_present": false,
+      "relation_to_activation": "after_activation_unattributed"
+    },
+    {
+      "event_ref": "engine-candidate-3",
+      "at_utc": "2026-10-25T11:16:17.815641+00:00",
+      "at_cet": "2026-10-25T12:16:17.815641+01:00",
+      "method": "POST",
+      "route": "/v1/chat/completions",
+      "http_status": 200,
+      "correlation_id_present": false,
+      "relation_to_activation": "after_activation_unattributed"
+    },
+    {
+      "event_ref": "engine-candidate-4",
+      "at_utc": "2026-10-25T11:31:18.066380+00:00",
+      "at_cet": "2026-10-25T12:31:18.066380+01:00",
+      "method": "POST",
+      "route": "/v1/chat/completions",
+      "http_status": 200,
+      "correlation_id_present": false,
+      "relation_to_activation": "after_activation_unattributed"
+    }
+  ],
+  "incident_entry_identified": false,
+  "raw_messages_exported": false,
+  "stream_error_code": "NOT_RECORDED_IN_ACCESS_ENTRIES",
+  "stop_done": "NOT_RECORDED_IN_ACCESS_ENTRIES",
+  "capture_provenance": "Read-only existing system journal, filtered before output; no raw messages or client peer addresses copied."
+}

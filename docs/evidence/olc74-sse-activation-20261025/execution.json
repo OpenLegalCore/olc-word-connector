@@ -1,0 +1,22 @@
+{
+  "operation": "owner-authorized frontend-only staging activation",
+  "started_at": "2026-10-25T16:33:51.406921+00:00",
+  "finished_at": "2026-10-25T16:34:03.032063+00:00",
+  "exit_code": 0,
+  "command": [
+    "pages",
+    "deploy",
+    "./frontend",
+    "--project-name",
+    "olc-word-staging",
+    "--branch",
+    "main",
+    "--commit-hash",
+    "de34ecdbc6d53ce756ecfc2e44b7c7ff6133339f",
+    "--commit-dirty=false",
+    "--commit-message",
+    "Reviewed bounded OLC-74 SSE diagnostics; Engine eef8ed0794046922842258ce587aab722db5fcb4"
+  ],
+  "worker_upload_or_switch": false,
+  "raw_output_retained_privately": true
+}

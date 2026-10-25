@@ -1,0 +1,145 @@
+{
+  "before": {
+    "checked_at": "2026-10-25T16:32:46.349Z",
+    "pages": {
+      "id": "4bcc267c-62f0-461b-98af-6583436a6bc4",
+      "source": "dc3bef4a8b7adac234bb92720f97a9106179be25",
+      "url": "https://4bcc267c.olc-word-staging.pages.dev",
+      "status": "success",
+      "project": "olc-word-staging",
+      "settings_sha256": "ad529e4f3fef9acc44c8dcf99123fb806cc9e0ea17feafe76f58f5d82828cf4d",
+      "domains": [
+        "olc-word-staging.pages.dev",
+        "word-staging.openlegalcore.org"
+      ],
+      "production_branch": "main"
+    },
+    "workers": [
+      {
+        "name": "olc-word-session-auth",
+        "active_deployment": "9d1a87ef-8a7a-40bc-9511-b2d94bcf7c6d",
+        "versions": [
+          {
+            "version_id": "8ec17425-5690-46ed-801a-fe214ebaff3b",
+            "percentage": 100
+          }
+        ],
+        "settings_and_bindings_sha256": "ff139ab49fab8dceaffe6ab3da16df3ed848ec0a1dd5453f646e25c15c6dd382",
+        "observability": null
+      },
+      {
+        "name": "olc-word-session-api",
+        "active_deployment": "ea2e322e-1b05-4e5c-821e-18bff638481e",
+        "versions": [
+          {
+            "version_id": "cfb80b7b-78ed-4da3-8a4a-4b9462c9deb0",
+            "percentage": 100
+          }
+        ],
+        "settings_and_bindings_sha256": "805f3c9e7d2686d9712a65a8398ec0efa98b033ed8eb5c236ec619f0d9365129",
+        "observability": null
+      }
+    ],
+    "routes": [
+      {
+        "pattern": "word-staging.openlegalcore.org/word-api/*",
+        "script": "olc-word-session-api"
+      },
+      {
+        "pattern": "word-staging.openlegalcore.org/word-auth/*",
+        "script": "olc-word-session-auth"
+      },
+      {
+        "pattern": "word-staging.openlegalcore.org/api/*",
+        "script": "olc-word-staging-gateway"
+      },
+      {
+        "pattern": "word-staging.openlegalcore.org/v1/*",
+        "script": "olc-word-staging-gateway"
+      }
+    ]
+  },
+  "after": {
+    "checked_at": "2026-10-25T16:34:33.908Z",
+    "pages": {
+      "id": "6f22feb3-14cc-4fab-a3e0-d9b30cd55c79",
+      "source": "de34ecdbc6d53ce756ecfc2e44b7c7ff6133339f",
+      "url": "https://6f22feb3.olc-word-staging.pages.dev",
+      "status": "success",
+      "project": "olc-word-staging",
+      "settings_sha256": "ad529e4f3fef9acc44c8dcf99123fb806cc9e0ea17feafe76f58f5d82828cf4d",
+      "domains": [
+        "olc-word-staging.pages.dev",
+        "word-staging.openlegalcore.org"
+      ],
+      "production_branch": "main"
+    },
+    "workers": [
+      {
+        "name": "olc-word-session-auth",
+        "active_deployment": "9d1a87ef-8a7a-40bc-9511-b2d94bcf7c6d",
+        "versions": [
+          {
+            "version_id": "8ec17425-5690-46ed-801a-fe214ebaff3b",
+            "percentage": 100
+          }
+        ],
+        "settings_and_bindings_sha256": "ff139ab49fab8dceaffe6ab3da16df3ed848ec0a1dd5453f646e25c15c6dd382",
+        "observability": null
+      },
+      {
+        "name": "olc-word-session-api",
+        "active_deployment": "ea2e322e-1b05-4e5c-821e-18bff638481e",
+        "versions": [
+          {
+            "version_id": "cfb80b7b-78ed-4da3-8a4a-4b9462c9deb0",
+            "percentage": 100
+          }
+        ],
+        "settings_and_bindings_sha256": "805f3c9e7d2686d9712a65a8398ec0efa98b033ed8eb5c236ec619f0d9365129",
+        "observability": null
+      }
+    ],
+    "routes": [
+      {
+        "pattern": "word-staging.openlegalcore.org/word-api/*",
+        "script": "olc-word-session-api"
+      },
+      {
+        "pattern": "word-staging.openlegalcore.org/word-auth/*",
+        "script": "olc-word-session-auth"
+      },
+      {
+        "pattern": "word-staging.openlegalcore.org/api/*",
+        "script": "olc-word-staging-gateway"
+      },
+      {
+        "pattern": "word-staging.openlegalcore.org/v1/*",
+        "script": "olc-word-staging-gateway"
+      }
+    ]
+  },
+  "comparison": {
+    "pages_settings_domains_and_production_branch": "PASS_UNCHANGED",
+    "workers_versions_traffic_settings_bindings": "PASS_UNCHANGED",
+    "routes": "PASS_UNCHANGED",
+    "secret_values": "NOT_READ_OR_SET; API-visible settings/binding fingerprints only"
+  },
+  "msal_config_before": {
+    "checked_at": "2026-10-25T16:33:24.107136+00:00",
+    "path": "/word-api/auth/config",
+    "status": 200,
+    "body_sha256": "082e99ea1db422c3edb8f453fc9d8d285c232188df301d06a99fb94650cdb57b",
+    "cache_control": "no-store",
+    "content_exported": false
+  },
+  "msal_config_after": {
+    "checked_at": "2026-10-25T16:34:57.022208+00:00",
+    "path": "/word-api/auth/config",
+    "status": 200,
+    "body_sha256": "082e99ea1db422c3edb8f453fc9d8d285c232188df301d06a99fb94650cdb57b",
+    "cache_control": "no-store",
+    "content_exported": false,
+    "matches_before": true
+  }
+}

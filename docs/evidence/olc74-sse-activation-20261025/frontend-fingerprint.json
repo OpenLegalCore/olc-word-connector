@@ -1,0 +1,31 @@
+{
+  "checked_at": "2026-10-25T16:34:56.945762+00:00",
+  "result": "PASS",
+  "checks": [
+    {
+      "host": "6f22feb3.olc-word-staging.pages.dev",
+      "asset": "taskpane.add14d180a105236dd9d.js",
+      "sha256": "f4c05e65fabc8cf9e12eae11c3bc39b8048b56169f6a1e49f28cf045004a1a43",
+      "frontendVersion": "word-b597de926a50cb988c79b8aa166b7ba4da8c986aa2afb94d2509a28b3d3c28cb",
+      "html_references_asset": true,
+      "result": "PASS"
+    },
+    {
+      "host": "olc-word-staging.pages.dev",
+      "asset": "taskpane.add14d180a105236dd9d.js",
+      "sha256": "f4c05e65fabc8cf9e12eae11c3bc39b8048b56169f6a1e49f28cf045004a1a43",
+      "frontendVersion": "word-b597de926a50cb988c79b8aa166b7ba4da8c986aa2afb94d2509a28b3d3c28cb",
+      "html_references_asset": true,
+      "result": "PASS"
+    },
+    {
+      "host": "word-staging.openlegalcore.org",
+      "asset": "taskpane.add14d180a105236dd9d.js",
+      "sha256": "f4c05e65fabc8cf9e12eae11c3bc39b8048b56169f6a1e49f28cf045004a1a43",
+      "frontendVersion": "word-b597de926a50cb988c79b8aa166b7ba4da8c986aa2afb94d2509a28b3d3c28cb",
+      "html_references_asset": true,
+      "result": "PASS"
+    }
+  ],
+  "owner_tab_loaded_version": "NOT_INSPECTED; server bytes only"
+}

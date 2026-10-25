@@ -10,6 +10,12 @@ import { ChatGatewayError, type ChatGatewayErrorCode } from "./ChatGatewayError"
 import { parseOpenAICompatibleCompletionStream } from "./openAICompatibleStream";
 import { serializePromptEnvelope } from "./promptEnvelope";
 import { adaptDocumentReview, documentReviewBody } from "./documentReview";
+import {
+  AttemptDiagnostics,
+  type DiagnosticPhase,
+  type DiagnosticReason,
+  type DiagnosticReceipt,
+} from "./diagnostics";
 import { DocumentReviewExplanationStream } from "./documentReviewStream";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 120_000;
@@ -35,6 +41,10 @@ export type OpenAICompatibleFetch = (input: string, init?: RequestInit) => Promi
 
 export interface OpenAICompatibleAdapterDependencies {
   readonly fetch?: OpenAICompatibleFetch;
+  readonly readDiagnosticReceipt?: (
+    attemptId: string,
+    version: string
+  ) => Promise<DiagnosticReceipt | undefined>;
 }
 
 interface ModelsResponse {
@@ -173,6 +183,11 @@ function statusError(status: number): ChatGatewayError {
 }
 
 export class OpenAICompatibleAdapter implements ChatGateway {
+  readonly diagnostics = new AttemptDiagnostics();
+  readonly readDiagnosticReceipt?: (
+    attemptId: string,
+    version: string
+  ) => Promise<DiagnosticReceipt | undefined>;
   private readonly baseUrl: string;
   private readonly documentReview: boolean;
   private readonly modelId: string;
@@ -220,6 +235,7 @@ export class OpenAICompatibleAdapter implements ChatGateway {
         (this.documentReview ? DEFAULT_MAX_RESPONSE_BYTES : DEFAULT_MAX_RESPONSE_CHARS)
     );
     this.fetchImpl = dependencies.fetch ?? defaultFetch;
+    this.readDiagnosticReceipt = dependencies.readDiagnosticReceipt;
   }
 
   async checkConnection(signal?: AbortSignal): Promise<void> {
@@ -249,72 +265,128 @@ export class OpenAICompatibleAdapter implements ChatGateway {
     signal?: AbortSignal,
     observer?: CompletionObserver
   ): Promise<CompletionResult> {
-    return this.withRequestBoundary(signal, async (requestSignal) => {
-      const body = JSON.stringify(
-        this.documentReview
-          ? documentReviewBody(request, this.modelId)
-          : {
-              model: this.modelId,
-              stream: true,
-              stream_options: { include_usage: true },
-              response_language: request.uiLocale === "sl-SI" ? "sl" : "en",
-              messages: [
-                {
-                  role: "user",
-                  content: serializePromptEnvelope(request),
-                },
-              ],
-            }
-      );
-      const response = await this.fetchImpl(`${this.baseUrl}/v1/chat/completions`, {
-        method: "POST",
-        headers: this.headers("text/event-stream", "application/json"),
-        body,
-        credentials: this.requestCredentials,
-        redirect: this.requestRedirect,
-        signal: requestSignal,
-      });
+    const attempt = this.diagnostics.begin();
+    let phase: DiagnosticPhase = "request";
+    let httpStatus: number | undefined;
+    try {
+      const completed = await this.withRequestBoundary(signal, async (requestSignal) => {
+        const body = JSON.stringify(
+          this.documentReview
+            ? documentReviewBody(request, this.modelId)
+            : {
+                model: this.modelId,
+                stream: true,
+                stream_options: { include_usage: true },
+                response_language: request.uiLocale === "sl-SI" ? "sl" : "en",
+                messages: [
+                  {
+                    role: "user",
+                    content: serializePromptEnvelope(request),
+                  },
+                ],
+              }
+        );
+        phase = "http";
+        const response = await this.fetchImpl(`${this.baseUrl}/v1/chat/completions`, {
+          method: "POST",
+          headers: {
+            ...this.headers("text/event-stream", "application/json"),
+            ...(this.requestCredentials === "same-origin"
+              ? {
+                  "X-OLC-Attempt-ID": attempt.attemptId,
+                  "X-OLC-Frontend-Version": attempt.frontendVersion,
+                }
+              : {}),
+          },
+          body,
+          credentials: this.requestCredentials,
+          redirect: this.requestRedirect,
+          signal: requestSignal,
+        });
 
-      this.requireSuccessfulResponse(response, "text/event-stream");
-      if (!response.body || typeof response.body.getReader !== "function") {
-        this.cancelResponseBody(response);
-        throw new ChatGatewayError("INVALID_RESPONSE");
-      }
-      let reader: ReadableStreamDefaultReader<Uint8Array>;
-      try {
-        reader = response.body.getReader();
-      } catch {
-        this.cancelResponseBody(response);
-        throw new ChatGatewayError("INVALID_RESPONSE");
-      }
-      const explanationStream = this.documentReview
-        ? new DocumentReviewExplanationStream()
-        : undefined;
-      const result = await parseOpenAICompatibleCompletionStream(
-        reader,
-        this.modelId,
-        requestSignal,
-        explanationStream
-          ? {
-              onTextDelta: (fragment) => {
-                const delta = explanationStream.feed(fragment);
-                if (delta) observer?.onTextDelta?.(delta);
-              },
-            }
-          : observer,
-        this.maxResponseChars,
-        this.maxResponseBytes
-      );
-      if (explanationStream) {
-        explanationStream.finish();
-        return {
-          ...adaptDocumentReview(result.text, request.uiLocale),
-          model: this.modelId,
-          usage: result.usage,
-        };
-      }
-      return { text: result.text, model: this.modelId, usage: result.usage };
-    });
+        httpStatus = response.status;
+        this.requireSuccessfulResponse(response, "text/event-stream");
+        phase = "sse";
+        if (!response.body || typeof response.body.getReader !== "function") {
+          this.cancelResponseBody(response);
+          throw new ChatGatewayError("INVALID_RESPONSE");
+        }
+        let reader: ReadableStreamDefaultReader<Uint8Array>;
+        try {
+          reader = response.body.getReader();
+        } catch {
+          this.cancelResponseBody(response);
+          throw new ChatGatewayError("INVALID_RESPONSE");
+        }
+        const explanationStream = this.documentReview
+          ? new DocumentReviewExplanationStream()
+          : undefined;
+        const result = await parseOpenAICompatibleCompletionStream(
+          reader,
+          this.modelId,
+          requestSignal,
+          explanationStream
+            ? {
+                onTextDelta: (fragment) => {
+                  const delta = explanationStream.feed(fragment);
+                  if (delta) observer?.onTextDelta?.(delta);
+                },
+              }
+            : observer,
+          this.maxResponseChars,
+          this.maxResponseBytes
+        );
+        if (explanationStream) {
+          phase = "result_validation";
+          explanationStream.finish();
+          return {
+            ...adaptDocumentReview(result.text, request.uiLocale, request.context),
+            model: this.modelId,
+            usage: result.usage,
+          };
+        }
+        return { text: result.text, model: this.modelId, usage: result.usage };
+      });
+      this.diagnostics.finish({
+        ...attempt,
+        schema: 1,
+        finishedAt: new Date().toISOString(),
+        outcome: "validated",
+        code: "OK",
+        phase: "complete",
+        reason: "VALIDATED_STOP_DONE",
+        ...(httpStatus !== undefined ? { httpStatus } : {}),
+      });
+      return completed;
+    } catch (error) {
+      const safe =
+        error instanceof ChatGatewayError ? error : new ChatGatewayError("NETWORK_ERROR");
+      const code = safe.code;
+      const reason: DiagnosticReason =
+        safe.reason ??
+        (code === "TIMEOUT"
+          ? "REQUEST_TIMEOUT"
+          : code === "CANCELLED"
+            ? "CANCELLED"
+            : code === "NETWORK_ERROR"
+              ? "FETCH_FAILED"
+              : (phase as DiagnosticPhase) === "http" && httpStatus !== undefined
+                ? "HTTP_STATUS"
+                : "REJECTED");
+      if (reason.startsWith("DOC_") || reason.startsWith("PROPOSAL_")) phase = "result_validation";
+      this.diagnostics.finish({
+        ...attempt,
+        schema: 1,
+        finishedAt: new Date().toISOString(),
+        outcome: "failed",
+        code,
+        phase,
+        reason,
+        ...(safe.upstreamCode !== undefined ? { upstreamCode: safe.upstreamCode } : {}),
+        ...(httpStatus !== undefined ? { httpStatus } : {}),
+      });
+      throw safe;
+    }
   }
 
   disconnect(): void {
@@ -362,7 +434,7 @@ export class OpenAICompatibleAdapter implements ChatGateway {
     }
     if (response.redirected || responseType !== expectedType) {
       this.cancelResponseBody(response);
-      throw new ChatGatewayError("INVALID_RESPONSE");
+      throw new ChatGatewayError("INVALID_RESPONSE", "HTTP_CONTENT_TYPE");
     }
   }
 

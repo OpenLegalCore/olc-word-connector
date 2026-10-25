@@ -1,0 +1,9 @@
+{
+  "check": "Read-only Pages project before publication",
+  "production_deployments_enabled": false,
+  "preview_deployment_setting": "none",
+  "canonical_pages_id": "7e4bcdfe-11ff-4d61-9789-80962046e5b1",
+  "canonical_source": "edfaf1dc3367cdd76c24ee9e176efb6bff2cedf8",
+  "mutation": false,
+  "auth_or_worker_read_or_change": false
+}

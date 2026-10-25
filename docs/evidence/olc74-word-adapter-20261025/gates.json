@@ -1,0 +1,146 @@
+{
+  "word_base": "69dbe682100575a6492fdf8fbfcde2b5b7eeaa45",
+  "engine_pin": "eef8ed0794046922842258ce587aab722db5fcb4",
+  "branch": "codex/olc-74-word-adapter-offline",
+  "node": "24.21.0",
+  "provider_calls": 0,
+  "live_staging_test_calls": 0,
+  "deployments": 0,
+  "native_word_writes": 0,
+  "full_suite": {
+    "passed": 677,
+    "skipped": 1,
+    "failed": 0,
+    "skip_reason": "Protected Engine live opt-in forcibly disabled"
+  },
+  "focused_suite": {
+    "command": "npm test -- --run test/chat/documentReview.test.ts test/taskpane/DocumentOnlyRuntime.test.ts",
+    "exit_code": 0,
+    "passed": 57
+  },
+  "red": {
+    "command": "npm test -- --run test/chat/documentReview.test.ts",
+    "exit_code": 1,
+    "failed": 2,
+    "passed": 24,
+    "reason": "SL/EN document-only rejected by base adapter before production edits"
+  },
+  "local_install": {
+    "command": "npm ci",
+    "status": "NOT_RUN",
+    "reason": "No installation; existing exact-lock dependency tree copied to isolated worktree"
+  },
+  "lock_sha256": "1efed91faec088ffd904b8660ad42fb1b0d7ceac17c94208e70e5cfb86783274",
+  "commands": [
+    {
+      "name": "tests",
+      "command": "npm test -- --run",
+      "exit_code": 0,
+      "seconds": 14.61
+    },
+    {
+      "name": "typecheck",
+      "command": "npm run typecheck",
+      "exit_code": 0,
+      "seconds": 2.15
+    },
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "exit_code": 0,
+      "seconds": 1.71
+    },
+    {
+      "name": "format",
+      "command": "npx --no-install prettier --check \".github/workflows/ci.yml\" \"src/**/*.ts\" \"src/**/*.css\" \"src/taskpane/*.html\" \"infrastructure/**/*.js\" \"test/**/*.ts\" \"test/**/*.css\" \"test/harness/harness.html\" \"scripts/**/*.js\" \"*.{js,json,mts}\"",
+      "exit_code": 0,
+      "seconds": 1.46
+    },
+    {
+      "name": "audit",
+      "command": "npm audit --omit=dev --audit-level=high",
+      "exit_code": 0,
+      "seconds": 0.53
+    },
+    {
+      "name": "manifest",
+      "command": "npm run validate",
+      "exit_code": 0,
+      "seconds": 0.6
+    },
+    {
+      "name": "manifest-dev",
+      "command": "npm run validate:dev",
+      "exit_code": 0,
+      "seconds": 0.55
+    },
+    {
+      "name": "manifest-stage",
+      "command": "npm run validate:stage",
+      "exit_code": 0,
+      "seconds": 0.56
+    },
+    {
+      "name": "manifest-prod",
+      "command": "npm run validate:prod",
+      "exit_code": 0,
+      "seconds": 0.56
+    },
+    {
+      "name": "build-harness",
+      "command": "npm run build:harness",
+      "exit_code": 0,
+      "seconds": 1.6
+    },
+    {
+      "name": "build-word-harness",
+      "command": "npm run build:word-harness",
+      "exit_code": 0,
+      "seconds": 2.09
+    },
+    {
+      "name": "build-dev",
+      "command": "npm run build:dev",
+      "exit_code": 0,
+      "seconds": 1.89
+    },
+    {
+      "name": "build-stage",
+      "command": "npm run build:stage",
+      "exit_code": 0,
+      "seconds": 3.88
+    },
+    {
+      "name": "build-prod",
+      "command": "npm run build",
+      "exit_code": 0,
+      "seconds": 3.49
+    },
+    {
+      "name": "build-workers",
+      "command": "npm run build:word-session",
+      "exit_code": 0,
+      "seconds": 0.21
+    },
+    {
+      "name": "bundle",
+      "command": "npm run verify:bundle",
+      "exit_code": 0,
+      "seconds": 0.1
+    },
+    {
+      "name": "diff",
+      "command": "git diff --check",
+      "exit_code": 0,
+      "seconds": 0.01
+    }
+  ],
+  "not_run": [
+    "Actual model acceptance",
+    "Native Word Insert/Replace/Undo/Redo/Save/reopen",
+    "Durable saved-result restore (not implemented in base)",
+    "Deployment",
+    "Merge"
+  ],
+  "publication_ci": "Check external handoff/PR for the immutable exact-head workflow result; no self-referential SHA in this commit."
+}

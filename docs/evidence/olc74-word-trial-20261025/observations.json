@@ -1,0 +1,120 @@
+{
+  "status": "OWNER_REPORTED_WORD_TRIAL_FAILED_ROOT_CAUSE_UNDETERMINED",
+  "investigation_base": "4c4878b912eb7f182270e4be9e273b05c36643a9",
+  "delivered_source": "e8ff0317ef699204783de90eb65b6377a95ce9cd",
+  "reported_deployment": "82da70e6-53ef-409e-b6cc-7f0ee91a9dd4",
+  "engine_pin": "eef8ed0794046922842258ce587aab722db5fcb4",
+  "owner_report": {
+    "operation": "Selected-paragraph content revision",
+    "proposal_shown": false,
+    "generic_safe_stop_shown": true,
+    "document_unchanged_reported": true,
+    "source": "Owner report; referenced screenshot image(20261025-111638).png, pixels not available to this investigation",
+    "send_time_and_timezone": "NOT_PROVIDED",
+    "request_or_ray_id": "NOT_PROVIDED",
+    "private_document_link_and_input_text_exported": false
+  },
+  "findings": {
+    "exact_incident_reached_engine": "UNKNOWN: no cross-layer identifier/time confirmation",
+    "engine_accesses_observed": "4 completion HTTP 200 header records, 1 before activation and 3 after; none attributed to the reported trial",
+    "browser_http_status": "UNKNOWN",
+    "worker_incident_http_status": "UNKNOWN",
+    "engine_incident_http_status": "UNKNOWN: cannot identify the incident row",
+    "sse_terminal_outcome": "UNKNOWN: no captured error/stop/DONE trace for this request",
+    "adapter_rejection": "UNKNOWN: internal error code and original response bytes unavailable",
+    "owner_loaded_pane_asset": "UNKNOWN: served bytes match, but owner tab not connected"
+  },
+  "browser_access": {
+    "connected_surfaces": "Codex in-app browser and MCP Apps only; initially no tabs",
+    "existing_owner_word_tab_accessible": false,
+    "supplied_link_used_only_to_find_existing_tab": true,
+    "new_word_tab_opened": false,
+    "word_reloaded_or_interacted_with": false,
+    "historical_network_or_console_record_obtained": false
+  },
+  "worker_access": {
+    "cloudflare_mcp": "UNAVAILABLE: secure credential-store decryption failure; no login/reauthorization/scope change attempted",
+    "supported_wrangler_readonly_metadata": "PASS: existing version/deployment queries succeeded",
+    "historic_invocation_logs": "NOT_OBTAINED: MCP unavailable; supported Wrangler inspection provides deployment/version metadata, not historical invocation stream",
+    "logging_disabled_in_active_version": "NOT_ESTABLISHED: repository default observability=false is not active-setting proof",
+    "cloudflare_mcp_error_is_not_word_sso_evidence": true
+  },
+  "engine_access": {
+    "service_identity": "Same active Engine TEST invocation/release as retained operator proof; read-only systemd metadata",
+    "journal": "READ: fixed current-invocation window and safe access metadata exported separately",
+    "non_access_error_keywords_in_reviewed_journal": {},
+    "tunnel_journal": "READ: no entries in bounded incident window; absence is not proof of cause",
+    "accessible_inspection_records": "103 historical run.json paths located; newest metadata mtime 2026-10-25T05:23:12.727891Z; no matching incident-period file in those accessible directories",
+    "protected_operational_release_or_package": "Permission denied; not read and no repeated OS authentication",
+    "effective_inspection_directory": "UNKNOWN: selected path absent in accessible unit metadata; wrapper/runtime configuration not independently read",
+    "raw_journal_or_run_content_published": false
+  },
+  "current_delivery": {
+    "checked_at": "2026-10-25T11:34:02.383849+00:00",
+    "checks": [
+      {
+        "path": "taskpane.html",
+        "status": 200,
+        "sha256": "dfe8bd2a5e1045c6c5eb9af7c26e9ffc5b33b7f524a4b71303b40df260990cd5",
+        "matches_reviewed_e8ff0317": true
+      },
+      {
+        "path": "taskpane.02aa65737465e62401a7.js",
+        "status": 200,
+        "sha256": "4aa6d608de93656fe5599a1071df3c46b9402f6106d19f063e7db03981dec167",
+        "matches_reviewed_e8ff0317": true
+      }
+    ],
+    "scope": "current public delivery; not proof of the owner pane loaded bundle",
+    "completion_calls": 0
+  },
+  "workers": {
+    "checked_at": "2026-10-25T11:33:04.724845+00:00",
+    "workers": {
+      "olc-word-session-api": {
+        "exit": 0,
+        "stderr_present": false,
+        "latest": {
+          "id": "56ce5a31-b8d4-4817-8781-029bd294dc4c",
+          "created_on": "2026-10-25T04:13:50.180029Z",
+          "versions": [
+            {
+              "version_id": "da36e666-89d1-4a59-b7b8-6fec4ad88807",
+              "percentage": 100
+            }
+          ]
+        }
+      },
+      "olc-word-session-auth": {
+        "exit": 0,
+        "stderr_present": false,
+        "latest": {
+          "id": "b373fe59-d785-4146-950b-d496727b4bfb",
+          "created_on": "2026-10-25T04:13:40.190407Z",
+          "versions": [
+            {
+              "version_id": "0ea8304d-3a08-4a4c-af7e-83aa2e2f6dff",
+              "percentage": 100
+            }
+          ]
+        }
+      }
+    }
+  },
+  "current_static_probe_caveat": {
+    "initial_plain_client_get": 403,
+    "subsequent_verification_user_agent_get": 200,
+    "relation_to_incident": "Neither is the historical completion response. Cause of probe difference not investigated or attributed to the Word incident.",
+    "investigator_cf_ray_not_reused_as_incident_id": true
+  },
+  "conclusion": "Insufficient evidence to assign the failing layer. HTTP 200 access entries do not prove successful completion or valid adapter result. Missing records are not a root-cause diagnosis.",
+  "effects": {
+    "new_completion_calls": 0,
+    "provider_calls": 0,
+    "word_actions": 0,
+    "code_changes": 0,
+    "deployment_changes": 0,
+    "auth_or_infrastructure_changes": 0,
+    "merge": 0
+  }
+}

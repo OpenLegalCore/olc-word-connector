@@ -1,0 +1,106 @@
+{
+  "checked_at": "2026-10-25T13:16:29.237Z",
+  "workers": {
+    "olc-word-session-auth": {
+      "deployment_id": "9d1a87ef-8a7a-40bc-9511-b2d94bcf7c6d",
+      "created_on": "2026-10-25T13:13:16.883762Z",
+      "versions": [
+        {
+          "version_id": "8ec17425-5690-46ed-801a-fe214ebaff3b",
+          "percentage": 100
+        }
+      ],
+      "expected_version_id": "8ec17425-5690-46ed-801a-fe214ebaff3b",
+      "active_exact": true,
+      "settings": {
+        "compatibility_date": "2026-07-30",
+        "compatibility_flags": [],
+        "observability": null,
+        "logpush": false,
+        "limits": null,
+        "placement": {},
+        "tail_consumers": [],
+        "usage_model": "standard"
+      },
+      "settings_sha256": "087523df7556474e7628bb4b3ce02aa22e00b81225e3907b6144f8887aa193e0",
+      "bindings_sha256": "fd69075412d5ef526cf3eed5daddbbdabbbf7d92e1ec3752c5142a6aadf60cae",
+      "version_bindings_sha256": "fd69075412d5ef526cf3eed5daddbbdabbbf7d92e1ec3752c5142a6aadf60cae",
+      "old_version_available": true,
+      "namespace_unchanged": true,
+      "migration_tag_unchanged": true,
+      "runtime": {
+        "migration_tag": "word-session-v1",
+        "compatibility_date": "2026-07-30",
+        "usage_model": "standard"
+      },
+      "etag": "24362f32c6a86eb818b5ed4ec3eeef1e0fbfe26cc9aaf0bd4f9522aff22f9126",
+      "subdomain": {
+        "enabled": false,
+        "previews_enabled": false
+      }
+    },
+    "olc-word-session-api": {
+      "deployment_id": "ea2e322e-1b05-4e5c-821e-18bff638481e",
+      "created_on": "2026-10-25T13:14:08.852908Z",
+      "versions": [
+        {
+          "version_id": "cfb80b7b-78ed-4da3-8a4a-4b9462c9deb0",
+          "percentage": 100
+        }
+      ],
+      "expected_version_id": "cfb80b7b-78ed-4da3-8a4a-4b9462c9deb0",
+      "active_exact": true,
+      "settings": {
+        "compatibility_date": "2026-07-30",
+        "compatibility_flags": [],
+        "observability": null,
+        "logpush": false,
+        "limits": null,
+        "placement": {},
+        "tail_consumers": [],
+        "usage_model": "standard"
+      },
+      "settings_sha256": "087523df7556474e7628bb4b3ce02aa22e00b81225e3907b6144f8887aa193e0",
+      "bindings_sha256": "c79a397df8130cb477d8f5ff0d01d8f73635e5a19ab3066a71737fc3de33ad80",
+      "version_bindings_sha256": "c79a397df8130cb477d8f5ff0d01d8f73635e5a19ab3066a71737fc3de33ad80",
+      "old_version_available": true,
+      "namespace_unchanged": true,
+      "migration_tag_unchanged": true,
+      "runtime": {
+        "compatibility_date": "2026-07-30",
+        "usage_model": "standard"
+      },
+      "etag": "577e3943dd794cf809dd31978ce0ae12643d527db4c5dc81fb8a844dd39dac31",
+      "subdomain": {
+        "enabled": false,
+        "previews_enabled": false
+      }
+    }
+  },
+  "pages": {
+    "project": "olc-word-staging",
+    "id": "4bcc267c-62f0-461b-98af-6583436a6bc4",
+    "source": "dc3bef4a8b7adac234bb92720f97a9106179be25",
+    "status": "success",
+    "url": "https://4bcc267c.olc-word-staging.pages.dev",
+    "domains": [
+      "olc-word-staging.pages.dev",
+      "word-staging.openlegalcore.org"
+    ],
+    "production_branch": "main",
+    "production_deployments_enabled": false,
+    "preview_deployment_setting": "none",
+    "uses_functions": false,
+    "project_settings_sha256": "1d92d8c060c0a5093fca1c6a68af8a7bc6e3c0c4c4851241332162b39d66240a"
+  },
+  "routes": [
+    {
+      "pattern": "word-staging.openlegalcore.org/word-api/*",
+      "script": "olc-word-session-api"
+    },
+    {
+      "pattern": "word-staging.openlegalcore.org/word-auth/*",
+      "script": "olc-word-session-auth"
+    }
+  ]
+}

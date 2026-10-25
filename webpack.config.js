@@ -1,6 +1,28 @@
 /* eslint-disable no-undef */
 
 const path = require("path");
+const fs = require("node:fs");
+const crypto = require("node:crypto");
+const { DefinePlugin } = require("webpack");
+function frontendFingerprint() {
+  const files = [];
+  function walk(directory) {
+    for (const entry of fs.readdirSync(path.join(__dirname, directory), { withFileTypes: true })) {
+      const name = `${directory}/${entry.name}`;
+      if (entry.isDirectory()) walk(name);
+      else if (entry.isFile()) files.push(name);
+    }
+  }
+  walk("src");
+  files.push("webpack.config.js", "package.json", "package-lock.json", "babel.config.json");
+  const hash = crypto.createHash("sha256");
+  for (const file of files.sort()) {
+    hash.update(file + "\0");
+    hash.update(fs.readFileSync(path.join(__dirname, file)));
+    hash.update("\0");
+  }
+  return "word-" + hash.digest("hex");
+}
 
 const devCerts = require("office-addin-dev-certs");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
@@ -188,6 +210,7 @@ async function webpackConfig(env, options) {
     },
     module: { rules: moduleRules },
     plugins: [
+      new DefinePlugin({ __OLC_FRONTEND_VERSION__: JSON.stringify(frontendFingerprint()) }),
       ...["microsoft-signin", "microsoft-redirect"].map(
         (name) =>
           new HtmlWebpackPlugin({

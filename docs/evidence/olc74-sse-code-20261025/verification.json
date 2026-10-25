@@ -1,0 +1,39 @@
+{
+  "targeted": {
+    "numTotalTests": 92,
+    "numPassedTests": 92,
+    "numFailedTests": 0,
+    "numPendingTests": 0,
+    "success": true
+  },
+  "full_suite": {
+    "passed": 732,
+    "skipped": 1,
+    "failed": 0,
+    "protected_live_test": "SKIP; no provider/completion enabled"
+  },
+  "all_local_gate_exit_codes": {
+    "npm audit --omit=dev --audit-level=high": 0,
+    "npm test -- --run": 0,
+    "npm run typecheck": 0,
+    "npm run lint": 0,
+    "prettier --check (CONTRIBUTING.md exact glob list)": 0,
+    "npm run validate": 0,
+    "npm run validate:dev": 0,
+    "npm run validate:stage": 0,
+    "npm run validate:prod": 0,
+    "npm run build:harness": 0,
+    "npm run build:word-harness": 0,
+    "npm run build:dev": 0,
+    "npm run build:stage": 0,
+    "npm run build": 0,
+    "npm run build:word-session": 0,
+    "npm run verify:bundle": 0
+  },
+  "targeted_command": "OLC_EXPORT_SYNTHETIC_WORD_REQUESTS=1 node_modules/.bin/vitest run test/chat/diagnostics.test.ts test/gateway/diagnostics.test.ts test/taskpane/ProductionTaskPaneRuntime.test.ts",
+  "offline_validator_command": "python3 scripts/verify-engine-word-request.py /home/rajko/olc-engine /tmp/olc74-synthetic-word-requests",
+  "offline_validator_exit": 0,
+  "scope": "controlled offline responses and synthetic inputs, not actual model/Word acceptance",
+  "known_build_warning": "existing webpack asset/entrypoint size warnings; zero gate failures",
+  "ci": "Exact final-head run is linked in the PR publication comment; no stale run claimed."
+}

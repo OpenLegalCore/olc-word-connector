@@ -1,0 +1,199 @@
+{
+  "order": [
+    "inert Auth upload",
+    "inert API upload",
+    "verify exact bytes/settings/bindings/no traffic switch",
+    "Auth/store 100%",
+    "API 100%",
+    "frontend Pages staging main channel"
+  ],
+  "upload_auth": {
+    "operation": "inert version upload",
+    "worker": "olc-word-session-auth",
+    "started_at": "2026-10-25T13:10:56.003317+00:00",
+    "finished_at": "2026-10-25T13:11:03.082448+00:00",
+    "exit_code": 0,
+    "version_id": "8ec17425-5690-46ed-801a-fe214ebaff3b",
+    "traffic_switched": false,
+    "no_bundle": true,
+    "keep_vars": true,
+    "strict": true,
+    "tag": "olc74-diag-dc3bef4a8b7adac2",
+    "raw_output_retained_privately": true,
+    "command": [
+      "versions",
+      "upload",
+      "--config",
+      "auth.wrangler.toml",
+      "--no-bundle",
+      "--keep-vars",
+      "--strict",
+      "--tag",
+      "olc74-diag-dc3bef4a8b7adac2",
+      "--message",
+      "Reviewed OLC-74 store diagnostics candidate"
+    ]
+  },
+  "upload_api": {
+    "operation": "inert version upload",
+    "worker": "olc-word-session-api",
+    "started_at": "2026-10-25T13:11:50.912637+00:00",
+    "finished_at": "2026-10-25T13:11:56.816701+00:00",
+    "exit_code": 0,
+    "version_id": "cfb80b7b-78ed-4da3-8a4a-4b9462c9deb0",
+    "traffic_switched": false,
+    "no_bundle": true,
+    "keep_vars": true,
+    "strict": true,
+    "tag": "olc74-diag-dc3bef4a8b7adac2",
+    "raw_output_retained_privately": true,
+    "command": [
+      "versions",
+      "upload",
+      "--config",
+      "api.wrangler.toml",
+      "--no-bundle",
+      "--keep-vars",
+      "--strict",
+      "--tag",
+      "olc74-diag-dc3bef4a8b7adac2",
+      "--message",
+      "Reviewed OLC-74 API diagnostics candidate"
+    ]
+  },
+  "activate_auth": {
+    "operation": "staging activation",
+    "component": "auth",
+    "started_at": "2026-10-25T13:13:11.811119+00:00",
+    "finished_at": "2026-10-25T13:13:18.048932+00:00",
+    "exit_code": 0,
+    "command": [
+      "versions",
+      "deploy",
+      "8ec17425-5690-46ed-801a-fe214ebaff3b@100",
+      "--name",
+      "olc-word-session-auth",
+      "--yes",
+      "--message",
+      "Authorized staging OLC-74 diagnostic store"
+    ],
+    "raw_output_retained_privately": true
+  },
+  "after_auth_readback": {
+    "checked_at": "2026-10-25T13:13:58.203Z",
+    "workers": {
+      "olc-word-session-auth": {
+        "id": "9d1a87ef-8a7a-40bc-9511-b2d94bcf7c6d",
+        "created_on": "2026-10-25T13:13:16.883762Z",
+        "versions": [
+          {
+            "version_id": "8ec17425-5690-46ed-801a-fe214ebaff3b",
+            "percentage": 100
+          }
+        ]
+      },
+      "olc-word-session-api": {
+        "id": "56ce5a31-b8d4-4817-8781-029bd294dc4c",
+        "created_on": "2026-10-25T04:13:50.180029Z",
+        "versions": [
+          {
+            "version_id": "da36e666-89d1-4a59-b7b8-6fec4ad88807",
+            "percentage": 100
+          }
+        ]
+      }
+    },
+    "pages": {
+      "id": "82da70e6-53ef-409e-b6cc-7f0ee91a9dd4",
+      "source": "e8ff0317ef699204783de90eb65b6377a95ce9cd"
+    }
+  },
+  "activate_api": {
+    "operation": "staging activation",
+    "component": "api",
+    "started_at": "2026-10-25T13:14:03.644094+00:00",
+    "finished_at": "2026-10-25T13:14:10.081641+00:00",
+    "exit_code": 0,
+    "command": [
+      "versions",
+      "deploy",
+      "cfb80b7b-78ed-4da3-8a4a-4b9462c9deb0@100",
+      "--name",
+      "olc-word-session-api",
+      "--yes",
+      "--message",
+      "Authorized staging OLC-74 diagnostic API"
+    ],
+    "raw_output_retained_privately": true
+  },
+  "after_api_readback": {
+    "checked_at": "2026-10-25T13:15:09.520Z",
+    "workers": {
+      "olc-word-session-auth": {
+        "id": "9d1a87ef-8a7a-40bc-9511-b2d94bcf7c6d",
+        "created_on": "2026-10-25T13:13:16.883762Z",
+        "versions": [
+          {
+            "version_id": "8ec17425-5690-46ed-801a-fe214ebaff3b",
+            "percentage": 100
+          }
+        ]
+      },
+      "olc-word-session-api": {
+        "id": "ea2e322e-1b05-4e5c-821e-18bff638481e",
+        "created_on": "2026-10-25T13:14:08.852908Z",
+        "versions": [
+          {
+            "version_id": "cfb80b7b-78ed-4da3-8a4a-4b9462c9deb0",
+            "percentage": 100
+          }
+        ]
+      }
+    },
+    "pages": {
+      "id": "82da70e6-53ef-409e-b6cc-7f0ee91a9dd4",
+      "source": "e8ff0317ef699204783de90eb65b6377a95ce9cd"
+    }
+  },
+  "activate_frontend": {
+    "operation": "staging activation",
+    "component": "frontend",
+    "started_at": "2026-10-25T13:15:15.702776+00:00",
+    "finished_at": "2026-10-25T13:15:25.294036+00:00",
+    "exit_code": 0,
+    "command": [
+      "pages",
+      "deploy",
+      "./frontend",
+      "--project-name",
+      "olc-word-staging",
+      "--branch",
+      "main",
+      "--commit-hash",
+      "dc3bef4a8b7adac234bb92720f97a9106179be25",
+      "--commit-dirty=false",
+      "--commit-message",
+      "Reviewed OLC-74 diagnostics; Engine eef8ed0794046922842258ce587aab722db5fcb4"
+    ],
+    "raw_output_retained_privately": true
+  },
+  "pages_readback": {
+    "checked_at": "2026-10-25T13:15:46.887Z",
+    "id": "4bcc267c-62f0-461b-98af-6583436a6bc4",
+    "source": "dc3bef4a8b7adac234bb92720f97a9106179be25",
+    "status": "success",
+    "url": "https://4bcc267c.olc-word-staging.pages.dev",
+    "created_on": "2026-10-25T13:15:22.530522Z",
+    "uses_functions": false
+  },
+  "builds_or_dependency_installs": 0,
+  "provider_or_completion_requests": 0,
+  "word_actions": 0,
+  "created_sessions": 0,
+  "created_diagnostic_records": 0,
+  "new_migrations": 0,
+  "namespace_or_data_resets": 0,
+  "github_main_writes": 0,
+  "merges": 0,
+  "original_packages_modified": false
+}

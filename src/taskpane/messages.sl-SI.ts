@@ -1,6 +1,11 @@
 import type { MessageCatalog } from "./messages.en-US";
 
 export const slSIMessages = {
+  diagnostics: {
+    copy: "Kopiraj diagnostiko",
+    copied: "Diagnostika kopirana",
+    failed: "Kopiranje diagnostike ni uspelo. Poskusite znova.",
+  },
   chrome: {
     documentTitle: "Dodatek OpenLegalCore za Microsoft Word",
     brandName: "OpenLegalCore za Word",

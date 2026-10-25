@@ -1,0 +1,132 @@
+{
+  "checked_at": "2026-10-25T13:12:32.280Z",
+  "workers": {
+    "olc-word-session-auth": {
+      "version_id": "8ec17425-5690-46ed-801a-fe214ebaff3b",
+      "old_version_id": "0ea8304d-3a08-4a4c-af7e-83aa2e2f6dff",
+      "latest_deployment": "b373fe59-d785-4146-950b-d496727b4bfb",
+      "active_versions": [
+        {
+          "version_id": "0ea8304d-3a08-4a4c-af7e-83aa2e2f6dff",
+          "percentage": 100
+        }
+      ],
+      "inert": true,
+      "bindings_equal": true,
+      "version_bindings_sha256": "fd69075412d5ef526cf3eed5daddbbdabbbf7d92e1ec3752c5142a6aadf60cae",
+      "settings_sha256": "087523df7556474e7628bb4b3ce02aa22e00b81225e3907b6144f8887aa193e0",
+      "settings": {
+        "compatibility_date": "2026-07-30",
+        "compatibility_flags": [],
+        "observability": null,
+        "logpush": false,
+        "limits": null,
+        "placement": {},
+        "tail_consumers": [],
+        "usage_model": "standard"
+      },
+      "namespace_unchanged": true,
+      "runtime": {
+        "migration_tag": "word-session-v1",
+        "compatibility_date": "2026-07-30",
+        "usage_model": "standard"
+      },
+      "migration_tag_unchanged": true,
+      "script_metadata": {
+        "etag": "24362f32c6a86eb818b5ed4ec3eeef1e0fbfe26cc9aaf0bd4f9522aff22f9126",
+        "handlers": [
+          "fetch"
+        ],
+        "named_handlers": [
+          {
+            "name": "WordSessionStore",
+            "handlers": [
+              "class"
+            ]
+          },
+          {
+            "name": "authorize",
+            "handlers": [
+              "class"
+            ]
+          },
+          {
+            "name": "verifyIdentity",
+            "handlers": [
+              "class"
+            ]
+          }
+        ],
+        "last_deployed_from": "wrangler"
+      },
+      "module_hashes": [
+        {
+          "name": "JOSE-LICENSE.txt",
+          "sha256": "8078b0829d6c3e9ecde2f003e1966e4cad3efc6e7a640efbab0313cc166b1af1"
+        },
+        {
+          "name": "auth-worker.mjs",
+          "sha256": "a59e8c6c67517da21548e607ad4eefbdb14375478668b793d5dade0c987513e2"
+        }
+      ],
+      "entry_bytes_match": true
+    },
+    "olc-word-session-api": {
+      "version_id": "cfb80b7b-78ed-4da3-8a4a-4b9462c9deb0",
+      "old_version_id": "da36e666-89d1-4a59-b7b8-6fec4ad88807",
+      "latest_deployment": "56ce5a31-b8d4-4817-8781-029bd294dc4c",
+      "active_versions": [
+        {
+          "version_id": "da36e666-89d1-4a59-b7b8-6fec4ad88807",
+          "percentage": 100
+        }
+      ],
+      "inert": true,
+      "bindings_equal": true,
+      "version_bindings_sha256": "c79a397df8130cb477d8f5ff0d01d8f73635e5a19ab3066a71737fc3de33ad80",
+      "settings_sha256": "087523df7556474e7628bb4b3ce02aa22e00b81225e3907b6144f8887aa193e0",
+      "settings": {
+        "compatibility_date": "2026-07-30",
+        "compatibility_flags": [],
+        "observability": null,
+        "logpush": false,
+        "limits": null,
+        "placement": {},
+        "tail_consumers": [],
+        "usage_model": "standard"
+      },
+      "namespace_unchanged": true,
+      "runtime": {
+        "compatibility_date": "2026-07-30",
+        "usage_model": "standard"
+      },
+      "migration_tag_unchanged": true,
+      "script_metadata": {
+        "etag": "577e3943dd794cf809dd31978ce0ae12643d527db4c5dc81fb8a844dd39dac31",
+        "handlers": [
+          "fetch"
+        ],
+        "named_handlers": [
+          {
+            "name": "wordApi",
+            "handlers": [
+              "class"
+            ]
+          }
+        ],
+        "last_deployed_from": "wrangler"
+      },
+      "module_hashes": [
+        {
+          "name": "api-worker.mjs",
+          "sha256": "2fc450b6add23a03f132c38d229390b52228407a05024b98a78856df76292fe6"
+        },
+        {
+          "name": "JOSE-LICENSE.txt",
+          "sha256": "8078b0829d6c3e9ecde2f003e1966e4cad3efc6e7a640efbab0313cc166b1af1"
+        }
+      ],
+      "entry_bytes_match": true
+    }
+  }
+}
