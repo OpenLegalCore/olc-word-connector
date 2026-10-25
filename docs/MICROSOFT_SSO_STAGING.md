@@ -1,11 +1,12 @@
 # Microsoft SSO staging and rollback
 
-**Corrected API activated; final canonical-URL cache-header check in progress.**
+**Microsoft API and task pane activated; actual Word acceptance pending.**
 The owner's actual Microsoft API token is cryptographically verified. The first
 attempt was rolled back after 503; corrected API issuance/session/models/revoke
 now pass. Pages canonicalizes `.html` to extensionless URLs, so no-store rules
-cover both spellings. Actual Word acceptance remains pending.
-See [runtime regression and rollback evidence](evidence/olc72-worker-runtime-20261025/README.md). The working delivered
+cover both spellings and all 69 delivered file/header comparisons pass. See
+[actual delivery and manual acceptance protocol](evidence/olc72-microsoft-delivery-20261025/README.md).
+See [runtime regression and rollback evidence](evidence/olc72-worker-runtime-20261025/README.md). The retained rollback
 baseline is `aa5d369f3e99067e8059a50fdd99f22535ca9810`, not the older pre-session
 frontend. Its Pages bytes, both session Workers, SQLite namespace, original
 private credentials, protected legacy gateway/routes and prior recovery bundles
@@ -22,8 +23,8 @@ remain retained. The new candidate is on the existing draft PR #2.
    the final diff and independently inspect its staged artifacts. No older CI
    or synthetic test is a real Word acceptance.
 3. Freshly compare the current active Pages/Worker versions and existing bindings
-   with the retained baseline. Stop on unexplained drift. This preparation did
-   not reread or change live resources. Keep baseline Pages, both session Worker
+   with the retained baseline. Stop on unexplained drift. The actual activation
+   record contains the completed readback checks. Keep baseline Pages, both session Worker
    versions/configurations and the existing legacy gateway recoverable. The
    previous pre-aa5 rollback is a separate older recovery layer.
 4. Preserve the approved real-host manifest bytes, GUID/version/permissions and

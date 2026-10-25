@@ -56,13 +56,14 @@ older hosts use a Microsoft Office-dialog fallback. Staging authorization remain
 restricted to the configured verified owner. Draft, language and attachment choice
 survive recovery in an open pane, with no automatic message replay or Word write.
 
-This candidate is **IN REVIEW, NOT ACTIVATED**. Microsoft registration/consent and
-verified owner configuration are missing activation inputs; actual Microsoft
-Word/NAA acceptance remains NOT_RUN. The currently delivered aa5 implementation
-and its [successful Cloudflare activation evidence](docs/evidence/olc72-word-session-activation-20261024/README.md)
-remain intact. The owner's manually signed-in usable-form report is accepted.
-The existing outbound Tunnel, DNS, local Engine and server-only credentials are
-unchanged. See the [Microsoft activation/rollback gates](docs/MICROSOFT_SSO_STAGING.md).
+This candidate is **IN REVIEW; Microsoft SSO staging is activated**. The dedicated
+registrations and cryptographically verified owner authorization are configured.
+Actual API issuance, session/model discovery, revocation and delivered asset/header
+checks pass. Actual Microsoft Word/NAA startup, reopening and expiry acceptance
+remain pending; automatic tests and the earlier aa5 usable-form report do not
+establish those outcomes. The aa5 rollback is retained. Tunnel, DNS, local Engine
+and server-only credentials are unchanged. See [actual delivery evidence](docs/evidence/olc72-microsoft-delivery-20261025/README.md)
+and [rollback](docs/MICROSOFT_SSO_STAGING.md).
 
 |                         |                                                                         |
 | ----------------------- | ----------------------------------------------------------------------- |

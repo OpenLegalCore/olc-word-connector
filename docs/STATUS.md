@@ -12,8 +12,10 @@ through MSAL/NAA as the replacement user authentication boundary. Engine content
 work is separate and is not part of this change.
 
 The corrected Microsoft API is **ACTIVATED** and its actual owner-token safe
-probe passes. Pages source `4c99928` is delivered, with canonical-URL cache rules
-being corrected before Word acceptance. The retained rollback implementation is
+probe passes. Pages source `edfaf1d` is delivered after successful exact-head CI. All 69
+static comparisons, canonical-URL no-store/CSP checks and public configuration
+checks pass. Actual Word acceptance remains pending owner execution. See
+[actual delivery and manual protocol](evidence/olc72-microsoft-delivery-20261025/README.md). The retained rollback implementation is
 `aa5d369f3e99067e8059a50fdd99f22535ca9810`. The owner's manual-login screenshot
 showing **OLC Engine connected** and a usable form is accepted as evidence of
 that delivered flow. No repeated browser connection, Cloudflare login or new
@@ -47,7 +49,8 @@ acquisition path without copying tokens. An additive Pages overlay preserves the
 aa5 application while the owner signs in; no Worker/Engine authorization changes
 occur during enrollment. The additive overlay was delivered after successful exact-head CI for
 `4e70228`; 60/60 static comparisons and the existing anonymous API denial passed.
-The task pane remains aa5d369 and all Workers are unchanged. The loopback
+At that enrollment-overlay stage the task pane remained aa5d369 and all Workers
+were unchanged. The loopback
 receiver completed owner verification. The first API activation returned 503
 before capability issuance and was rolled back to aa5 Worker versions.
 A deterministic workerd regression now reproduces the unsupported `redirect:
@@ -55,7 +58,8 @@ A deterministic workerd regression now reproduces the unsupported `redirect:
 Correction `4c99928` passed all gates/CI and was activated: actual Microsoft
 issuance, session, models and revoke passed (200), then revoked session returned
 401. Final static checks found `.html` canonicalization bypassed the no-store
-rules; explicit extensionless rules are added. Actual Word acceptance is pending. See
+rules; explicit extensionless rules were delivered in `edfaf1d` and passed all
+69 static/header comparisons. Actual Word acceptance is pending. See
 [owner enrollment](MICROSOFT_SSO.md#owner-enrollment-continuation-2026-10-25).
 
 See the [fresh preflight evidence](evidence/olc72-activation-preflight-20261025/README.md).

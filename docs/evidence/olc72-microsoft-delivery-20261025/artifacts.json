@@ -1,0 +1,31 @@
+{
+  "head": "edfaf1dc3367cdd76c24ee9e176efb6bff2cedf8",
+  "previousPages": "464e292c-cf8d-4c85-a0e9-b02a4748a9d2",
+  "onlyArtifactChange": "_headers canonical no-store rules",
+  "sha256": {
+    "microsoft-auth.df10041a98e9362e5574.js": "d01f8bd6307b155c727c3d0e67772277d56df15f117b456707940f543b12c129",
+    "commands.7ecfbe69559036f859a7.js": "827934507dc9ef32819cdcfbba8cde20a10448efc4a69824fa866dbe2787b6b9",
+    "signin.html": "baeed5a06fe1014c73993c0902addf42af9e5526c28237f82555a7106f32ae03",
+    "taskpane.f0c0f90aebbb54b836d8.js.LICENSE.txt": "8c9946dfc859a2bfb26cc541125631cd96e7110fa20a702eb19275c9d1658805",
+    "_headers": "d7ba8a562548d191cfd0d7249b5a081a37fe235efc95dd6dc7976213582c0ad5",
+    "microsoft-signin.a4f0be7ff4c9506a7314.js.LICENSE.txt": "8c9946dfc859a2bfb26cc541125631cd96e7110fa20a702eb19275c9d1658805",
+    "polyfill.5f53caeebcc124812129.js": "43ed416b27bded9208218535ad0b2fe9c33476dfad7a70b9e793a594f811e6e0",
+    "MSAL-LICENSE.txt": "c544adf8f0d43453d9fdf6c11da19605d12d89806a7870653169b8cc97f5bb53",
+    "taskpane.f0c0f90aebbb54b836d8.js": "568ec98e091f4ee3b39d7506caf7552165df959862933b300c942c6693ce2346",
+    "microsoft-signin.html": "2065c331cb714cd5dbc97e63e9d98559ba3acff4ef0e346ee823bc67e02ed452",
+    "microsoft-redirect.html": "459da2c8c2fc5cd86aac80a8fcdc30aa2f8e4beb08bd484c882e62efbcc829ae",
+    "f801043f68c0679f8271.css": "73b0ae18f9499c6b869223adbc826b7e9d022d54cca4501de9f3ca3761b9289c",
+    "microsoft-signin.a4f0be7ff4c9506a7314.js": "4c0d375e43d98f5113d29f8bcb2fbc0e3016483cdc92fa35de9b096588ce40b5",
+    "commands.html": "1f3f6c3acaf9d227405a9f161eecc2aa08421aabdb1f7be921da61b6ae2cc999",
+    "microsoft-auth.df10041a98e9362e5574.js.LICENSE.txt": "107af2f3a281dd103744d3cdbc0675a2d7016bc6183c06b0945832873081a7c0",
+    "taskpane.html": "2ff94b7a670c9b7d726b0327dd5022fa4a206858f1a0ed52078a99b8f3fec3e9",
+    "signin.9179a61cd92a01bb2e3f.js": "ee31786cdc45585452a4abed9b856e1793544ab900216f23c3220cec9e352cf4",
+    "manifest.xml": "2ce9617367832ec2bb3b141e28e8ce87467030210ec62a7db37bb597950d200e",
+    "microsoft-redirect.3694cdae87bc70cb7bbf.js": "3c9bf0220ac2051875b3b4a3a92f7b972725b1a980b0e3753e3b996387e9dc51",
+    "assets/icon-128.png": "8b1413f73e63b7ad079b4cd735b89bd854933326da505fee6e45613527fa96ce",
+    "assets/office/1.0.0.2/openlegalcore-mark-64.png": "72415b81615fa6026db2b4affc8e22de26f490e36d020f517fecc26893ec5769",
+    "assets/office/1.0.0.2/openlegalcore-mark-32.png": "0a605930e9605de57ac66431d5241862b82be1f5b72378a3c77fa056dff543e2",
+    "assets/office/1.0.0.2/openlegalcore-mark-16.png": "71bf906b86e19ef6660af72dcae7fcb16b72d8b99d34319bf7154f7afac5c57b",
+    "assets/office/1.0.0.2/openlegalcore-mark-80.png": "54c5cde1c8af4565f373108793729704e79fc5ce9083739769cb5896c2749736"
+  }
+}
