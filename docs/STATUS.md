@@ -1,5 +1,13 @@
 # Word Connector — OLC-72 and OLC-74 review status
 
+## Inactive OLC-74 correlated capture candidate
+
+[Prospective diagnostic correlation](evidence/olc74-correlated-capture/README.sl.md)
+adds final-wire hash/bytes and Engine completion ACK to the existing private
+receipt, with unchanged TTL, authentication and Apply. It is not activated or an
+incident fix. The owner export has been analyzed; the historical run join and
+specific guard remain unproven. Prior source findings and failed evidence remain.
+
 Updated: 2026-10-25. Microsoft SSO reopen and post-idle access checks have
 **MANUAL PASS** owner acceptance; PR #2 remains draft and under review,
 `codex/olc-72-word-native-sse`.

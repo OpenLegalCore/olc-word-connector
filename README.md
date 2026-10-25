@@ -297,3 +297,6 @@ For evaluation, integration, research collaboration or operated-service
 discussions, see [Partnerships and services](PARTNERSHIPS.md). OpenLegalCore is
 open to working with teams that want to evaluate or extend trustworthy legal-AI
 workflows while retaining clear technical and data-governance boundaries.
+
+Inactive [OLC-74 correlated capture preparation](docs/evidence/olc74-correlated-capture/README.sl.md)
+keeps the current SSO and document workflow unchanged; it is not a delivered incident fix.

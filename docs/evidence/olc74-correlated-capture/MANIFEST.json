@@ -1,0 +1,16 @@
+{
+  "scope": "PROSPECTIVE_CORRELATED_CAPTURE_ONLY_NOT_ACTIVATED",
+  "base": "f894b409012356d25c1237965aed53982a9ef5d7",
+  "files": {
+    "docs/evidence/olc74-correlated-capture/README.sl.md": "6cad66ee903f6b119aee5b436734300cb9a62be42e9254ea06463f6e9fd20560",
+    "docs/evidence/olc74-correlated-capture/verification.json": "f85719c09d83644970c7e9a86367dd1f8c0fd27a61656c7b83e87078e35455bf"
+  },
+  "code_files": {
+    "infrastructure/cloudflare/word-gateway-example/worker.js": "e2a02bda643177ef8701687f9ebaa0a0914520c8632945a9cc6b1d36222b34c5",
+    "infrastructure/cloudflare/word-session/api-worker.js": "879f4b4a91fa7f1689dcf60d805f02ebfefd8ca6230178848a9df1a80defa313",
+    "infrastructure/cloudflare/word-session/diagnostics.js": "9ac2e79bb57d5df636b2d6b1219b8efbb1e3fa03909e1d2273afb390e3f19e98",
+    "src/chat/diagnostics.ts": "42bb913150a7d0920856626ab00111f9f568698466f5acc6e243635233d69e51",
+    "test/fixtures/correlated-engine-capture.mjs": "47868f4eb9d7dded3e2b1a1ebe4e6b1e2a81e5b1421995036e6160ff2848d80a",
+    "test/gateway/correlatedCapture.test.ts": "25d49500e3c7f749463523c4afa710bfdb1f2bb7dad0db042ca8ffa912619f49"
+  }
+}

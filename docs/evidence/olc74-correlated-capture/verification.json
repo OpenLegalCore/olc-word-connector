@@ -1,0 +1,105 @@
+{
+  "status": "INACTIVE_OFFLINE_CAPTURE_QUALIFIED_NOT_INCIDENT_FIX",
+  "engine_base": "1f81f126a5a70cb17fd9f5e78290c274d7f393fa",
+  "runtime_engine_unchanged": "eef8ed0794046922842258ce587aab722db5fcb4",
+  "word_base": "f894b409012356d25c1237965aed53982a9ef5d7",
+  "runtime_word_unchanged": "de34ecdbc6d53ce756ecfc2e44b7c7ff6133339f",
+  "engine_final_full": {
+    "passed": 2586,
+    "skipped": 461,
+    "failed": 0,
+    "exit": 0,
+    "seconds": 132.82,
+    "skip_reasons": {
+      "dedicated synthetic PostgreSQL DSNs not supplied": 64,
+      "isolated synthetic PostgreSQL only": 66,
+      "dedicated synthetic worker/operator PostgreSQL DSNs required": 17,
+      "pinned Studio Git object not available": 1,
+      "dedicated synthetic PostgreSQL admin DSN not supplied": 4,
+      "isolated synthetic PG and unchanged LWS validation checkout required": 6,
+      "own synthetic PostgreSQL only": 96,
+      "synthetic PostgreSQL required": 5,
+      "isolated synthetic PostgreSQL required": 10,
+      "synthetic PostgreSQL DSNs required": 7,
+      "synthetic disposable PostgreSQL only": 27,
+      "optional pinned OCR SDK extra required": 14,
+      "dedicated synthetic OCR PostgreSQL only": 35,
+      "dedicated synthetic PostgreSQL only": 28,
+      "isolated synthetic PostgreSQL DSNs required": 5,
+      "own synthetic preparation PostgreSQL required": 7,
+      "dedicated own synthetic PostgreSQL only": 28,
+      "own disposable PostgreSQL DSNs required": 28,
+      "own isolated PostgreSQL required": 3,
+      "isolated PostgreSQL DSNs were not supplied": 6,
+      "external terminal candidate path not supplied": 4
+    },
+    "linked_word_checkout_supplied": true
+  },
+  "new_linked_regressions": {
+    "passed": 7,
+    "includes_duplicate_same_wire": true,
+    "real_boundaries": [
+      "Word builder/adapter/session/API/final gateway",
+      "Miniflare SQLite authenticated receipt",
+      "Engine loopback HTTP/workflow",
+      "Writer parent/child/bootstrap/SDK/IPC",
+      "actual validators and private InspectionRecorder",
+      "ordinary user private export join/readback"
+    ],
+    "controlled": [
+      "model provider HTTP transports only"
+    ],
+    "not_additive_to_full_count": true
+  },
+  "ordinary_private_reader_regression": {
+    "passed": 1,
+    "included_in_full": true
+  },
+  "word_final_full": {
+    "passed": 741,
+    "skipped": 1,
+    "failed": 0,
+    "exit": 0,
+    "live_skip": "protected Engine live contract: live environment opt-in not enabled"
+  },
+  "word_new_closed_metadata_tests": {
+    "passed": 9,
+    "included_in_word_full": true
+  },
+  "word_gates": {
+    "typecheck_exit": 0,
+    "lint_exit": 0,
+    "production_build": "PASS_WITH_3_EXISTING_WEBPACK_PERFORMANCE_WARNINGS",
+    "bundle_isolation": "PASS",
+    "manifest_package_lock": "UNCHANGED_NOT_REVALIDATED"
+  },
+  "original_development_failures_preserved": {
+    "sandbox": "loopback socket unavailable in sandbox; approved ordinary-user isolated test run used",
+    "first_full_wrong_interpreter": "collection missing pypdf/Pillow/cryptography; reused existing locked interpreter; no dependency edits",
+    "first_full": "missing pinned Node SDK fixture; null completion_id changed old private identity shape; repaired conditional field and reused identical-lock SDK",
+    "test_expectations": "malformed JSON rejected earlier by Word; early contract guard has no writer_source_ids/notice bytes yet; tests now assert actual distinct paths"
+  },
+  "new_provider_calls": 0,
+  "live_mutations": 0,
+  "historical_replay": "NOT_RUN",
+  "activation": "NOT_RUN",
+  "historical_incident_join": "UNPROVEN",
+  "historical_guard": "NOT_RETAINED",
+  "independent_review": "PASS",
+  "dependency_symlinks": "OWN_ONLY_REMOVED_AFTER_GATES",
+  "peer_engine_files": {
+    "src/lexai_engine/chat_protocol.py": "bc683064bc08d74c91ff694e1fb79c1c2eb1e89a474f292b293f8a31aa7ced77",
+    "src/lexai_engine/server.py": "0de52679f1ab10978765a3d7e013edf5f3973b8b975e7452960412b864407d43",
+    "src/lexai_engine/workflow.py": "6b6e8e557800e0b0889f8bd0fd9f7af31da3ca1b1027f3b65189b1c43acb3fc2",
+    "examples/word_capture_join.py": "375365d8a0fc7f3c49946973b3aa26f1cddb5fdd53f8dfd3854a301e526c5bf4",
+    "tests/test_word_correlated_capture.py": "b93895842e478ba6d552c8daf96e12f792c33caff5ae32325e1368b341cb7dbc"
+  },
+  "peer_word_files": {
+    "infrastructure/cloudflare/word-gateway-example/worker.js": "e2a02bda643177ef8701687f9ebaa0a0914520c8632945a9cc6b1d36222b34c5",
+    "infrastructure/cloudflare/word-session/api-worker.js": "879f4b4a91fa7f1689dcf60d805f02ebfefd8ca6230178848a9df1a80defa313",
+    "infrastructure/cloudflare/word-session/diagnostics.js": "9ac2e79bb57d5df636b2d6b1219b8efbb1e3fa03909e1d2273afb390e3f19e98",
+    "src/chat/diagnostics.ts": "42bb913150a7d0920856626ab00111f9f568698466f5acc6e243635233d69e51",
+    "test/fixtures/correlated-engine-capture.mjs": "47868f4eb9d7dded3e2b1a1ebe4e6b1e2a81e5b1421995036e6160ff2848d80a",
+    "test/gateway/correlatedCapture.test.ts": "25d49500e3c7f749463523c4afa710bfdb1f2bb7dad0db042ca8ffa912619f49"
+  }
+}

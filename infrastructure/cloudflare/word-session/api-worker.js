@@ -184,7 +184,7 @@ async function wordApiRequest(
       forwarded,
       { ...env, PUBLIC_HOST: url.hostname },
       fetchImpl,
-      (stage, status) => trace.record(stage, status)
+      (stage, status, engineJoin) => trace.record(stage, status, engineJoin)
     );
   } catch {
     return failure(503, "SERVICE_UNAVAILABLE");

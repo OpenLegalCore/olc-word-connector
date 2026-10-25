@@ -14,11 +14,30 @@ const stages = [
   "transfer_cancelled",
   "transfer_error",
 ];
+export function validEngineJoin(value) {
+  return (
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.keys(value).sort().join(",") === "bodySha256,bodyUtf8Bytes,completionId" &&
+    typeof value.bodySha256 === "string" &&
+    /^[0-9a-f]{64}$/.test(value.bodySha256) &&
+    Number.isInteger(value.bodyUtf8Bytes) &&
+    value.bodyUtf8Bytes > 0 &&
+    value.bodyUtf8Bytes <= 65536 &&
+    (value.completionId === null ||
+      (typeof value.completionId === "string" &&
+        /^chatcmpl-[0-9a-f]{32}$/.test(value.completionId)))
+  );
+}
 export function validEvent(event) {
   if (!event || typeof event !== "object" || Array.isArray(event)) return false;
   const status = event.stage === "upstream_http" || event.stage === "response_http";
+  const joined = event.engineJoin !== undefined;
   return (
-    Object.keys(event).sort().join(",") === (status ? "at,httpStatus,stage" : "at,stage") &&
+    (!joined || (event.stage === "upstream_http" && validEngineJoin(event.engineJoin))) &&
+    Object.keys(event).sort().join(",") ===
+      (joined ? "at,engineJoin,httpStatus,stage" : status ? "at,httpStatus,stage" : "at,stage") &&
     stages.includes(event.stage) &&
     typeof event.at === "string" &&
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(event.at) &&
@@ -38,12 +57,13 @@ export class DiagnosticTrace {
     this.auth = { token, origin, attemptId, frontendVersion };
     this.record("accepted");
   }
-  record(stage, httpStatus) {
+  record(stage, httpStatus, engineJoin) {
     if (!this.auth) return;
     const event = {
       stage,
       at: new Date().toISOString(),
       ...(httpStatus === undefined ? {} : { httpStatus }),
+      ...(engineJoin === undefined ? {} : { engineJoin }),
     };
     if (!validEvent(event)) return;
     this.pending = this.pending.then(async () => {

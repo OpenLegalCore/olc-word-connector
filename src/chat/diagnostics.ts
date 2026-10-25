@@ -114,6 +114,11 @@ export interface DiagnosticReceipt {
     readonly stage: (typeof transferStages)[number];
     readonly at: string;
     readonly httpStatus?: number;
+    readonly engineJoin?: {
+      readonly bodySha256: string;
+      readonly bodyUtf8Bytes: number;
+      readonly completionId: string | null;
+    };
   }[];
 }
 export const validAttemptId = (value: unknown): value is string =>
@@ -151,7 +156,21 @@ export function diagnosticReceipt(
     return;
   for (const event of value.events) {
     if (
-      !(keys(event, "at,stage") || keys(event, "at,httpStatus,stage")) ||
+      !(
+        keys(event, "at,stage") ||
+        keys(event, "at,httpStatus,stage") ||
+        (keys(event, "at,engineJoin,httpStatus,stage") &&
+          event.stage === "upstream_http" &&
+          keys(event.engineJoin, "bodySha256,bodyUtf8Bytes,completionId") &&
+          typeof event.engineJoin.bodySha256 === "string" &&
+          /^[0-9a-f]{64}$/.test(event.engineJoin.bodySha256) &&
+          Number.isInteger(event.engineJoin.bodyUtf8Bytes) &&
+          (event.engineJoin.bodyUtf8Bytes as number) > 0 &&
+          (event.engineJoin.bodyUtf8Bytes as number) <= 65536 &&
+          (event.engineJoin.completionId === null ||
+            (typeof event.engineJoin.completionId === "string" &&
+              /^chatcmpl-[0-9a-f]{32}$/.test(event.engineJoin.completionId))))
+      ) ||
       !transferStages.includes(event.stage as (typeof transferStages)[number]) ||
       typeof event.at !== "string" ||
       !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(event.at) ||

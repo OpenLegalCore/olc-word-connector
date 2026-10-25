@@ -507,7 +507,27 @@ export async function handleRequest(request, env, fetchImpl = fetch, observe = (
     return gatewayError(502, "UPSTREAM_UNAVAILABLE");
   }
 
-  observe("upstream_http", upstream.status);
+  // Hash the final serialized bytes actually supplied to fetch, not the pane
+  // object or the first gateway's differently formatted body. No body is logged.
+  let engineJoin;
+  try {
+    if (body !== undefined) {
+      const bytes = new TextEncoder().encode(body);
+      const fingerprint = await crypto.subtle.digest("SHA-256", bytes);
+      const ack = upstream.headers.get("X-OLC-Completion-ID");
+      engineJoin = {
+        bodySha256: Array.from(new Uint8Array(fingerprint), (b) =>
+          b.toString(16).padStart(2, "0")
+        ).join(""),
+        bodyUtf8Bytes: bytes.byteLength,
+        completionId: /^chatcmpl-[0-9a-f]{32}$/.test(ack ?? "") ? ack : null,
+      };
+    }
+  } catch {
+    // Optional diagnostics cannot change or retry the upstream response.
+    engineJoin = undefined;
+  }
+  observe("upstream_http", upstream.status, engineJoin);
   if (upstream.status !== 200 || upstream.redirected) {
     await cancelBody(upstream.body);
     return gatewayError(502, "UPSTREAM_REJECTED");
