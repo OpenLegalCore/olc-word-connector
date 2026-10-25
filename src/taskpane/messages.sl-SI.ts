@@ -20,7 +20,7 @@ export const slSIMessages = {
     checkConnection: "Preveri povezavo",
     checkingConnection: "Preverjam povezavo …",
     connectionUnchecked: "Preverite dostop iz tega podokna brez oddaje sporočila.",
-    connectionPassed: "Obe preverjanji dostopa sta uspeli. Sporočilo ni bilo poslano.",
+    connectionPassed: "Povezava je vzpostavljena. Sporočilo ni bilo poslano.",
     connectionFailed: "Preverjanje dostopa ni uspelo. Vaš vnos je ohranjen.",
     checkedAt: (time: string): string => `Zadnje preverjanje: ${time}`,
   },
@@ -46,10 +46,10 @@ export const slSIMessages = {
     footerMessage: "NEAKTIVNO",
   },
   connecting: {
-    statusLabel: (provider: string): string => `Preverjanje storitve ${provider}`,
+    statusLabel: (provider: string): string => `Povezovanje s storitvijo ${provider}`,
     statusDetail: "POVEZOVANJE",
     eyebrow: "POVEZAVA S STORITVIJO",
-    heading: "Preverjanje izbrane storitve …",
+    heading: "Povezovanje …",
     description: "To preverjanje ne pošlje besedila dokumenta in dokumenta ne more spremeniti.",
     footerEyebrow: "MEJA STORITVE",
     footerMessage: "PREVERJANJE POTEKA",
@@ -137,15 +137,15 @@ export const slSIMessages = {
     eyebrow: "ZAŠČITENA SEJA",
     heading: "Potreben je dostop",
     description:
-      "Za kratkotrajno Word sejo se prijavite v ločenem oknu. Vnos je ohranjen in ne bo samodejno poslan.",
-    signInOpenedTitle: "Varna prijava je odprta",
+      "Microsoft zahteva prijavo ali soglasje. Vnos je ohranjen in ne bo samodejno poslan.",
+    signInOpenedTitle: "Microsoftova prijava",
     signInOpenedMessage:
       "Office lahko pred odprtjem okna vpraša Allow / Ignore. Allow odpre varno prijavo; Ignore dostopa ne spremeni. Po vrnitvi se preveri samo povezava, vaše sporočilo se ne pošlje.",
-    signInFailedTitle: "Varne prijave ni bilo mogoče dokončati",
+    signInFailedTitle: "Microsoftove prijave ni bilo mogoče dokončati",
     signInFailedMessage:
       "Prijave ali varne izmenjave kode ni bilo mogoče dokončati. Vnos je ohranjen; prijavo znova odprite, ko želite.",
     retrySearch: "Preveri povezavo",
-    openSecureSignIn: "Odpri varno prijavo",
+    openSecureSignIn: "Prijava z Microsoftom",
     completedTitle: "Word seja je ustvarjena",
     closedTitle: "Prijava ni bila dokončana",
     closedMessage:
@@ -160,8 +160,10 @@ export const slSIMessages = {
   connectionError: {
     deniedHeading: "Dostop je zavrnjen",
     descriptionFor: (code: string): string => {
+      if (code === "INVALID_CONFIGURATION")
+        return "Microsoftov dostop še ni konfiguriran. Obrnite se na upravljavca; vnos je ohranjen.";
       if (code === "ACCESS_DENIED")
-        return "Zaščitena zahteva je bila zavrnjena (403). To ne dokazuje poteka seje. Vnos je ohranjen; upravljavec mora preveriti dovoljenja.";
+        return "Ta Microsoftov račun nima dovoljenja za uporabo OpenLegalCore. Vnos je ohranjen; obrnite se na upravljavca.";
       if (code === "NETWORK_ERROR")
         return "Zahteva ni dosegla storitve. Preverite omrežje; ponovna prijava morda ne bo pomagala. Vnos je ohranjen.";
       if (code === "SERVICE_UNAVAILABLE")

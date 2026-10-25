@@ -1,0 +1,15 @@
+{
+  "result": "PREPARED_NOT_ACTIVATED",
+  "deliveredBaseline": "aa5d369f3e99067e8059a50fdd99f22535ca9810",
+  "startingHead": "d6c365840759364fc7793bb6b202a748113ebfac",
+  "artifactFiles": 48,
+  "manifestSha256": "2ce9617367832ec2bb3b141e28e8ce87467030210ec62a7db37bb597950d200e",
+  "approvedCssEqual": true,
+  "approvedIconsEqual": true,
+  "microsoftRegistration": "NOT_CONFIGURED",
+  "actualWordMicrosoftSSO": "NOT_RUN",
+  "liveControlPlaneReread": "NOT_RUN",
+  "providerCompletions": 0,
+  "documentWrites": 0,
+  "networkTopologyChanged": false
+}

@@ -1,86 +1,84 @@
 # Word Connector — OLC-72 review status
 
 Updated: 2026-10-24. **IN REVIEW**, draft PR #2,
-`codex/olc-72-word-native-sse`. This owner-approved architecture change starts at
-`d419b477c527f5437e5a32429c7b7f19319f0a20`, retained in a local recovery ref.
-The original user checkout, its two documentation edits, other clones and old
-recovery packages are preserved.
+`codex/olc-72-word-native-sse`.
 
-The candidate replaces the pane's cookie prerequisite with an explicit native
-Office login, S256 PKCE, verified human Access JWT, single-use codes (max 60s)
-and opaque Word sessions (max 15m). Code consumption, expiry, revocation and
-rate limits use SQLite Durable Object transactions. A separate API Worker checks
-session scope before protected operations and again after completion-body
-admission, immediately before SSE/Engine access. Cleanup is transactional too.
-Engine bearer and Access service credentials remain server-side and reuse the
-originals; no new Engine key or Access service-token pair was created. Word
-capabilities remain transient. The owner-authorized
-staging activation reused the two provisioned Workers and SQLite namespace,
-added the narrow routes/auth destination and delivered the approved frontend.
-Existing policies, legacy gateway/routes and DNS remain unchanged. See the
-[sanitized execution record](evidence/olc72-word-session-activation-20261024/README.md).
+## Primary outcome still required
 
-The accepted form, colors, typography, automatic removable selection, SL/EN,
-Send/Stop, Engine document-review profile, strict stop → DONE, actual usage/null
-and guarded document writes remain unchanged. Storage Access is not imported by
-the new production composition. No refresh token, persistent draft/history,
-automatic completion, silent-login promise or provider fallback is added.
+Remove repeated **Cloudflare user sign-ins** and access interruptions after
+idle time or reopening the pane. A manually recovered usable form does not
+close this usability objective. The owner approved Microsoft identity from Word
+through MSAL/NAA as the replacement user authentication boundary. Engine content
+work is separate and is not part of this change.
 
-| Evidence / delivery layer | Actual status |
+The Microsoft candidate is implemented and locally validated, **NOT ACTIVATED**.
+The currently working staging implementation remains
+`aa5d369f3e99067e8059a50fdd99f22535ca9810`. The owner's manual-login screenshot
+showing **OLC Engine connected** and a usable form is accepted as evidence of
+that delivered flow. No repeated browser connection, Cloudflare login or new
+Word test was requested or simulated as a substitute for that report.
+
+## Candidate implementation
+
+- Runtime `NestedAppAuth 1.1` detection, MSAL silent acquisition/renewal and an
+  explicit Microsoft-only interactive action when login/consent is required.
+  Unsupported hosts have a same-origin Office-dialog/standard-MSAL fallback.
+- API-specific delegated scope and distinct API audience, trusted Microsoft
+  discovery/JWKS, signature/key issuer, issuer, lifetime, SPA client and scope
+  validation. Graph tokens, ID-token substitutes and other valid Microsoft
+  users are not accepted as application authorization.
+- Explicit owner `tid:oid` authorization, including checks for existing
+  capabilities on each protected API access and immediately before SSE start.
+- Coalesced, bounded renewal of the memory-only 15-minute Word capability from
+  the silently obtained Microsoft token. No persistent token/draft storage,
+  Cloudflare user fallback, automatic completion replay or automatic Word write.
+- Connecting → usable form; one main Microsoft sign-in action; manual check in
+  Settings. Main-view internal error codes are removed. Preflight before Send
+  preserves draft, locale and attached/removed selection when interaction is
+  required; recovery returns to the form without submitting it.
+- Existing API forwarding, server-only Engine/service credentials, outbound
+  Tunnel/cloudflared on Medo, DNS, routes and local Engine remain unchanged.
+  There is no inbound connection or port forwarding.
+
+## Evidence and limits
+
+| Layer | Actual result |
 | --- | --- |
-| Owner's individual Access required cause | Unproven; not declared resolved |
-| Implementation | Local auth/API Workers, SQLite store and pane integration implemented |
-| Full offline suite | 608 pass, 1 protected live skip; 35 passing files, 1 skipped |
-| Local contribution gates | All 16 pass, including production audit (0 vulnerabilities), 4 manifests, 5 frontend builds, Worker build and bundle isolation |
-| Real-browser synthetic qualification | Firefox 157, all cookies blocked, actual production bundle, synthetic Office/Access/Engine; no completion |
-| Open-pane draft/locale/removed attachment | Retained through synthetic expiry/recovery; no automatic resend |
-| New pane | New explicit login; prior memory session/draft not persisted |
-| Actual Word edge cases with the new session architecture | **NOT_RUN in this continuation**; no connected supported Word surface available |
-| Functional/visual owner evidence | Existing evidence preserved; PR #2 and OLC-72 also record the owner's 2026-10-24 normal-operation report, without an exact artifact SHA or separate expiry/reopen qualification |
-| Active staging source | `aa5d369f3e99067e8059a50fdd99f22535ca9810`; previous `ded891c22b735ca323bfede552e5219683d24841` retained for rollback |
-| New architecture delivery | **STAGING TECHNICAL PASS**: existing new Workers/store, auth-only Access destination append, two narrow routes and prepared Pages delivery verified |
-| Original server credential availability | Confirmed privately and provisioned only to the new API Worker; no replacement or export of deployed secrets |
-| Real human Access / PKCE / replay | PASS using official Access client and live endpoints; verified code issued/exchanged, replay rejected; distinct from Office dialog acceptance |
-| Cookie-free Word API | Missing token: marked JSON 401; valid session/models: 200; revoked session/models: 401. Test session revoked |
-| Published files / document headers | 45/45 HTTP 200 and byte-equal; 9/9 HTML CSP checks match, no X-Frame-Options. One unchanged cached PNG retains an older CSP header; no purge performed |
-| Active frontend boundary | Approved JS identity, `/word-api` composition and absence of Storage Access calls verified |
-| Engine content/runtime and native Word writes | Separate outstanding qualification; no completion or document write |
-| Word for Mac | Backlog |
+| Starting PR head / local recovery ref | `d6c365840759364fc7793bb6b202a748113ebfac`; preserved before editing |
+| Registration discovery | No Microsoft registration configured in the inspected project; external Entra directory not accessible/verified |
+| Missing activation input | Actual distinct SPA/API registration IDs, delegated scope/redirect/consent configuration and verified owner `tid:oid`; no values invented |
+| Offline suite | **628 PASS / 1 protected-live SKIP**, 39 passing files / 1 skipped |
+| Local contribution gates | All 18 commands pass: locked install, production audit (0 vulnerabilities), full tests, typecheck, lint, exact CI formatting, 4 manifests, 5 frontend builds, Worker build, bundle isolation and diff check |
+| Synthetic auth scenarios | Silent/new-pane acquisition, 15-minute capability renewal, concurrency, bounded denial, consent/cancellation, unsupported-host fallback, wrong issuer/audience/scope/client/signature, key rollover and account denial tested |
+| Synthetic runtime recovery | Multiline draft, SL/EN and both attached/removed choices retained; no completion or document write |
+| Actual Microsoft/Entra/Word NAA/fallback | **NOT_RUN**; registration/owner configuration missing, no actual host support inferred |
+| Prepared staging and rollback | 48 artifact files, approved real-host manifest, accepted CSS/icons and aa5 rollback copied/verified; no deployment or fresh live control-plane attestation |
+| Exact-current-head CI | Required before activation/merge; local evidence alone does not establish its result |
+| Current delivery / infrastructure | Preserved; no live Entra/Cloudflare/auth/Tunnel/DNS/Engine change, OAuth login, completion, document write or merge |
 
-`npm ci` completed with the locked dependency tree; no `--ignore-scripts` command
-was used. Local npm reported its install-script approval policy. The actual
-esbuild/workerd binaries, all builds and offline tests were executed successfully;
-this does not qualify unrelated keyring/Office sideload tooling. The two new
-Miniflare transitive dependencies have scoped security overrides (`undici` and
-`sharp`); unrelated pre-existing Office development-tool findings remain outside
-this change. Exact-head CI
-remains the required PR gate; its immutable run/result is linked from the PR and
-final handoff. Merge is not authorized.
+The original user checkout and its two documentation edits, all prior clones,
+windows/processes, recovery refs and activation packages are preserved. Work is
+isolated in a new temporary clone of the existing PR branch. The retained
+[Cloudflare activation record](evidence/olc72-word-session-activation-20261024/README.md)
+and [browser-surface handoff](evidence/olc72-word-session-activation-20261024/word-surface-handoff.md)
+remain historical evidence; they do not qualify Microsoft SSO.
 
-See [architecture and security](WORD_SCOPED_SESSION.md),
-[prepared staging / rollback](WORD_SESSION_STAGING.md), and
-[new sanitized evidence](evidence/olc72-word-session-20261024/README.md).
-The [previous evidence synchronization](OLC72_SYNC_REPORT_20261024.md) and
-[historical access diagnostics](WORD_WEB_ACCESS_RECOVERY.md) are preserved.
-After the owner reopened Codex, the scoped preserving Access PUT succeeded;
-readback changed only destinations and update time. No OAuth flow was repeated.
-This establishes effective write access after reconnection; it does not prove
-the internal cause of the preceding transport failures. The API Worker is not
-a human Access destination. Both new workers.dev/preview surfaces stay disabled.
+## Concrete next action
 
-Replacement-chat handoff, 2026-10-24: the owner reports an existing signed-in
-Word welcome page in the earlier visible browser panel. This chat's browser
-inventory exposes two surfaces with zero tabs; direct binding returns
-`Tab not found in browser 2`. Document Control reports no connected Word session.
-The [sanitized Word-surface handoff](evidence/olc72-word-session-activation-20261024/word-surface-handoff.md)
-records these direct observations separately from the already accepted owner
-functional report. It establishes a connection limitation, not a new login failure.
+The operator must inspect/reuse or prepare the two registrations with the exact
+account types, staging redirects, API scope and allowed SPA listed in
+[Microsoft SSO configuration](MICROSOFT_SSO.md#registration-discovery-and-exact-missing-configuration),
+then provide their actual IDs and verified owner principal through protected
+configuration. No client secret, Graph permission, Cloudflare login, Tunnel
+change or network reconfiguration is needed. The independent code is complete;
+missing configuration is an activation blocker, not a request to redesign SSO.
 
-Next: expose the same existing signed-in Word tab to this chat, then verify the
-loaded artifact, native Office dialog, usable form, open-pane recovery after
-known expiry/revocation with draft/locale/removed attachment retention, canceled
-dialog and separate new-pane login. These specific cases were NOT_RUN here.
-No new Microsoft login, OAuth consent, staging activation, completion or document
-write is needed to resolve the surface connection. Existing windows, processes,
-checkouts, local edits and recovery packages remain preserved; no rollback
-trigger was observed. OLC-72 remains IN REVIEW.
+Then require exact-head CI and review the
+[prepared coordinated activation/rollback](MICROSOFT_SSO_STAGING.md) before any
+delivery switch. Actual Word silent startup/reopen/idle recovery and fallback
+acceptance remain separate gates, using only session/model discovery and
+synthetic input, without Send or a Word write.
+
+See [architecture and registration contract](MICROSOFT_SSO.md),
+[sanitized candidate evidence](evidence/olc72-microsoft-sso-20261024/README.md),
+and [third-party provenance](UPSTREAM_SOURCES.md#microsoft-identity--olc-72).

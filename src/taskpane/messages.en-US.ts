@@ -18,7 +18,7 @@ export const enUSMessages = {
     checkConnection: "Check connection",
     checkingConnection: "Checking connection…",
     connectionUnchecked: "Check access from this pane without sending your message.",
-    connectionPassed: "Both access checks passed. No message was sent.",
+    connectionPassed: "Connected. No message was sent.",
     connectionFailed: "Access check failed. Your message is retained.",
     checkedAt: (time: string): string => `Last check: ${time}`,
   },
@@ -43,10 +43,10 @@ export const enUSMessages = {
     footerMessage: "INACTIVE",
   },
   connecting: {
-    statusLabel: (provider: string): string => `Checking ${provider}`,
+    statusLabel: (provider: string): string => `Connecting to ${provider}`,
     statusDetail: "CONNECTING",
     eyebrow: "SERVICE CONNECTION",
-    heading: "Verifying the selected service…",
+    heading: "Connecting…",
     description: "This check sends no document text and cannot change the document.",
     footerEyebrow: "SERVICE BOUNDARY",
     footerMessage: "CHECK IN PROGRESS",
@@ -134,15 +134,15 @@ export const enUSMessages = {
     eyebrow: "PROTECTED SESSION",
     heading: "Access required",
     description:
-      "Sign in outside this pane to start a short-lived Word session. Your message is retained and will not be sent automatically.",
-    signInOpenedTitle: "Secure sign-in opened",
+      "Microsoft needs your sign-in or consent. Your message is retained and will not be sent automatically.",
+    signInOpenedTitle: "Microsoft sign-in",
     signInOpenedMessage:
       "Office may ask Allow / Ignore before opening the window. Allow opens secure sign-in; Ignore leaves access unchanged. After return, only the connection is checked, never your message.",
-    signInFailedTitle: "Secure sign-in could not complete",
+    signInFailedTitle: "Microsoft sign-in could not complete",
     signInFailedMessage:
       "Sign-in or the secure code exchange could not complete. Your message is retained; try sign-in again when ready.",
     retrySearch: "Check connection",
-    openSecureSignIn: "Open secure sign-in",
+    openSecureSignIn: "Sign in with Microsoft",
     completedTitle: "Word session created",
     closedTitle: "Sign-in was not completed",
     closedMessage:
@@ -157,8 +157,10 @@ export const enUSMessages = {
   connectionError: {
     deniedHeading: "Access denied",
     descriptionFor: (code: string): string => {
+      if (code === "INVALID_CONFIGURATION")
+        return "Microsoft access is not configured yet. Contact the operator; your message is retained.";
       if (code === "ACCESS_DENIED")
-        return "The protected request was denied (403). This is not proof of an expired session. Your message is retained; the operator must check authorization.";
+        return "This Microsoft account is not authorized to use OpenLegalCore. Your message is retained; contact the operator.";
       if (code === "NETWORK_ERROR")
         return "The request could not reach the service. Check the network; signing in may not resolve this. Your message is retained.";
       if (code === "SERVICE_UNAVAILABLE")

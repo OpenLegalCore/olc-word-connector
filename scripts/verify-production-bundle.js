@@ -5,18 +5,23 @@ const root = path.resolve(__dirname, "..");
 const defaultDist = path.resolve(process.argv[2] || path.join(root, "dist", "prod"));
 const staticRequiredFiles = new Set([
   "_headers",
+  "MSAL-LICENSE.txt",
   "commands.html",
   "manifest.xml",
   "taskpane.html",
   "signin.html",
+  "microsoft-signin.html",
+  "microsoft-redirect.html",
   "assets/icon-128.png",
   "assets/office/1.0.0.2/openlegalcore-mark-16.png",
   "assets/office/1.0.0.2/openlegalcore-mark-32.png",
   "assets/office/1.0.0.2/openlegalcore-mark-64.png",
   "assets/office/1.0.0.2/openlegalcore-mark-80.png",
 ]);
-const productionScript = /^(commands|polyfill|taskpane|signin)\.[a-f0-9]{20}\.js$/;
-const productionLicense = /^taskpane\.[a-f0-9]{20}\.js\.LICENSE\.txt$/;
+const productionScript =
+  /^(commands|polyfill|taskpane|signin|microsoft-auth|microsoft-signin|microsoft-redirect)\.[a-f0-9]{20}\.js$/;
+const productionLicense =
+  /^(?:taskpane|microsoft-auth|microsoft-signin)\.[a-f0-9]{20}\.js\.LICENSE\.txt$/;
 const productionStyle = /^[a-f0-9]{20}\.css$/;
 const sourceMapReference = /sourceMappingURL\s*=/;
 const canonicalTaskPaneMark = "assets/office/1.0.0.2/openlegalcore-mark-80.png";
@@ -133,7 +138,15 @@ function assertExpectedOutputs(files, outputDirectory) {
     throw new Error(`Forbidden production source map: ${sourceMaps.join(", ")}`);
   }
 
-  for (const name of ["commands", "polyfill", "taskpane", "signin"]) {
+  for (const name of [
+    "commands",
+    "polyfill",
+    "taskpane",
+    "signin",
+    "microsoft-auth",
+    "microsoft-signin",
+    "microsoft-redirect",
+  ]) {
     const scripts = relativeFiles.filter(
       (file) => productionScript.test(file) && file.startsWith(`${name}.`)
     );
@@ -141,8 +154,8 @@ function assertExpectedOutputs(files, outputDirectory) {
       throw new Error(`Expected exactly one versioned ${name} script`);
     }
   }
-  if (relativeFiles.filter((file) => productionLicense.test(file)).length !== 1) {
-    throw new Error("Expected exactly one versioned taskpane license file");
+  if (relativeFiles.filter((file) => productionLicense.test(file)).length !== 3) {
+    throw new Error("Expected taskpane and pinned Microsoft dependency license files");
   }
   if (relativeFiles.filter((file) => productionStyle.test(file)).length !== 1) {
     throw new Error("Expected exactly one versioned production stylesheet");
@@ -217,7 +230,13 @@ function inspectBundleContent(files, outputDirectory) {
     if ([".js", ".css"].includes(extension) && sourceMapReference.test(content)) {
       throw new Error(`Forbidden sourceMappingURL in ${relativeFile}`);
     }
-    const forbidden = forbiddenContent.find(({ pattern }) => pattern.test(content));
+    // Only the pinned, isolated Microsoft dependency chunk may contain inactive
+    // storage implementations. Application code and every other bundle remain forbidden.
+    const vendor = /^microsoft-auth\.[a-f0-9]{20}\.js$/.test(relativeFile);
+    const forbidden = forbiddenContent.find(
+      ({ pattern, label }) =>
+        !(vendor && label === "persistent browser credential storage") && pattern.test(content)
+    );
     if (forbidden) {
       throw new Error(`Forbidden development marker in ${relativeFile}: ${forbidden.label}`);
     }
@@ -240,6 +259,8 @@ function inspectProductionEntrypoints() {
   }
 
   for (const source of filesBelow(path.join(root, "src")).filter((file) => file.endsWith(".ts"))) {
+    if (/\b(?:localStorage|sessionStorage|indexedDB)\b/.test(fs.readFileSync(source, "utf8")))
+      throw new Error("Persistent storage access in application source");
     if (source === path.join(root, "src/office/OfficeWordAdapter.ts")) continue;
     if (/\.insert(?:Text|Html|Ooxml)\s*\(/.test(fs.readFileSync(source, "utf8"))) {
       throw new Error("Word insertion outside the approved Office adapter");

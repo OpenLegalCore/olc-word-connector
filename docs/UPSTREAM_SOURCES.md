@@ -128,3 +128,14 @@ for local strongly consistent storage tests and Worker packaging. See
 Miniflare-only dependency overrides pin `undici@7.30.1` and `sharp@0.35.5`
 to avoid known vulnerable transitive versions. These test-tool overrides do not
 change the browser or authorization Worker dependency set.
+
+## Microsoft identity — OLC-72
+
+Production MSAL Browser 5.26.0 and MSAL Common 16.14.3 are MIT; both exact release
+tags resolve to `16a4714f38ba2844f34d154dd59dd8f1402457c9`. Verified by
+`git ls-remote --tags` on Microsoft's upstream repository. The npm versions,
+resolved package URLs and integrity values are pinned in the lockfile. These are
+bundled dependencies, not copied samples; custom orchestration, policy and UI
+code are original connector code. Complete license text is retained in
+[third-party notices](../THIRD_PARTY_NOTICES.md#microsoft-authentication-library-for-javascript)
+and emitted as `MSAL-LICENSE.txt`.

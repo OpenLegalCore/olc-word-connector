@@ -23,6 +23,7 @@ import type {
 } from "./taskPaneViewModel";
 import type { SecureSignIn, SignInOutcome } from "./OfficeSignInDialog";
 import { WordSessionClient } from "./WordSessionClient";
+import type { MicrosoftTokenSource } from "./MicrosoftAccess";
 
 export const OLC_ENGINE_MODEL_ID = "lexai-engine-local";
 export const SECURE_SIGN_IN_PATH = "/word-auth/authorize";
@@ -45,6 +46,7 @@ export interface ProductionGatewayDependencies {
   readonly fetch?: (input: string, init?: RequestInit) => Promise<Response>;
   readonly initialLocale?: UiLocale;
   readonly signIn?: SecureSignIn;
+  readonly microsoft?: MicrosoftTokenSource;
 }
 
 const backendLabels: Readonly<Record<RuntimeBackend, string>> = {
@@ -309,7 +311,7 @@ function controllerModel(
   return {
     id: "error",
     environment,
-    status: { label: messages.error.statusLabel, detail: state.error.code, tone: "danger" },
+    status: { label: messages.error.statusLabel, detail: "", tone: "danger" },
     eyebrow: messages.error.eyebrow,
     heading: messages.error.heading,
     description: messages.error.description,
@@ -374,11 +376,10 @@ function sessionExpiredModel(
             }
           : undefined,
     actions: [
-      { id: "retry-search", label: messages.session.retrySearch, variant: "primary" },
       {
         id: "open-secure-sign-in",
         label: messages.session.openSecureSignIn,
-        variant: "quiet",
+        variant: "primary",
       },
     ],
     footer: { eyebrow: messages.session.footerEyebrow, message: messages.session.footerMessage },
@@ -446,7 +447,8 @@ export class ProductionTaskPaneRuntime {
     initialLocale: UiLocale = "en-US",
     private readonly closeSecureSignIn: () => void = () => undefined,
     private readonly checkSession?: (signal?: AbortSignal) => Promise<void>,
-    private readonly clearSession: () => void = () => undefined
+    private readonly clearSession: () => void = () => undefined,
+    private readonly prepareAccess?: (signal: AbortSignal) => Promise<void>
   ) {
     this.locale = initialLocale;
   }
@@ -797,7 +799,7 @@ export class ProductionTaskPaneRuntime {
               code === "ACCESS_DENIED"
                 ? messages.connectionError.deniedHeading
                 : messages.connectionError.statusLabel(backendLabels[backend]),
-            detail: code,
+            detail: "",
             tone: "danger",
           },
           eyebrow: messages.connectionError.eyebrow,
@@ -950,6 +952,53 @@ export class ProductionTaskPaneRuntime {
         uiLocale: this.locale,
       };
     }
+    if (this.prepareAccess) {
+      // Establish access before handing the displayed selection to the controller.
+      // A consent/login interruption must not consume or recapture that attachment.
+      const abort = new AbortController();
+      const preparationId = ++this.connectionId;
+      this.connectionAbort = abort;
+      this.connectionCheck = { phase: "checking" };
+      this.renderView((messages) =>
+        connectingModel(messages, this.selectedBackend, this.environment)
+      );
+      try {
+        await this.prepareAccess(abort.signal);
+        if (abort.signal.aborted || this.disposed || preparationId !== this.connectionId) return;
+        this.connectionCheck = { phase: "success", checkedAt: Date.now() };
+      } catch (error) {
+        if (this.disposed || preparationId !== this.connectionId) return;
+        const code = error instanceof ChatGatewayError ? error.code : "NETWORK_ERROR";
+        this.connectionCheck = { phase: "failure", code };
+        if (code === "SESSION_EXPIRED") {
+          this.connectionRecoveryFromSettings = true;
+          this.renderView((messages) =>
+            sessionExpiredModel(messages, this.selectedBackend, this.environment, "idle")
+          );
+        } else {
+          this.renderView((messages) =>
+            readyModel(
+              messages,
+              this.selectedBackend,
+              this.question,
+              this.displayedSelection,
+              this.selectionError,
+              this.environment,
+              {
+                title: messages.connectionError.heading,
+                message: messages.connectionError.descriptionFor(code),
+                tone: "warning",
+                role: "alert",
+              }
+            )
+          );
+        }
+        return;
+      } finally {
+        if (this.connectionAbort === abort) this.connectionAbort = undefined;
+        if (!this.disposed && preparationId === this.connectionId) this.updateConnectionControls();
+      }
+    }
     this.resetCopyFeedback();
     this.lastInput = {
       ...input,
@@ -991,7 +1040,13 @@ export class ProductionTaskPaneRuntime {
       this.connectionId++;
       this.connectionAbort?.abort();
       this.connectionAbort = undefined;
-      await this.connect("olc-engine");
+      this.connectionCheck = { phase: "idle" };
+      this.connectionRecoveryFromSettings = false;
+      if (this.controller) this.renderControllerState();
+      else
+        this.renderView((messages) =>
+          sessionExpiredModel(messages, this.selectedBackend, this.environment, "closed")
+        );
       return;
     }
     if (actionId === "send") {
@@ -1113,7 +1168,8 @@ export function createProductionTaskPaneRuntime(
     clipboard = undefined;
   }
   const session = new WordSessionClient(
-    dependencies.fetch ?? ((url, init) => globalThis.fetch(url, init))
+    dependencies.fetch ?? ((url, init) => globalThis.fetch(url, init)),
+    dependencies.microsoft
   );
   return new ProductionTaskPaneRuntime(
     root,
@@ -1123,12 +1179,26 @@ export function createProductionTaskPaneRuntime(
     environment,
     clipboard,
     () =>
-      dependencies.signIn?.open((code, verifier, state, signal) =>
-        session.exchange(code, verifier, state, signal)
-      ) ?? false,
+      dependencies.microsoft
+        ? session
+            .authenticate(true)
+            .then(() => "completed" as const)
+            .catch((error: unknown) =>
+              error instanceof ChatGatewayError && error.code === "CANCELLED"
+                ? ("closed" as const)
+                : error instanceof ChatGatewayError && error.code === "ACCESS_DENIED"
+                  ? ("denied" as const)
+                  : ("failed" as const)
+            )
+        : (dependencies.signIn?.open((code, verifier, state, signal) =>
+            session.exchange(code, verifier, state, signal)
+          ) ?? false),
     dependencies.initialLocale,
-    () => dependencies.signIn?.close(),
+    () => {
+      dependencies.signIn?.close();
+    },
     (signal) => session.check(signal),
-    () => session.clear()
+    () => session.clear(),
+    dependencies.microsoft ? (signal) => session.prepare(signal) : undefined
   );
 }

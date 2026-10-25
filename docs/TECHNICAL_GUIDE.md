@@ -1,5 +1,10 @@
 # Technical guide
 
+> OLC-72 Microsoft-auth candidate: [MSAL/NAA and API authorization](MICROSOFT_SSO.md)
+> supersede the deployed Cloudflare user-login path described below. The candidate
+> is IN REVIEW and not activated; private Engine credentials, API forwarding,
+> outbound Tunnel and document-operation boundaries are retained.
+
 [Documentation index](README.md) · [Integration](INTEGRATION.md) ·
 [Compatibility](COMPATIBILITY_AND_LIMITATIONS.md)
 

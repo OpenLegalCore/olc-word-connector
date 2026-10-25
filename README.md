@@ -48,20 +48,25 @@ language and selection attachment survive the check and explicit sign-in recover
 See [current qualification status](docs/STATUS.md); retained input alone does not
 establish that access or authentication recovery works in Word.
 
-The current draft implements a [cookie-independent Word session](docs/WORD_SCOPED_SESSION.md):
-explicit Office dialog login, verified human Access JWT, PKCE and single-use
-codes in strongly consistent server storage, then a memory-only short-lived
-Word capability on dedicated same-origin API routes. Storage Access is no longer
-a prerequisite. The owner-authorized [staging activation](docs/evidence/olc72-word-session-activation-20261024/README.md)
-has passed real human Access/PKCE and cookie-free session/model-discovery checks;
-the approved frontend is delivered. The test session was revoked successfully.
-Actual Word dialog/reopen/expiry acceptance remains pending. This does not establish the
-cause or resolution of the owner's individual incident. See the
-[prepared staging/rollback sequence](docs/WORD_SESSION_STAGING.md).
+The current OLC-72 candidate implements [Microsoft identity through MSAL/NAA](docs/MICROSOFT_SSO.md)
+to remove repeated Cloudflare user sign-ins after idle time or reopening the pane.
+It acquires/renews our API access token silently and obtains a short Word
+capability without a Cloudflare login. Required Microsoft interaction is explicit;
+older hosts use a Microsoft Office-dialog fallback. Staging authorization remains
+restricted to the configured verified owner. Draft, language and attachment choice
+survive recovery in an open pane, with no automatic message replay or Word write.
+
+This candidate is **IN REVIEW, NOT ACTIVATED**. Microsoft registration/consent and
+verified owner configuration are missing activation inputs; actual Microsoft
+Word/NAA acceptance remains NOT_RUN. The currently delivered aa5 implementation
+and its [successful Cloudflare activation evidence](docs/evidence/olc72-word-session-activation-20261024/README.md)
+remain intact. The owner's manually signed-in usable-form report is accepted.
+The existing outbound Tunnel, DNS, local Engine and server-only credentials are
+unchanged. See the [Microsoft activation/rollback gates](docs/MICROSOFT_SSO_STAGING.md).
 
 |                         |                                                                         |
 | ----------------------- | ----------------------------------------------------------------------- |
-| **Word host**           | Earlier Word Web flow verified; new session flow pending; Windows/Mac not tested        |
+| **Word host**           | Earlier Word Web flow verified; Microsoft SSO candidate pending; Windows/Mac not tested        |
 | **Legal sources**       | Slovenian legislation and case law supplied by the configured backend   |
 | **Backend path**        | OLC Engine through the dedicated same-origin `/word-api/v1/*` boundary               |
 | **Document context**    | No document content, or only the exact selected text                    |

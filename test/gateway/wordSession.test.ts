@@ -89,6 +89,52 @@ async function issue(
 }
 const exchange = (grant: unknown, source = origin): Promise<Response> =>
   wordApi(req("/word-api/session/exchange", grant, undefined, source), env);
+describe("Microsoft capability issuance and continuous staging authorization", () => {
+  it("keeps legacy exchange disabled, owner access explicit, and revocation distinct from renewable identity", async () => {
+    const tid = "11111111-1111-4111-8111-111111111111",
+      oid = "22222222-2222-4222-8222-222222222222";
+    const clientId = "33333333-3333-4333-8333-333333333333",
+      audience = "44444444-4444-4444-8444-444444444444";
+    const values = {
+      ...env,
+      MICROSOFT_AUTH_ENABLED: "true",
+      MICROSOFT_CLIENT_ID: clientId,
+      MICROSOFT_API_AUDIENCE: audience,
+      MICROSOFT_ALLOWED_IDENTITIES: JSON.stringify([`${tid}:${oid}`]),
+    };
+    const verified = vi.fn(async () => ({
+      principal: `${tid}:${oid}`,
+      clientId,
+      audience,
+      identityExpiresAt: Date.now() + 3600_000,
+    }));
+    const upstream = vi.fn(async () => Response.json({ data: [{ id: "lexai-engine-local" }] }));
+    const call = (request: Request) => wordApi(request, values, upstream, verified);
+    expect((await call(req("/word-api/session/exchange", {}))).status).toBe(404);
+    expect(await (await call(req("/word-api/auth/config"))).json()).toEqual({
+      clientId,
+      apiScope: `api://${audience}/Word.Access`,
+    });
+    const issued = await call(
+      req("/word-api/session/microsoft", {}, "synthetic-microsoft-api-token")
+    );
+    expect(issued.status).toBe(200);
+    const capability = (await issued.json()).token;
+    expect((await call(req("/word-api/session", undefined, capability))).status).toBe(200);
+    values.MICROSOFT_ALLOWED_IDENTITIES = JSON.stringify([`${tid}:${clientId}`]);
+    expect((await call(req("/word-api/v1/models", undefined, capability))).status).toBe(403);
+    expect(upstream).not.toHaveBeenCalled();
+    values.MICROSOFT_ALLOWED_IDENTITIES = JSON.stringify([`${tid}:${oid}`]);
+    expect((await call(req("/word-api/session/revoke", {}, capability))).status).toBe(200);
+    expect((await call(req("/word-api/session", undefined, capability))).status).toBe(401);
+    const replacement = await call(
+      req("/word-api/session/microsoft", {}, "synthetic-microsoft-api-token")
+    );
+    expect(replacement.status).toBe(200);
+    expect((await replacement.json()).token).not.toBe(capability);
+    expect(upstream).not.toHaveBeenCalled();
+  });
+});
 describe("Word session boundary, real local workerd/SQLite Durable Object", () => {
   it("verifies signature, exact issuer/audience, algorithm, expiry and required claims", async () => {
     expect(await verifyIdentity(await identity(), env, key)).toBeGreaterThan(Date.now());

@@ -93,9 +93,9 @@ describe("task-pane i18n catalogs", () => {
     expect(slSIMessages.settings.languageChanged("Slovenščina")).toBe(
       "Izbrani jezik: Slovenščina."
     );
-    expect(enUSMessages.connecting.statusLabel("OLC Engine")).toBe("Checking OLC Engine");
+    expect(enUSMessages.connecting.statusLabel("OLC Engine")).toBe("Connecting to OLC Engine");
     expect(slSIMessages.connecting.statusLabel("OLC Engine")).toBe(
-      "Preverjanje storitve OLC Engine"
+      "Povezovanje s storitvijo OLC Engine"
     );
     expect(enUSMessages.ready.connectedStatus("OLC Engine")).toBe("OLC Engine connected");
     expect(slSIMessages.ready.connectedStatus("OLC Engine")).toBe("OLC Engine je povezan");

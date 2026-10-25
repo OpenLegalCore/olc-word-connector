@@ -20,7 +20,7 @@ export class WordSessionStore {
       codeKey = "code:" + (await digest(code));
     return this.storage.transaction(async (tx) => {
       const now = Date.now();
-      if (operation === "/issue" || operation === "/exchange") {
+      if (operation === "/issue" || operation === "/exchange" || operation === "/microsoft") {
         for (const [bucket, max] of [
           ["global", 300],
           [input.client, 12],
@@ -34,6 +34,26 @@ export class WordSessionStore {
           await tx.put(rateKey, rate);
         }
         if ((await tx.getAlarm()) === null) await tx.setAlarm(now + 60_000);
+      }
+      if (operation === "/microsoft") {
+        if (
+          typeof input.principal !== "string" ||
+          typeof input.clientId !== "string" ||
+          typeof input.audience !== "string" ||
+          !Number.isFinite(input.identityExpiresAt) ||
+          input.identityExpiresAt <= now
+        )
+          return failure(403, "ACCESS_DENIED");
+        const expiresAt = Math.min(now + SESSION_TTL, input.identityExpiresAt);
+        await tx.put(tokenKey, {
+          origin: input.origin,
+          scope: SCOPE,
+          expiresAt,
+          principal: input.principal,
+          clientId: input.clientId,
+          audience: input.audience,
+        });
+        return reply(200, { token, expiresAt, scope: SCOPE });
       }
       if (operation === "/issue") {
         if (
@@ -82,7 +102,13 @@ export class WordSessionStore {
         )
           return failure(401, "SESSION_EXPIRED");
         if (operation === "/revoke") await tx.delete(sessionKey);
-        return reply(200, { expiresAt: record.expiresAt, scope: record.scope });
+        return reply(200, {
+          expiresAt: record.expiresAt,
+          scope: record.scope,
+          ...(record.principal
+            ? { principal: record.principal, clientId: record.clientId, audience: record.audience }
+            : {}),
+        });
       }
       return failure(404, "ROUTE_NOT_FOUND");
     });

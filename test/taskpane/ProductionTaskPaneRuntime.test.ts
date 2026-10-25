@@ -172,7 +172,7 @@ function setup(
 }
 
 async function waitForReady(): Promise<void> {
-  await vi.waitFor(() => expect(viewState()).toBe("ready"));
+  await vi.waitFor(() => expect(viewState(), root().textContent ?? "").toBe("ready"));
 }
 
 let activeRuntime: ProductionTaskPaneRuntime | undefined;
@@ -216,7 +216,8 @@ describe("production Engine-only task-pane runtime", () => {
     click("check-connection");
     await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
     click("open-secure-sign-in");
-    for (const id of ["check-connection", "retry-search"]) {
+    expect(root().querySelector('[data-action-id="retry-search"]')).toBeNull();
+    for (const id of ["check-connection"]) {
       expect(root().querySelector<HTMLButtonElement>(`[data-action-id="${id}"]`)?.disabled).toBe(
         true
       );
@@ -226,12 +227,12 @@ describe("production Engine-only task-pane runtime", () => {
     finish("completed");
     await vi.waitFor(() =>
       expect(
-        root().querySelector<HTMLButtonElement>('[data-action-id="retry-search"]')?.disabled
+        root().querySelector<HTMLButtonElement>('[data-action-id="check-connection"]')?.disabled
       ).toBe(false)
     );
     expect(state.olcEngine.connectionChecks).toBe(3);
     state.olcEngine.connectionError = undefined;
-    click("retry-search");
+    click("check-connection");
     await waitForReady();
     expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
       "Retained\nDraft"
@@ -301,7 +302,7 @@ describe("production Engine-only task-pane runtime", () => {
       click("check-connection");
       await vi.waitFor(() =>
         expect(root().querySelector("#olc-connection-check-result")?.textContent).toContain(
-          locale === "sl-SI" ? "Obe preverjanji" : "Both access checks"
+          locale === "sl-SI" ? "Povezava je vzpostavljena" : "Connected."
         )
       );
       expect(root().querySelector("#runtime-legal-question")).toBe(input);
@@ -367,7 +368,7 @@ describe("production Engine-only task-pane runtime", () => {
     finish();
     await vi.waitFor(() =>
       expect(root().querySelector("#olc-connection-check-result")?.textContent).toContain(
-        "Both access checks"
+        "Connected."
       )
     );
     expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
@@ -402,7 +403,7 @@ describe("production Engine-only task-pane runtime", () => {
         expect(root().textContent).toContain("Dostop iz Word podokna je še zavrnjen")
       );
       state.olcEngine.connectionError = undefined;
-      click("retry-search");
+      click("check-connection");
       await waitForReady();
       expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
         "Ohrani osnutek\nDruga vrstica"
@@ -431,7 +432,7 @@ describe("production Engine-only task-pane runtime", () => {
       await vi.waitFor(() => expect(viewState()).toBe("connection-error"));
       expect(root().querySelector("#olc-connection-check-result")?.textContent).toContain(code);
       expect(root().querySelector("#olc-connection-check-result")?.textContent).not.toContain(
-        "Both access checks passed"
+        "Connected. passed"
       );
       state.olcEngine.connectionError = undefined;
       click("retry-connection");
@@ -507,7 +508,7 @@ describe("production Engine-only task-pane runtime", () => {
     await vi.waitFor(() => expect(root().textContent).toContain("Prijava ni bila dokončana"));
     expect(state.olcEngine.connectionChecks).toBe(1);
     expect(state.olcEngine.requests).toHaveLength(1);
-    click("retry-search");
+    click("check-connection");
     await waitForReady();
     expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
       "Sintetični vnos po zaprtem oknu."
@@ -529,6 +530,78 @@ describe("production Engine-only task-pane runtime", () => {
     expect(fetch).not.toHaveBeenCalled();
     expect(root().querySelector('[data-action-id="allow-pane-cookies"]')).toBeNull();
   });
+  it.each([false, true])(
+    "silently renews Microsoft access and preserves attachment choice %s when consent interrupts Send",
+    async (removed) => {
+      const word = new FakeWordAdapter(SNAPSHOT);
+      const microsoft = {
+        acquire: vi.fn<
+          (
+            interactive?: boolean,
+            force?: boolean
+          ) => Promise<{ accessToken: string; expiresAt: number }>
+        >(async () => ({ accessToken: "synthetic-api-token", expiresAt: Date.now() + 3600_000 })),
+        close: vi.fn(),
+      };
+      const urls: string[] = [];
+      const send = vi.fn(async (url: string) => {
+        urls.push(url);
+        if (url === "/word-api/session/microsoft")
+          return Response.json(
+            {
+              token: "m".repeat(43),
+              expiresAt: Date.now() + 900_000,
+              scope: "word:models word:complete",
+            },
+            { headers: { "X-OLC-Word-Gateway": "1" } }
+          );
+        if (url === "/word-api/session")
+          return Response.json({}, { headers: { "X-OLC-Word-Gateway": "1" } });
+        if (url === "/word-api/v1/models")
+          return Response.json({ object: "list", data: [{ id: OLC_ENGINE_MODEL_ID }] });
+        throw new Error("Unexpected request: test must never submit");
+      });
+      activeRuntime = createProductionTaskPaneRuntime(
+        root(),
+        word,
+        "STAGING",
+        new TaskPaneView(root()),
+        { fetch: send, microsoft, initialLocale: "sl-SI" }
+      );
+      activeRuntime.start();
+      await waitForReady();
+      setQuestion("Izmišljen vnos\nDruga vrstica.");
+      if (removed) click("remove-selection");
+      const captures = word.captureCalls,
+        initialNow = Date.now();
+      vi.spyOn(Date, "now").mockReturnValue(initialNow + 901_000);
+      click("toggle-settings");
+      click("check-connection");
+      await vi.waitFor(() =>
+        expect(root().querySelector("#olc-connection-check-result")?.textContent).toContain(
+          "Povezava je vzpostavljena"
+        )
+      );
+      expect(urls.filter((url) => url === "/word-api/session/microsoft")).toHaveLength(2);
+      microsoft.acquire.mockRejectedValueOnce(new ChatGatewayError("SESSION_EXPIRED"));
+      click("send");
+      await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
+      expect(root().querySelector('[data-action-id="retry-search"]')).toBeNull();
+      click("open-secure-sign-in");
+      await waitForReady();
+      expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
+        "Izmišljen vnos\nDruga vrstica."
+      );
+      expect(document.documentElement.lang).toBe("sl-SI");
+      expect(Boolean(root().querySelector(".olc-selection-attachment"))).toBe(!removed);
+      expect(word.captureCalls).toBe(captures);
+      expect(word.applyCalls).toHaveLength(0);
+      expect(urls.some((url) => url.includes("completions") || url.includes("word-auth"))).toBe(
+        false
+      );
+      expect(microsoft.acquire.mock.calls.some(([interactive]) => interactive === true)).toBe(true);
+    }
+  );
   it.each(["granted", "denied", "unsupported"] as const)(
     "recovers without %s cookie permissions, retaining draft/locale/removal and never resending",
     async (permission) => {
@@ -790,7 +863,7 @@ describe("production Engine-only task-pane runtime", () => {
     state.olcEngine.emitDelta("Delni odgovor");
     expect(root().textContent).toContain("Delni odgovor");
     click("cancel");
-    await vi.waitFor(() => expect(viewState()).toBe("ready"));
+    await vi.waitFor(() => expect(viewState(), root().textContent ?? "").toBe("ready"));
     state.olcEngine.emitDelta(" prezrt");
     state.olcEngine.resolveLate({ text: "Pozni odgovor" });
     await Promise.resolve();
@@ -831,11 +904,11 @@ describe("production Engine-only task-pane runtime", () => {
     expect(openSignIn).toHaveBeenCalledTimes(1);
     await vi.waitFor(() =>
       expect(
-        root().querySelector<HTMLButtonElement>('[data-action-id="retry-search"]')?.disabled
+        root().querySelector<HTMLButtonElement>('[data-action-id="check-connection"]')?.disabled
       ).toBe(false)
     );
     state.olcEngine.connectionError = undefined;
-    click("retry-search");
+    click("check-connection");
     await waitForReady();
 
     expect(state.olcEngine.connectionChecks).toBe(2);
@@ -854,21 +927,21 @@ describe("production Engine-only task-pane runtime", () => {
     click("open-secure-sign-in");
     await vi.waitFor(() =>
       expect(
-        root().querySelector<HTMLButtonElement>('[data-action-id="retry-search"]')?.disabled
+        root().querySelector<HTMLButtonElement>('[data-action-id="check-connection"]')?.disabled
       ).toBe(false)
     );
     state.olcEngine.connectionError = new ChatGatewayError("SESSION_EXPIRED");
-    click("retry-search");
+    click("check-connection");
     await vi.waitFor(() => expect(state.olcEngine.connectionChecks).toBe(2));
     await vi.waitFor(() => expect(viewState()).toBe("session-expired"));
     click("open-secure-sign-in");
     await vi.waitFor(() =>
       expect(
-        root().querySelector<HTMLButtonElement>('[data-action-id="retry-search"]')?.disabled
+        root().querySelector<HTMLButtonElement>('[data-action-id="check-connection"]')?.disabled
       ).toBe(false)
     );
     state.olcEngine.connectionError = undefined;
-    click("retry-search");
+    click("check-connection");
     await waitForReady();
     expect(root().querySelector<HTMLTextAreaElement>("#runtime-legal-question")?.value).toBe(
       "Sintetični vnos ostane.\nDruga vrstica."

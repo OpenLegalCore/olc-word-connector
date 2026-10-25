@@ -67,6 +67,7 @@ function staticPatterns(target) {
   }));
   const patterns = [
     ...iconPatterns,
+    { from: "node_modules/@azure/msal-browser/LICENSE", to: "MSAL-LICENSE.txt" },
     {
       from: "assets/icon-128.png",
       to: "assets/[name][ext]",
@@ -166,13 +167,35 @@ async function webpackConfig(env, options) {
         : ["./src/taskpane/taskpane.ts", "./src/taskpane/taskpane.html"],
       commands: "./src/commands/commands.ts",
       signin: "./src/taskpane/signin.ts",
+      "microsoft-signin": "./src/taskpane/microsoft-signin.ts",
+      "microsoft-redirect": "./src/taskpane/microsoft-redirect.ts",
     },
     output,
+    optimization: {
+      splitChunks: {
+        cacheGroups: {
+          microsoft: {
+            test: /[\\/]node_modules[\\/]@azure[\\/]msal-(?:browser|common)[\\/]/,
+            name: "microsoft-auth",
+            chunks: "all",
+            enforce: true,
+          },
+        },
+      },
+    },
     resolve: {
       extensions: [".ts", ".html", ".js"],
     },
     module: { rules: moduleRules },
     plugins: [
+      ...["microsoft-signin", "microsoft-redirect"].map(
+        (name) =>
+          new HtmlWebpackPlugin({
+            filename: `${name}.html`,
+            template: `./src/taskpane/${name}.html`,
+            chunks: [name],
+          })
+      ),
       new HtmlWebpackPlugin({
         filename: "taskpane.html",
         template: target.wordHarness

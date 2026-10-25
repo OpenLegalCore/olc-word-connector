@@ -280,12 +280,18 @@ export class TaskPaneView {
           : messages.checkedAt(new Date(status.checkedAt).toLocaleString(this.locale));
       result.textContent = [summary, time, status.code].filter(Boolean).join(" ");
     }
-    for (const id of ["send", "replace-proposal", "insert-proposal", "retry-search"]) {
+    for (const id of [
+      "send",
+      "replace-proposal",
+      "insert-proposal",
+      "retry-search",
+      "open-secure-sign-in",
+    ]) {
       const action = this.root.querySelector<HTMLButtonElement>(`button[data-action-id="${id}"]`);
       if (action)
         action.disabled =
           status?.phase === "checking" ||
-          (id === "retry-search" && Boolean(status?.disabled)) ||
+          ((id === "retry-search" || id === "open-secure-sign-in") && Boolean(status?.disabled)) ||
           Boolean(this.actionDisabledByModel.get(id));
     }
   }

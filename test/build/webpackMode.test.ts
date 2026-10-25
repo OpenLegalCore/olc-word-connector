@@ -368,13 +368,16 @@ describe("isolated hosted outputs", () => {
     for (const target of ["production", "staging"] as const) {
       const outputPath = outputPaths.get(target)!;
       const files = readdirSync(outputPath);
-      expect(files.filter((file) => file.endsWith(".js"))).toHaveLength(4);
+      expect(files.filter((file) => file.endsWith(".js"))).toHaveLength(7);
       expect(files.filter((file) => file.endsWith(".js"))).toEqual(
         expect.arrayContaining([
           expect.stringMatching(/^commands\.[a-f0-9]{20}\.js$/),
           expect.stringMatching(/^polyfill\.[a-f0-9]{20}\.js$/),
           expect.stringMatching(/^taskpane\.[a-f0-9]{20}\.js$/),
           expect.stringMatching(/^signin\.[a-f0-9]{20}\.js$/),
+          expect.stringMatching(/^microsoft-auth\.[a-f0-9]{20}\.js$/),
+          expect.stringMatching(/^microsoft-signin\.[a-f0-9]{20}\.js$/),
+          expect.stringMatching(/^microsoft-redirect\.[a-f0-9]{20}\.js$/),
         ])
       );
       expect(files.filter((file) => file.endsWith(".css"))).toEqual([
@@ -414,9 +417,25 @@ describe("isolated hosted outputs", () => {
 
   it("preserves source-map diagnostics for development and both harnesses", () => {
     const expectedMaps = {
-      development: ["commands.js.map", "polyfill.js.map", "signin.js.map", "taskpane.js.map"],
+      development: [
+        "commands.js.map",
+        "microsoft-auth.js.map",
+        "microsoft-redirect.js.map",
+        "microsoft-signin.js.map",
+        "polyfill.js.map",
+        "signin.js.map",
+        "taskpane.js.map",
+      ],
       harness: ["harness.js.map"],
-      "word-harness": ["commands.js.map", "polyfill.js.map", "signin.js.map", "taskpane.js.map"],
+      "word-harness": [
+        "commands.js.map",
+        "microsoft-auth.js.map",
+        "microsoft-redirect.js.map",
+        "microsoft-signin.js.map",
+        "polyfill.js.map",
+        "signin.js.map",
+        "taskpane.js.map",
+      ],
     } as const;
 
     for (const [target, maps] of Object.entries(expectedMaps)) {
@@ -609,7 +628,9 @@ describe("Cloudflare Pages static policy", () => {
     }
     expect(headers).toContain("connect-src 'self'");
     expect(headers).not.toMatch(/X-Frame-Options/i);
-    expect(headers.match(/connect-src ([^;]+);/)?.[1]).toBe("'self'");
+    expect(headers.match(/connect-src ([^;]+);/)?.[1]).toBe(
+      "'self' https://login.microsoftonline.com"
+    );
     expect(headers).not.toMatch(/openwebui|\/api\//i);
   });
 

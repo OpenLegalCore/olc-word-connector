@@ -44,6 +44,7 @@
     "build:word-session": "node scripts/build-word-session.js"
   },
   "dependencies": {
+    "@azure/msal-browser": "5.26.0",
     "core-js": "^3.36.0",
     "jose": "6.2.13",
     "regenerator-runtime": "^0.14.1"

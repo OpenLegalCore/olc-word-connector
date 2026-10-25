@@ -46,12 +46,17 @@ function installNavigator(value: Navigator | (() => never) | undefined): void {
 async function importEntry(): Promise<TaskPaneEntryModule> {
   const entry = await import("../../src/taskpane/taskpane.js");
   await Promise.resolve();
-  await Promise.resolve();
+  await vi.waitFor(() =>
+    expect(document.querySelector(".olc-app")?.getAttribute("data-view-state")).not.toBe(
+      "connecting"
+    )
+  );
   return entry;
 }
 
 beforeEach(() => {
   vi.resetModules();
+  vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({}, { status: 503 }));
   document.documentElement.lang = "";
   document.title = "OpenLegalCore";
   document.body.innerHTML =
@@ -160,7 +165,7 @@ describe("production task-pane entry initialization", () => {
     expect(document.documentElement.lang).toBe("en-US");
     expect(document.title).toBe("OpenLegalCore for Word");
     expect(document.querySelector(".olc-app")?.getAttribute("data-view-state")).toBe(
-      "session-expired"
+      "connection-error"
     );
   });
 
@@ -209,7 +214,8 @@ describe("production task-pane entry initialization", () => {
     expect(document.querySelectorAll(".olc-app")).toHaveLength(1);
     expect(document.querySelectorAll('button[data-action-id^="select-"]')).toHaveLength(0);
     expect(wordRun).not.toHaveBeenCalled();
-    await vi.waitFor(() => expect(fetch).not.toHaveBeenCalled());
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    expect(fetch.mock.calls[0][0]).toBe("/word-api/auth/config");
   });
 
   it.each([
@@ -234,11 +240,12 @@ describe("production task-pane entry initialization", () => {
       expect(document.documentElement.lang).toBe("en-US");
       expect(document.title).toBe("OpenLegalCore for Word");
       expect(document.querySelector(".olc-app")?.getAttribute("data-view-state")).toBe(
-        "session-expired"
+        "connection-error"
       );
-      expect(document.body.textContent).toContain("Access required");
+      expect(document.body.textContent).toContain("Microsoft access is not configured yet");
       expect(wordRun).not.toHaveBeenCalled();
-      expect(fetch).not.toHaveBeenCalled();
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(fetch.mock.calls[0][0]).toBe("/word-api/auth/config");
     }
   );
 
@@ -261,11 +268,12 @@ describe("production task-pane entry initialization", () => {
     expect(document.documentElement.lang).toBe("en-US");
     expect(document.title).toBe("OpenLegalCore for Word");
     expect(document.querySelector(".olc-app")?.getAttribute("data-view-state")).toBe(
-      "session-expired"
+      "connection-error"
     );
     expect(document.body.textContent).not.toContain("sensitive navigator value");
     expect(wordRun).not.toHaveBeenCalled();
-    expect(fetch).not.toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch.mock.calls[0][0]).toBe("/word-api/auth/config");
   });
 
   it("fails safely when navigator.language and Office.onReady registration throw", async () => {
@@ -322,7 +330,7 @@ describe("production task-pane entry initialization", () => {
 
   it.each([
     ["unsupported host", "Excel", "unsupported"],
-    ["supported Word host", "Word", "session-expired"],
+    ["supported Word host", "Word", "connection-error"],
   ])("renders the localized safe state for an %s", async (_label, host, state) => {
     installNavigator({ language: "en-US" } as Navigator);
     installOffice({

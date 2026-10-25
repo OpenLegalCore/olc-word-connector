@@ -1,5 +1,11 @@
 # OLC-72 cookie-independent Word session
 
+> Historical/deployed Cloudflare-user-login architecture. The owner-approved
+> Microsoft NAA/SSO candidate supersedes this user authentication path but is
+> not activated yet. See [Microsoft SSO](MICROSOFT_SSO.md) and its
+> [coordinated staging/rollback](MICROSOFT_SSO_STAGING.md). The working aa5 delivery
+> and this earlier evidence are retained.
+
 Status: **IN REVIEW — implemented and published; staging technical activation
 passed, actual Word acceptance pending**. The [execution record](evidence/olc72-word-session-activation-20261024/README.md)
 distinguishes real Access/PKCE/API checks and published bytes from unrun native

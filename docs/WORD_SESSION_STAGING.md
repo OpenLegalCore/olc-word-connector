@@ -1,5 +1,11 @@
 # OLC-72 Word session staging preparation
 
+> Historical/deployed Cloudflare-user-login architecture. The owner-approved
+> Microsoft NAA/SSO candidate supersedes this user authentication path but is
+> not activated yet. See [Microsoft SSO](MICROSOFT_SSO.md) and its
+> [coordinated staging/rollback](MICROSOFT_SSO_STAGING.md). The working aa5 delivery
+> and this earlier evidence are retained.
+
 Execution update 2026-10-24: the owner-authorized staging activation for
 `aa5d369f3e99067e8059a50fdd99f22535ca9810` has passed live human Access/PKCE,
 session/models/revocation and artifact delivery checks. Actual Word remains
