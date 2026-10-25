@@ -32,7 +32,8 @@ export function microsoftConfiguration(env) {
 
 async function trustedJson(url, send) {
   const response = await send(url, {
-    redirect: "error",
+    // Workers supports only follow/manual. Reject redirects via response.ok below.
+    redirect: "manual",
     credentials: "omit",
     signal: AbortSignal.timeout(5000),
   });

@@ -21,8 +21,7 @@ Word test was requested or simulated as a substitute for that report.
 ## End-to-end activation continuation (2026-10-25)
 
 The owner authorized the dedicated staging registrations and a coordinated
-activation/rollback after configuration and artifact gates. **Activation has not
-started; OLC-72 is not complete.** Reviewed code `30e6b7b` and its successful CI
+activation/rollback after configuration and artifact gates. **The first activation was rolled back; OLC-72 is not complete.** Reviewed code `30e6b7b` and its successful CI
 remain the source baseline. A fresh read of Pages and all three Worker versions
 matches the retained aa5 activation record; both session Workers' current plain
 variables match retained private operator configuration. A new HTTP comparison
@@ -38,8 +37,9 @@ live Entra/Cloudflare/Engine state or document was changed by these checks.
 The owner has manually created the dedicated **OLC Word Connector Staging SPA**
 and **OLC Word Connector Staging API** and supplied their actual IDs, scope and
 screenshot-based configuration evidence. No duplicate registration is needed.
-API account types and the actual user's cryptographically verified `tid:oid`
-remain pending; application/directory object IDs are not owner identities.
+The owner confirmed API account types and completed real Microsoft sign-in.
+The receiver cryptographically verified the actual user API token and saved only
+the private `tid:oid`; application/directory object IDs were not used.
 
 An operator-only MSAL sign-in page and loopback verifier now provide the missing
 acquisition path without copying tokens. An additive Pages overlay preserves the
@@ -47,8 +47,11 @@ aa5 application while the owner signs in; no Worker/Engine authorization changes
 occur during enrollment. The additive overlay was delivered after successful exact-head CI for
 `4e70228`; 60/60 static comparisons and the existing anonymous API denial passed.
 The task pane remains aa5d369 and all Workers are unchanged. The loopback
-receiver is ready for owner interaction; actual Microsoft identity verification,
-API activation and Word acceptance remain pending. See
+receiver completed owner verification. The first API activation returned 503
+before capability issuance and was rolled back to aa5 Worker versions.
+A deterministic workerd regression now reproduces the unsupported `redirect:
+"error"` fetch option; `manual` plus fail-closed response checking fixes it.
+New gates/CI and reactivation are required; actual Word acceptance remains pending. See
 [owner enrollment](MICROSOFT_SSO.md#owner-enrollment-continuation-2026-10-25).
 
 See the [fresh preflight evidence](evidence/olc72-activation-preflight-20261025/README.md).

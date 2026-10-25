@@ -1,0 +1,11 @@
+> olc-word-connector@0.1.0-beta.1 test
+> vitest --run test/gateway/microsoftWorkerRuntime.test.ts test/gateway/microsoftIdentity.test.ts
+
+
+ RUN  v4.1.11 [checkout]
+
+
+ Test Files  2 passed (2)
+      Tests  10 passed (10)
+   Start at  05:08:20
+   Duration  941ms (transform 219ms, setup 0ms, import 394ms, tests 622ms, environment 0ms)

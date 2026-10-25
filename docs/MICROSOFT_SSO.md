@@ -193,8 +193,8 @@ Entra; do not create replacements. These application IDs are public configuratio
 
 Owner-reported screenshot evidence confirms the three SPA redirects, SPA account
 types, delegated permission without Graph, disabled implicit/public-client flows,
-API v2 tokens/User scope and SPA preauthorization. API account types need separate
-confirmation. Directory tenant ID and application object ID are never substituted
+API v2 tokens/User scope and SPA preauthorization. The owner separately confirmed that the API also supports organizational and
+personal accounts. Directory tenant ID and application object ID are never substituted
 for the signed-in user's identity. LexAI OpenWebUI was not changed.
 
 The previous stdin verifier lacked an actual token-acquisition handoff. The
@@ -236,3 +236,9 @@ capability issuance, authenticated safe GETs and revocation; it writes sanitized
 status-only checks beside the private identity file. No completion route exists
 in the probe. Real sign-in, activation and Word acceptance are separate outcomes;
 local synthetic tests alone do not establish any of them.
+
+The owner completed the actual popup login and the receiver verified the real
+API token. The first coordinated API activation then exposed a Worker runtime
+fetch incompatibility and was rolled back; see the [runtime regression](evidence/olc72-worker-runtime-20261025/README.md).
+Trusted metadata requests now use `redirect: "manual"` and reject every non-OK
+response, including redirects, without following a Location header.

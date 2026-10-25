@@ -1,6 +1,9 @@
 # Microsoft SSO staging and rollback
 
-**Prepared only — no live activation in this change.** The working delivered
+**First activation rolled back; corrected candidate awaiting reactivation.**
+The owner's actual Microsoft API token is cryptographically verified; the first
+attempt failed with 503 before capability issuance due to a Worker fetch option.
+See [runtime regression and rollback evidence](evidence/olc72-worker-runtime-20261025/README.md). The working delivered
 baseline is `aa5d369f3e99067e8059a50fdd99f22535ca9810`, not the older pre-session
 frontend. Its Pages bytes, both session Workers, SQLite namespace, original
 private credentials, protected legacy gateway/routes and prior recovery bundles
