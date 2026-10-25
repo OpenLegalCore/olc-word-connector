@@ -44,8 +44,11 @@ remain pending; application/directory object IDs are not owner identities.
 An operator-only MSAL sign-in page and loopback verifier now provide the missing
 acquisition path without copying tokens. An additive Pages overlay preserves the
 aa5 application while the owner signs in; no Worker/Engine authorization changes
-occur during enrollment. Actual overlay delivery, Microsoft verification and
-Word acceptance must be recorded separately after execution. See
+occur during enrollment. The additive overlay was delivered after successful exact-head CI for
+`4e70228`; 60/60 static comparisons and the existing anonymous API denial passed.
+The task pane remains aa5d369 and all Workers are unchanged. The loopback
+receiver is ready for owner interaction; actual Microsoft identity verification,
+API activation and Word acceptance remain pending. See
 [owner enrollment](MICROSOFT_SSO.md#owner-enrollment-continuation-2026-10-25).
 
 See the [fresh preflight evidence](evidence/olc72-activation-preflight-20261025/README.md).

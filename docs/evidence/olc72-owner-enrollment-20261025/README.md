@@ -56,3 +56,24 @@ The Cloudflare connector's asset check returned HTTP 403 (endpoint authorization
 so asset publication will use the already authorized Wrangler installation/session;
 no new Cloudflare login is requested. Runtime results will be recorded separately,
 not inferred from the successful local suite.
+
+## Actual overlay delivery
+
+The exact code commit `4e70228aee0d1f023f84d8457db2dc44d3198a33` passed
+[CI / validate](https://github.com/OpenLegalCore/olc-word-connector/actions/runs/40159870867),
+including every job step. Wrangler used its existing authorized session to publish
+only the additive overlay: deployment `ea98e2c5-47b2-4902-a00c-9f1da1962510`.
+The application still runs **aa5d369**; Microsoft-only API mode is not activated.
+No Worker or auth configuration was changed.
+
+[Delivered hashes and status-only checks](delivery.json) record **60/60** asset
+comparisons (20 files on custom, canonical and immutable hosts). The helper's
+actual headers and HTML CSP, no-store behavior and redirect bridge were checked;
+the original task-pane CSP and absence of X-Frame-Options remain intact.
+Anonymous session/models still return 401; Microsoft config remains 404 on the
+old API. The original aa5 Pages deployment and package remain available for
+rollback. This verifies static delivery, **not actual interactive Microsoft login**.
+
+The loopback receiver has been started and the owner has been given the local
+start URL. Owner identity, API activation and actual Word acceptance are pending
+owner interaction, not PASS. No token or private identity is included here.
