@@ -1,0 +1,14 @@
+{
+  "attemptId": "bd72b0b0-acc9-442b-b147-8c0641aaa366",
+  "startedAt": "2026-10-25T14:00:35.812Z",
+  "finishedAt": "2026-10-25T14:00:44.429Z",
+  "httpStatus": 200,
+  "reason": "SSE_ERROR_EVENT",
+  "frontendVersion": "word-e37f072f824c4a8121ed20b628b457249a52fbc0cde0a015b36b8c2fa883eedc",
+  "provenance": "podal lastnik, brez neodvisnega pregleda zavihka",
+  "actual_request_body": "NOT_ACQUIRED",
+  "original_sse_code": "NOT_ACQUIRED",
+  "cause": "UNDETERMINED",
+  "engine_attribution": "UNPROVEN; nearby HTTP record has no joining identity",
+  "new_word_or_provider_trial": false
+}

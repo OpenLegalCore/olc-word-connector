@@ -1,9 +1,9 @@
 # OLC-74 bounded failure diagnostics — staging delivered
 
 **IN REVIEW / STAGING_DELIVERED; native acceptance open.** Reviewed source
-`dc3bef4a8b7adac234bb92720f97a9106179be25` is active at Pages
-`4bcc267c-62f0-461b-98af-6583436a6bc4`, with Auth/store `8ec17425…` and API `cfb80b7b…`,
-each 100%. See [actual activation, postflight and rollback](evidence/olc74-diagnostics-activation-20261025/README.md).
+`de34ecdbc6d53ce756ecfc2e44b7c7ff6133339f` is active at Pages
+`6f22feb3-14cc-4fab-a3e0-d9b30cd55c79`, with Auth/store `8ec17425…` and API `cfb80b7b…`,
+each 100%. See [actual frontend-only activation, postflight and rollback](evidence/olc74-sse-activation-20261025/README.md). The prior coordinated Worker/store activation remains [historical evidence](evidence/olc74-diagnostics-activation-20261025/README.md).
 The implementation started at documentation HEAD `da7c95959b0b9c7709770811d514a01bd9d4495f`.
 The historical Word trial remains
 [FAIL_OWNER_REPORTED / UNDETERMINED](evidence/olc74-word-trial-20261025/README.md).
@@ -11,7 +11,7 @@ This diagnostic implementation supplies no missing historical request record.
 The original [SSO MANUAL PASS](evidence/olc72-microsoft-delivery-20261025/README.md)
 is unchanged and does not accept this candidate or document proposals.
 
-## SSE-code follow-up candidate — not activated
+## SSE-code follow-up — staging delivered, incident unresolved
 
 The [14:00 UTC attempt investigation and reviewable candidate](evidence/olc74-sse-code-20261025/README.md)
 keep its root cause **UNDETERMINED** and original SSE code **NOT_RECOVERED**.
@@ -21,7 +21,11 @@ exception. Stream rejection, validations, bounded memory, no replay and explicit
 Apply are preserved. Actual adapter/gateway synthetic bytes pass pinned Engine
 admission for SL/EN. The complete historical request was unavailable, so that
 compatibility result does not validate the incident's actual input or model result.
-Current delivered source above is unchanged. No Worker update or activation occurs.
+The exact reviewed frontend is now delivered as recorded above; no Worker update occurred.
+For the 14:00 attempt the owner supplied
+`frontendVersion: word-e37f072f824c4a8121ed20b628b457249a52fbc0cde0a015b36b8c2fa883eedc`
+with provenance **podal lastnik, brez neodvisnega pregleda zavihka**. The request
+body and original SSE code remain unacquired.
 
 ## Pane record and copy
 
@@ -29,7 +33,8 @@ The actual OpenAI-compatible adapter creates a cryptographic UUID v4 and UTC
 start time before serializing/sending each completion. Its in-memory record has
 only: schema number, attempt ID, start/end UTC, loaded frontend fingerprint,
 failed/validated outcome, internal error code, phase, fixed reason and optional
-observed HTTP status. It excludes request/response content, exception messages,
+observed HTTP status, plus allowlisted `upstreamCode` (otherwise UNKNOWN) for SSE
+error envelopes. It excludes request/response content, exception messages,
 stack traces, document/selection identifiers, user identity, URLs and credentials.
 
 **Kopiraj diagnostiko / Copy diagnostics** appears after a completion failure.
@@ -141,7 +146,16 @@ error/stop/DONE/cancellation state. That contract must exclude content, identity
 credentials and arbitrary exception strings and specify retention/access rules.
 This candidate neither claims nor implements that future Engine change.
 
-## Reviewed package, actual activation and retained rollback
+## Current frontend-only rollback
+
+The current SSE-code frontend keeps exact Pages `4bcc267c…` / source `dc3bef4…`
+as its current-before-activation rollback. Only Pages needs restoring; Worker
+versions and their settings are unchanged. See [actual frontend delivery and
+rollback](evidence/olc74-sse-activation-20261025/README.md). Its exact reviewed
+56-checksum v2 package and the prior coordinated recovery packet remain preserved.
+Rollback was not needed or executed; Word/model acceptance remains open.
+
+## Historical coordinated package, activation and retained rollback
 
 The local review packet contains the exact frontend bytes, both compiled Workers,
 minimal settings-preserving upload configurations, pre-activation e8ff0317 frontend

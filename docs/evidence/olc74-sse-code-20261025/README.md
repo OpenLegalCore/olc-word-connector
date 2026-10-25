@@ -1,9 +1,11 @@
 # OLC-74 existing attempt and bounded SSE-code candidate
 
-**IN REVIEW / NOT ACTIVATED. Incident cause UNDETERMINED.** Attempt
+This is the preparation/investigation record. The later [owner-authorized frontend-only activation](../olc74-sse-activation-20261025/README.md) delivered this exact source without changing its bytes. This documentation successor corrects the owner-supplied fingerprint; the approved source/archive remain immutable.
+
+**At preparation: IN REVIEW / NOT ACTIVATED. Incident cause UNDETERMINED.** Attempt
 `bd72b0b0-acc9-442b-b147-8c0641aaa366`, 2026-10-25
 14:00:35.812–14:00:44.429 UTC: the owner supplies HTTP 200 / SSE_ERROR_EVENT.
-The original SSE error code is **NOT_RECOVERED**. The delivered parser's error
+The original SSE error code is **NOT_RECOVERED**. The then-delivered parser's error
 branch demonstrably discards it; this diagnostic defect does not identify the
 cause of the failed request. No request replay, provider call or Word action occurred.
 
@@ -30,7 +32,10 @@ for the authenticated receipt GET; its ten-minute retention has elapsed anyway.
 The receipt retains transfer metadata, not the original SSE code or request body.
 
 **The complete actual incident body is unavailable.** Its exact question,
-selection, loaded frontend fingerprint and sent-byte hash cannot be verified.
+selection and sent-byte hash cannot be verified. The owner supplied
+`frontendVersion: word-e37f072f824c4a8121ed20b628b457249a52fbc0cde0a015b36b8c2fa883eedc`.
+Provenance: **podal lastnik, brez neodvisnega pregleda zavihka**. It is reported
+metadata, not an independent inspection of the loaded tab.
 No production input/output is copied here. This limits task 1's historical
 verification; a reconstruction is not promoted to a capture.
 
@@ -99,13 +104,13 @@ error-class bundling changes the signin JS asset/reference; its SSO logic is
 unchanged. Eighteen same-path files match; only taskpane/signin JS/license paths
 and their HTML references change. No Worker update is required.
 
-Current baseline remains Pages `4bcc267c-62f0-461b-98af-6583436a6bc4`, source
+At preparation, the baseline was Pages `4bcc267c-62f0-461b-98af-6583436a6bc4`, source
 `dc3bef4a8b7adac234bb92720f97a9106179be25`, Auth/store `8ec17425…`, API `cfb80b7b…`,
 both 100%. [26 fresh immutable-host byte/header checks PASS](baseline-static.json).
 The new local packet contains these exact 24-file baseline rollback bytes and
 the 24-file candidate, verifier, checksums and frontend-only APPLY/ROLLBACK handoff.
 Its final source SHA, archive path/hash and CI are in the PR publication comment.
-No activation, rollback, main push, merge or infrastructure change occurred.
+No activation, rollback, main push, merge or infrastructure change occurred during preparation. The later authorized frontend activation is linked above.
 
 Historical login MANUAL PASS and the earlier FAIL_OWNER_REPORTED / UNDETERMINED
 trial are preserved. Actual new code/clipboard in the owner's Word host,

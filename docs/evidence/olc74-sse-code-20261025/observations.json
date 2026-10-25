@@ -5,9 +5,10 @@
     "finishedAt": "2026-10-25T14:00:44.429Z",
     "httpStatus": 200,
     "reason": "SSE_ERROR_EVENT",
-    "provenance": "owner supplied diagnostic metadata; no original wire body/error envelope available",
+    "provenance": "podal lastnik, brez neodvisnega pregleda zavihka",
     "original_upstream_code": "UNKNOWN / NOT_RECOVERED",
-    "root_cause": "UNDETERMINED"
+    "root_cause": "UNDETERMINED",
+    "frontendVersion": "word-e37f072f824c4a8121ed20b628b457249a52fbc0cde0a015b36b8c2fa883eedc"
   },
   "browser": {
     "connected_word_sessions": 0,
@@ -25,11 +26,12 @@
     "tail_started": false
   },
   "request": {
-    "actual_incident_body": "UNAVAILABLE; cannot validate original message/selection, body hash or exact loaded frontend version",
+    "actual_incident_body": "UNAVAILABLE; cannot validate original message/selection or sent-byte hash",
     "deployed_serializer_and_gateway_sources": "unchanged from dc3bef4; full synthetic actual-adapter/gateway bytes pass pinned Engine admission",
     "gateway_transform": "64KiB bounded JSON parse/stringify in session API and gateway; model/messages/stream/stream_options/response_language/response_format preserved; upstream headers rebuilt, Word capability/cookie/attempt ID not forwarded",
     "question_and_selection": "two distinct user text parts, exact Unicode/newline bytes in synthetic tests; not concatenated/enveloped",
-    "semantic_or_model_acceptance": "NOT_RUN"
+    "semantic_or_model_acceptance": "NOT_RUN",
+    "reported_frontend_version": "Owner supplied the frontendVersion recorded above; no independent owner-tab inspection"
   },
   "engine": {
     "pin": "eef8ed0794046922842258ce587aab722db5fcb4",

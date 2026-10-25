@@ -36,10 +36,10 @@ without changing the document.
 
 ## At a glance
 
-The [OLC-74 SSE diagnostic follow-up](docs/evidence/olc74-sse-code-20261025/README.md)
-is in review and not activated. It retains only allowlisted upstream error codes;
-the reported Word failure's cause remains undetermined. Existing staging and SSO
-acceptance records are preserved.
+The [OLC-74 SSE diagnostic follow-up](docs/evidence/olc74-sse-activation-20261025/README.md)
+is delivered on staging: source `de34ecd`, Pages `6f22feb3…`. It retains only
+allowlisted upstream error codes. The reported Word failure remains undetermined;
+this improves diagnostics and does not establish incident resolution or Word acceptance.
 
 The OLC-72 draft adds an [explicit document-review proposal with guarded
 user-clicked writes](docs/WORD_DOCUMENT_PROPOSAL.md). Its owner-accepted visual
@@ -82,10 +82,12 @@ and the remaining acceptance scenarios stay **NOT_RUN**.
 The earlier SSO MANUAL PASS remains historical access acceptance.
 
 The [bounded diagnostics update](docs/evidence/olc74-diagnostics-activation-20261025/README.md)
-is now activated on staging: source `dc3bef4a`, Pages `4bcc267c…`, with the
+was activated on staging as source `dc3bef4a`, Pages `4bcc267c…`, with the
 reviewed Auth/store and API versions. Delivered bytes/settings and diagnostic GET
 protection pass. Authorized lookup and Word clipboard/proposal use remain NOT_RUN;
-the historical failed Word trial remains undiagnosed.
+the historical failed Word trial remains undiagnosed. Its frontend is now
+superseded by the frontend-only SSE-code activation linked above; Worker versions
+and their settings remain unchanged.
 
 |                         |                                                                         |
 | ----------------------- | ----------------------------------------------------------------------- |

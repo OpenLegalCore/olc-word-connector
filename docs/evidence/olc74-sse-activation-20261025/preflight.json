@@ -1,0 +1,38 @@
+{
+  "package": {
+    "archive_sha256": "35f77a4573e8404cf07d66198a1b70bc4076815ca71a885e284544ec10d8ad4e",
+    "internal_checksums": 56,
+    "archive_entries": 57,
+    "all_internal_checksums": "PASS",
+    "archive_equals_reviewed_packet": "PASS",
+    "source": "de34ecdbc6d53ce756ecfc2e44b7c7ff6133339f",
+    "tree": "9c6e04323999f8852be618a0445b1e2a58a72905",
+    "original_checkout_diff_sha256": "bf549109fe7d00920e882e5a608f4256dff13bce513dc1aeb30a0e1ba9ae4f16"
+  },
+  "ci": {
+    "source": "de34ecdbc6d53ce756ecfc2e44b7c7ff6133339f",
+    "run_id": 40208491747,
+    "url": "https://github.com/OpenLegalCore/olc-word-connector/actions/runs/40208491747",
+    "status": "completed",
+    "conclusion": "success",
+    "source_ci_rechecked": true,
+    "documentation_successor_ci": "NOT_RUN; docs only, no merge"
+  },
+  "connections_before": {
+    "checked_at": "2026-10-25T16:32:49.595859+00:00",
+    "command": "ss -Htn state established ( sport = :18451 or dport = :18451 )",
+    "exit": 0,
+    "established_connections": 0,
+    "scope": "sample of local Engine listener TCP sockets; no admission lock or assertion about future requests",
+    "content_exported": false
+  },
+  "connections_at_apply": {
+    "checked_at": "2026-10-25T16:33:51.406519+00:00",
+    "established_connections": 0,
+    "exit": 0,
+    "scope": "TCP sample only; no admission lock or future-request guarantee"
+  },
+  "baseline_match": "PASS",
+  "standalone_packet_verifier_exit": 0,
+  "build_or_install_during_activation": false
+}

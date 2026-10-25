@@ -266,3 +266,30 @@ Active staging stays `dc3bef4` / Pages `4bcc267c…`, with unchanged Auth/API ve
 26 retained-baseline static checks PASS. No activation or provider/Word action.
 Historical SSO MANUAL PASS and earlier FAIL_OWNER_REPORTED / UNDETERMINED remain
 unchanged; real Word proposal/use and remaining acceptance remain NOT_RUN.
+
+
+## OLC-74 frontend-only SSE diagnostics activation — 2026-10-25
+
+**STAGING_DIAGNOSTICS_DELIVERED / POSTFLIGHT PASS; incident UNDETERMINED.**
+Exact owner-approved product source `de34ecdbc6d53ce756ecfc2e44b7c7ff6133339f` is now
+canonical Pages `6f22feb3-14cc-4fab-a3e0-d9b30cd55c79`. The prepared archive and all
+56 internal checksums PASS; source CI 40208491747 PASS. Only prepared Pages bytes
+were delivered, without build/install, Worker upload/switch, setting or route change.
+All 78 served-byte/security-header checks and the taskpane asset/fingerprint on
+immutable and both canonical hosts PASS. Public MSAL config is byte-identical.
+Auth/store `8ec17425-5690-46ed-801a-fe214ebaff3b` and API
+`cfb80b7b-78ed-4da3-8a4a-4b9462c9deb0` stay 100%; settings/binding/route fingerprints
+match preflight. No secret-setting operation, Engine/Studio/LWS or open Word action.
+
+Documentation correction for attempt `bd72b0b0-acc9-442b-b147-8c0641aaa366`:
+owner supplied `frontendVersion: word-e37f072f824c4a8121ed20b628b457249a52fbc0cde0a015b36b8c2fa883eedc`.
+Provenance: **podal lastnik, brez neodvisnega pregleda zavihka**. The prior claim
+that this reported fingerprint was missing is corrected in this documentation-only
+successor. Actual request body and original SSE code remain NOT_ACQUIRED; cause
+UNDETERMINED. The approved product source/archive are preserved unchanged.
+
+Rollback `4bcc267c…` / source `dc3bef4…` and its exact 24-file packet are retained;
+26 baseline byte/header checks PASS. Rollback not needed/executed. No new completion,
+provider call or independent Word test. Word clipboard/proposal display/use,
+Apply/Undo/Redo/reopen and remaining acceptance are NOT_RUN. Historical SSO MANUAL
+PASS and FAIL_OWNER_REPORTED are unchanged. See [actual cleaned delivery evidence](evidence/olc74-sse-activation-20261025/README.md).
