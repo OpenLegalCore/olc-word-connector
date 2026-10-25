@@ -1,6 +1,6 @@
 # Word Connector — OLC-72 review status
 
-Updated: 2026-10-24. **IN REVIEW**, draft PR #2,
+Updated: 2026-10-25. **IN REVIEW**, draft PR #2,
 `codex/olc-72-word-native-sse`.
 
 ## Primary outcome still required
@@ -17,6 +17,33 @@ The currently working staging implementation remains
 showing **OLC Engine connected** and a usable form is accepted as evidence of
 that delivered flow. No repeated browser connection, Cloudflare login or new
 Word test was requested or simulated as a substitute for that report.
+
+## Concurrent 401 follow-up (2026-10-25)
+
+The owner-reported race was reproduced on reviewed head
+`e8e247e5f128e5d139b753920fdfc65573f28488`: with Microsoft renewal held,
+the second original GET retried with `Bearer undefined`. The deterministic
+regression failed in both response orders before production code was changed.
+Safe GETs now await the shared silent renewal or use the valid newer capability;
+retry requires a present, unexpired capability. A delayed retry's 401 invalidates
+only its own capability, preserving a newer session. Each GET still retries at
+most once, completion POSTs never replay, and cancellation of a waiter does not
+cancel renewal for the other request. No automatic interactive sign-in is added.
+
+The new focused tests also cover rejected identity/capability renewal, both
+cancelled waiter positions and stale original/retry responses. See the
+[regression and verification record](evidence/olc72-concurrent-401-20261025/README.md)
+for RED/GREEN results, exact local commands and Entra inventory findings.
+This source correction remains **IN REVIEW / NOT ACTIVATED**.
+
+Read-only connector discovery found no Entra/Microsoft Graph directory-management
+connection; `az`, `mgc` and `pwsh` are absent. Therefore the actual SPA/API
+registration inventory remains **NOT_QUERIED**, and registration existence is
+**UNKNOWN**, not absent. The missing capability is an authenticated directory
+connection able to read applications (normally `Application.Read.All`; personal
+account ownership listing also requires `User.Read`). No existing Word login is
+claimed as that directory authorization, and no live auth/configuration changes
+were attempted.
 
 ## Candidate implementation
 
@@ -47,13 +74,13 @@ Word test was requested or simulated as a substitute for that report.
 | Starting PR head / local recovery ref | `d6c365840759364fc7793bb6b202a748113ebfac`; preserved before editing |
 | Registration discovery | No Microsoft registration configured in the inspected project; external Entra directory not accessible/verified |
 | Missing activation input | Actual distinct SPA/API registration IDs, delegated scope/redirect/consent configuration and verified owner `tid:oid`; no values invented |
-| Offline suite | **628 PASS / 1 protected-live SKIP**, 39 passing files / 1 skipped |
+| Offline suite | **636 PASS / 1 protected-live SKIP**, 39 passing files / 1 skipped |
 | Local contribution gates | All 18 commands pass: locked install, production audit (0 vulnerabilities), full tests, typecheck, lint, exact CI formatting, 4 manifests, 5 frontend builds, Worker build, bundle isolation and diff check |
 | Synthetic auth scenarios | Silent/new-pane acquisition, 15-minute capability renewal, concurrency, bounded denial, consent/cancellation, unsupported-host fallback, wrong issuer/audience/scope/client/signature, key rollover and account denial tested |
 | Synthetic runtime recovery | Multiline draft, SL/EN and both attached/removed choices retained; no completion or document write |
 | Actual Microsoft/Entra/Word NAA/fallback | **NOT_RUN**; registration/owner configuration missing, no actual host support inferred |
 | Prepared staging and rollback | 48 artifact files, approved real-host manifest, accepted CSS/icons and aa5 rollback copied/verified; no deployment or fresh live control-plane attestation |
-| Exact-current-head CI | Required before activation/merge; local evidence alone does not establish its result |
+| Exact-current-head CI | Must be checked after this follow-up is published; the previous successful run on `e8e247e` does not establish the new head result |
 | Current delivery / infrastructure | Preserved; no live Entra/Cloudflare/auth/Tunnel/DNS/Engine change, OAuth login, completion, document write or merge |
 
 The original user checkout and its two documentation edits, all prior clones,

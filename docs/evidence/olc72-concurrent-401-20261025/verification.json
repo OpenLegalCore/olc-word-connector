@@ -1,0 +1,261 @@
+{
+  "date": "2026-10-25",
+  "branch": "codex/olc-72-word-native-sse",
+  "startingHead": "e8e247e5f128e5d139b753920fdfc65573f28488",
+  "startingTree": "0610ae537c79c0990052e1b13cdb503596b4052f",
+  "prBase": "603585a195180f535674126803cb570c086b4523",
+  "liveEngineTests": "disabled: OLC_WORD_LIVE_OLC_ENGINE=0",
+  "red": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "--run",
+      "test/taskpane/MicrosoftSessionRenewal.test.ts",
+      "-t",
+      "shares renewal when"
+    ],
+    "exitCode": 1,
+    "failed": 2,
+    "productionSourceUnchangedBeforeRun": true,
+    "observedInvalidRetryHeader": "Bearer undefined"
+  },
+  "green": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "--run",
+      "test/taskpane/MicrosoftSessionRenewal.test.ts",
+      "test/taskpane/WordSessionClient.test.ts"
+    ],
+    "exitCode": 0,
+    "passed": 20
+  },
+  "fullSuite": {
+    "passed": 636,
+    "skippedProtectedLive": 1,
+    "passingFiles": 39,
+    "skippedFiles": 1
+  },
+  "gates": [
+    {
+      "command": [
+        "npm",
+        "ci"
+      ],
+      "exitCode": 0,
+      "seconds": 8.12,
+      "log": "01-npm-ci.log"
+    },
+    {
+      "command": [
+        "npm",
+        "audit",
+        "--omit=dev",
+        "--audit-level=high"
+      ],
+      "exitCode": 0,
+      "seconds": 0.51,
+      "log": "02-npm-audit---omit=dev.log"
+    },
+    {
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run"
+      ],
+      "exitCode": 0,
+      "seconds": 14.79,
+      "log": "03-npm-test---.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "exitCode": 0,
+      "seconds": 2.0,
+      "log": "04-npm-run-typecheck.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "lint"
+      ],
+      "exitCode": 0,
+      "seconds": 1.59,
+      "log": "05-npm-run-lint.log"
+    },
+    {
+      "command": [
+        "npx",
+        "--no-install",
+        "prettier",
+        "--check",
+        ".github/workflows/ci.yml",
+        "src/**/*.ts",
+        "src/**/*.css",
+        "src/taskpane/*.html",
+        "infrastructure/**/*.js",
+        "test/**/*.ts",
+        "test/**/*.css",
+        "test/harness/harness.html",
+        "scripts/**/*.js",
+        "*.{js,json,mts}"
+      ],
+      "exitCode": 0,
+      "seconds": 1.42,
+      "log": "06-npx---no-install-prettier.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "validate"
+      ],
+      "exitCode": 0,
+      "seconds": 0.4,
+      "log": "07-npm-run-validate.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "validate:dev"
+      ],
+      "exitCode": 0,
+      "seconds": 0.33,
+      "log": "08-npm-run-validate-dev.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "validate:stage"
+      ],
+      "exitCode": 0,
+      "seconds": 0.32,
+      "log": "09-npm-run-validate-stage.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "validate:prod"
+      ],
+      "exitCode": 0,
+      "seconds": 0.32,
+      "log": "10-npm-run-validate-prod.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build:harness"
+      ],
+      "exitCode": 0,
+      "seconds": 1.48,
+      "log": "11-npm-run-build-harness.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build:word-harness"
+      ],
+      "exitCode": 0,
+      "seconds": 2.06,
+      "log": "12-npm-run-build-word-harness.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build:dev"
+      ],
+      "exitCode": 0,
+      "seconds": 1.84,
+      "log": "13-npm-run-build-dev.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build:stage"
+      ],
+      "exitCode": 0,
+      "seconds": 3.57,
+      "log": "14-npm-run-build-stage.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exitCode": 0,
+      "seconds": 3.38,
+      "log": "15-npm-run-build.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build:word-session"
+      ],
+      "exitCode": 0,
+      "seconds": 0.21,
+      "log": "16-npm-run-build-word-session.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "verify:bundle"
+      ],
+      "exitCode": 0,
+      "seconds": 0.1,
+      "log": "17-npm-run-verify-bundle.log"
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exitCode": 0,
+      "seconds": 0.0,
+      "log": "18-git-diff---check.log"
+    }
+  ],
+  "sourceSha256": {
+    "src/taskpane/WordSessionClient.ts": "dcdfa496426daea4dea5edb0e6a3a8ec0a98d432754e08e238d7b5921b4c6d91",
+    "test/taskpane/MicrosoftSessionRenewal.test.ts": "2af1741d5987cf7d262e559bae1f02dd70fd771f2ea50773c50fbd07ee912a13"
+  },
+  "entraInventory": {
+    "supportedDirectoryToolAvailable": false,
+    "catalogSearches": [
+      "Microsoft Entra",
+      "Microsoft Graph application registrations directory inventory"
+    ],
+    "directoryConnectorFound": false,
+    "availableLocalClients": [],
+    "directoryQuery": "NOT_RUN",
+    "registrationExistence": "UNKNOWN",
+    "missingConnection": "Authenticated Entra/Microsoft Graph read-application inventory connection",
+    "minimumReadPermission": "Application.Read.All; personal account owned-app listing also User.Read",
+    "source": "https://learn.microsoft.com/en-us/graph/api/application-list?view=graph-rest-1.0"
+  },
+  "notPerformed": [
+    "activation",
+    "live authentication changes",
+    "merge",
+    "provider completion",
+    "Word write",
+    "Tunnel/cloudflared/DNS/local Engine change"
+  ]
+}

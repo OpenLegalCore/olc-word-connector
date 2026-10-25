@@ -107,9 +107,18 @@ export class WordSessionClient {
       // Only replay an idempotent discovery GET. Never replay a completion body.
       if (this.identity && (init.method ?? "GET") === "GET" && url !== "/v1/chat/completions") {
         void response.body?.cancel().catch(() => undefined);
-        if (stillCurrent) await this.authenticate(false, true);
+        // Another 401 may already have cleared the rejected capability. Join
+        // its renewal, or use the valid newer capability it has installed.
+        if (this.renewal || !this.token || this.expiresAt <= Date.now()) {
+          const pending = this.renewal ?? this.authenticate(false, true);
+          if (init.signal) await interrupted(pending, init.signal);
+          else await pending;
+        }
         if (init.signal?.aborted) throw new ChatGatewayError("CANCELLED");
-        headers.set("Authorization", `Bearer ${this.token}`);
+        if (!this.token || this.expiresAt <= Date.now())
+          throw new ChatGatewayError("SESSION_EXPIRED");
+        const retryToken = this.token;
+        headers.set("Authorization", `Bearer ${retryToken}`);
         const retry = await this.send("/word-api" + url, {
           ...init,
           headers,
@@ -118,7 +127,7 @@ export class WordSessionClient {
           cache: "no-store",
         });
         if (retry.status === 401) {
-          this.token = undefined;
+          if (this.token === retryToken) this.token = undefined;
           void retry.body?.cancel().catch(() => undefined);
           throw new ChatGatewayError("ACCESS_DENIED");
         }
