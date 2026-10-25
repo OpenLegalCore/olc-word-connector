@@ -1,4 +1,5 @@
 import { diagnosticReasons, type DiagnosticReason } from "./diagnostics";
+import { upstreamSseErrorCode, type UpstreamSseErrorCode } from "./upstreamSseError";
 
 export type ChatGatewayErrorCode =
   | "INVALID_CONFIGURATION"
@@ -18,11 +19,13 @@ export class ChatGatewayError extends Error {
   readonly code: ChatGatewayErrorCode;
 
   readonly reason?: DiagnosticReason;
+  readonly upstreamCode?: UpstreamSseErrorCode;
 
-  constructor(code: ChatGatewayErrorCode, reason?: DiagnosticReason) {
+  constructor(code: ChatGatewayErrorCode, reason?: DiagnosticReason, upstreamCode?: unknown) {
     super(code);
     this.name = "ChatGatewayError";
     this.code = code;
     this.reason = diagnosticReasons.includes(reason as DiagnosticReason) ? reason : undefined;
+    if (this.reason === "SSE_ERROR_EVENT") this.upstreamCode = upstreamSseErrorCode(upstreamCode);
   }
 }

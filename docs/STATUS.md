@@ -243,3 +243,26 @@ Archive SHA-256 and all 68 internal checksums PASS; approved-source CI 401938802
 Authorized empty diagnostic lookup is **NOT_RUN** because supported tools expose no current Word capability/connected Word session. No session or artificial record was created. Owner Word/pane state was not inspected or reloaded, and no new Word test was initiated. Live receipt/clipboard, actual model/proposal use, Apply/Undo/Redo/reopen and the other outstanding retention scenarios remain **NOT_RUN**. The historical trial remains **FAIL_OWNER_REPORTED / UNDETERMINED** and the original login **MANUAL PASS** remains unchanged.
 
 Rollback was not needed or executed. Exact current-before-activation e8ff0317 frontend/Pages `82da70e6…` and both previous Worker versions remain available; all 26 retained rollback byte/header checks PASS. See [actual identities, ordered exit codes, cleaned evidence and limitations](evidence/olc74-diagnostics-activation-20261025/README.md). PR #3 stays draft/unmerged. Engine pin and prior owner-executed Tunnel proof remain unchanged; no GitHub-main, Engine/Tunnel/DNS/LWS/Studio or open Word/browser change.
+
+
+## OLC-74 SSE code investigation — candidate IN REVIEW, not activated
+
+Attempt `bd72b0b0-acc9-442b-b147-8c0641aaa366` (14:00:35.812–14:00:44.429 UTC)
+has owner-supplied HTTP 200 / SSE_ERROR_EVENT. Cause **UNDETERMINED**, original
+SSE code **NOT_RECOVERED**. The lone temporally adjacent Engine 200 lacks a joining
+identity/terminal and is not attributed. Complete historical request bytes and
+protected inspection records are unavailable; missing evidence is not a cause.
+
+The minimal frontend candidate preserves only 16 pinned exact upstream error
+codes, otherwise UNKNOWN, into bounded copyable diagnostics. No request-profile
+change was justified: full actual-adapter/gateway synthetic SL/EN byte vectors
+pass pure admission validators at Engine `eef8ed0794046922842258ce587aab722db5fcb4`.
+This does not validate the actual incident body or semantic model behavior.
+Local gates PASS: 732 tests, one protected live SKIP, 92 targeted PASS, all other
+required gates PASS. Exact final-head CI and source/package SHA are linked in PR #3.
+See [clean evidence, limitations and candidate](evidence/olc74-sse-code-20261025/README.md).
+
+Active staging stays `dc3bef4` / Pages `4bcc267c…`, with unchanged Auth/API versions;
+26 retained-baseline static checks PASS. No activation or provider/Word action.
+Historical SSO MANUAL PASS and earlier FAIL_OWNER_REPORTED / UNDETERMINED remain
+unchanged; real Word proposal/use and remaining acceptance remain NOT_RUN.

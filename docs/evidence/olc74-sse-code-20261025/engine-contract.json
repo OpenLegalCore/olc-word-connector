@@ -1,0 +1,31 @@
+{
+  "engine_pin": "eef8ed0794046922842258ce587aab722db5fcb4",
+  "scope": "synthetic actual-adapter/gateway bytes; historical incident body unavailable",
+  "module_sha256": {
+    "src/lexai_engine/__init__.py": "f645927277d6f96fa8fc54809fecce19225174f2d5be210bd57f58a8cfd472b7",
+    "src/lexai_engine/chat_protocol.py": "0272a5379ac5bc073eb0da927b9d06d3da244ecd7a1fcd750beae948c8fb386c",
+    "src/lexai_engine/config.py": "207552a5bcb6aa904bafad2c48ae8d666c7a37e9e6368453c89431a9eb647942",
+    "src/lexai_engine/language.py": "10defbdd25d79137c818e51347d384c69368e34454f56866868bb9399bd66167",
+    "src/lexai_engine/retrieval_policy.py": "a60acf095defa1132fbe30318804a0b8db8d179a6f849148e39b764d49272419",
+    "src/lexai_engine/structured_output.py": "7317065e49196862b1ac31398a1151686f7be2af7bb75e9201f7023ef367d5dc",
+    "src/lexai_engine/tool_calling.py": "b62bd23e0062b17dcd1024a63e64fb34127b6aed90b6ee5af83496c3f091f9e0",
+    "src/lexai_engine/workflow_events.py": "470235fe3af10adbc3fce1e3c8f5e8b2b40e1d5dd05d38a00daeae957a194f51"
+  },
+  "results": [
+    {
+      "language": "sl",
+      "result": "PASS",
+      "synthetic_body_sha256": "8d87e43a7eb57d90c6055bbd08029e67dd451f7e8b8a754a20e554f5f2aa8d05",
+      "bytes": 1794,
+      "negative_controls_rejected": 4
+    },
+    {
+      "language": "en",
+      "result": "PASS",
+      "synthetic_body_sha256": "995d4889728581fb56dc1482dc681f7ba3bfba68623bab339f90bc553a0dfbcf",
+      "bytes": 1794,
+      "negative_controls_rejected": 4
+    }
+  ],
+  "network_forbidden": true
+}

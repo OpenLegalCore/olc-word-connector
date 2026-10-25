@@ -382,6 +382,7 @@ export class OpenAICompatibleAdapter implements ChatGateway {
         code,
         phase,
         reason,
+        ...(safe.upstreamCode !== undefined ? { upstreamCode: safe.upstreamCode } : {}),
         ...(httpStatus !== undefined ? { httpStatus } : {}),
       });
       throw safe;

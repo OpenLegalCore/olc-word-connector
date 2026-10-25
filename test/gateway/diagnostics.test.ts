@@ -9,6 +9,8 @@ import { OpenAICompatibleAdapter } from "../../src/chat/OpenAICompatibleAdapter"
 import { WordSessionClient } from "../../src/taskpane/WordSessionClient";
 import { diagnosticReceipt } from "../../src/chat/diagnostics";
 import { contentEvent, documentOnlyFixture, successTerminal } from "../fixtures/documentReview";
+import { documentReviewBody } from "../../src/chat/documentReview";
+import { mkdirSync, writeFileSync } from "node:fs";
 const origin = "https://word.example.invalid";
 const request = {
   question: "PRIVATE_QUESTION_SENTINEL",
@@ -77,12 +79,22 @@ async function capability() {
 }
 async function fixture(upstream: (request: Request) => Promise<Response>) {
   const upstreamFetch = vi.fn(upstream);
-  const calls: { path: string; method: string; attemptId: string | null }[] = [];
+  const calls: {
+    path: string;
+    method: string;
+    attemptId: string | null;
+    body?: BodyInit | null;
+  }[] = [];
   const send = async (path: string, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);
     headers.set("Origin", origin);
     headers.set("CF-Connecting-IP", random());
-    calls.push({ path, method: init.method ?? "GET", attemptId: headers.get("X-OLC-Attempt-ID") });
+    calls.push({
+      path,
+      method: init.method ?? "GET",
+      attemptId: headers.get("X-OLC-Attempt-ID"),
+      body: init.body,
+    });
     return wordApi(
       new Request(origin + path, { ...init, headers }),
       env,
@@ -105,6 +117,63 @@ async function fixture(upstream: (request: Request) => Promise<Response>) {
   return { adapter, client, calls, upstreamFetch };
 }
 describe("bounded authenticated diagnostics using actual adapters, API gateway and SQLite store", () => {
+  it.each(["sl", "en"] as const)(
+    "preserves the complete serialized %s Word profile through both gateways",
+    async (language) => {
+      const input = {
+        question: 'SYNTHETIC instruction "quoted"\nčžš 🟤',
+        context: {
+          type: "selected_text" as const,
+          quotedText: "SYNTHETIC selected text\n  čžš 🟤\n",
+        },
+        uiLocale: language === "sl" ? ("sl-SI" as const) : ("en-US" as const),
+      };
+      let received = "";
+      const { adapter, calls } = await fixture(async (upstream) => {
+        received = await upstream.text();
+        return sse(
+          contentEvent(JSON.stringify(documentOnlyFixture(language, false))) + successTerminal
+        );
+      });
+      await expect(adapter.complete(input)).resolves.toMatchObject({ text: "" });
+      await flushed();
+      const sent = calls.find((call) => call.path.endsWith("completions"))!.body;
+      expect(sent).toBe(JSON.stringify(documentReviewBody(input, "lexai-engine-local")));
+      expect(received).toBe(sent);
+      expect(JSON.parse(received).messages[0].content).toEqual([
+        { type: "text", text: input.question },
+        { type: "text", text: input.context.quotedText },
+      ]);
+      // Explicit local-only export of this synthetic vector for the pinned Python validator.
+      if (process.env.OLC_EXPORT_SYNTHETIC_WORD_REQUESTS === "1") {
+        mkdirSync("/tmp/olc74-synthetic-word-requests", { recursive: true, mode: 0o700 });
+        writeFileSync(`/tmp/olc74-synthetic-word-requests/${language}.json`, received, {
+          mode: 0o600,
+        });
+      }
+    }
+  );
+  it("joins an allowlisted upstream SSE code to the same receipt without a second POST", async () => {
+    const { adapter, client, calls, upstreamFetch } = await fixture(async () =>
+      sse(
+        contentEvent('{"status":"ANSWER","claims":[]') +
+          'data: {"error":{"code":"planning_failed","message":"PRIVATE_MESSAGE"}}\n\n'
+      )
+    );
+    await expect(adapter.complete(request)).rejects.toMatchObject({
+      upstreamCode: "planning_failed",
+    });
+    await flushed();
+    const diagnostic = adapter.diagnostics.latestFailure()!;
+    const receipt = await client.diagnostic(diagnostic.attemptId, diagnostic.frontendVersion);
+    expect(receipt?.attemptId).toBe(diagnostic.attemptId);
+    expect(receipt?.events).toContainEqual(
+      expect.objectContaining({ stage: "upstream_http", httpStatus: 200 })
+    );
+    expect(JSON.stringify({ diagnostic, receipt })).not.toContain("PRIVATE_");
+    expect(upstreamFetch).toHaveBeenCalledTimes(1);
+    expect(calls.filter((call) => call.path.endsWith("completions"))).toHaveLength(1);
+  });
   it.each([
     [
       "upstream HTTP",

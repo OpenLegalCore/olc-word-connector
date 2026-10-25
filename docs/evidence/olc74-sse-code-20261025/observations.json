@@ -1,0 +1,49 @@
+{
+  "attempt": {
+    "id": "bd72b0b0-acc9-442b-b147-8c0641aaa366",
+    "startedAt": "2026-10-25T14:00:35.812Z",
+    "finishedAt": "2026-10-25T14:00:44.429Z",
+    "httpStatus": 200,
+    "reason": "SSE_ERROR_EVENT",
+    "provenance": "owner supplied diagnostic metadata; no original wire body/error envelope available",
+    "original_upstream_code": "UNKNOWN / NOT_RECOVERED",
+    "root_cause": "UNDETERMINED"
+  },
+  "browser": {
+    "connected_word_sessions": 0,
+    "historical_network_record": "UNAVAILABLE",
+    "word_actions": 0
+  },
+  "worker": {
+    "api_version": "cfb80b7b-78ed-4da3-8a4a-4b9462c9deb0",
+    "auth_version": "8ec17425-5690-46ed-801a-fe214ebaff3b",
+    "traffic_each": 100,
+    "observability": null,
+    "logpush": false,
+    "historical_receipt": "NOT_READ: no current capability available; 10-minute retention already elapsed",
+    "sse_code_retention": "UNSUPPORTED in current transfer-only receipt",
+    "tail_started": false
+  },
+  "request": {
+    "actual_incident_body": "UNAVAILABLE; cannot validate original message/selection, body hash or exact loaded frontend version",
+    "deployed_serializer_and_gateway_sources": "unchanged from dc3bef4; full synthetic actual-adapter/gateway bytes pass pinned Engine admission",
+    "gateway_transform": "64KiB bounded JSON parse/stringify in session API and gateway; model/messages/stream/stream_options/response_language/response_format preserved; upstream headers rebuilt, Word capability/cookie/attempt ID not forwarded",
+    "question_and_selection": "two distinct user text parts, exact Unicode/newline bytes in synthetic tests; not concatenated/enveloped",
+    "semantic_or_model_acceptance": "NOT_RUN"
+  },
+  "engine": {
+    "pin": "eef8ed0794046922842258ce587aab722db5fcb4",
+    "operator_imports": 53,
+    "operator_planner": "gpt-5.6-sol / high / 8000",
+    "process_metadata_matches_retained_operator_proof": true,
+    "active_release_directory": "not readable; no authentication or bypass attempted",
+    "effective_inspection_directory": "not established by accessible operator metadata",
+    "inspection_record_for_attempt": "NOT_AVAILABLE; not proof that none exists",
+    "correlation": "UNSUPPORTED: basic Word request UUID is not forwarded/consumed; no sent-body hash/response ID available to join inspection_identity.request_body_sha256"
+  },
+  "activation": false,
+  "completion_calls": 0,
+  "engine_changes": false,
+  "historical_earlier_trial": "FAIL_OWNER_REPORTED / UNDETERMINED; unchanged",
+  "original_sso_acceptance": "historical MANUAL PASS unchanged"
+}

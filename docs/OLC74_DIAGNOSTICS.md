@@ -11,6 +11,18 @@ This diagnostic implementation supplies no missing historical request record.
 The original [SSO MANUAL PASS](evidence/olc72-microsoft-delivery-20261025/README.md)
 is unchanged and does not accept this candidate or document proposals.
 
+## SSE-code follow-up candidate — not activated
+
+The [14:00 UTC attempt investigation and reviewable candidate](evidence/olc74-sse-code-20261025/README.md)
+keep its root cause **UNDETERMINED** and original SSE code **NOT_RECOVERED**.
+A minimal frontend follow-up adds optional `upstreamCode` to failed SSE diagnostics:
+16 pinned exact Engine codes only, otherwise `UNKNOWN`; no arbitrary message or
+exception. Stream rejection, validations, bounded memory, no replay and explicit
+Apply are preserved. Actual adapter/gateway synthetic bytes pass pinned Engine
+admission for SL/EN. The complete historical request was unavailable, so that
+compatibility result does not validate the incident's actual input or model result.
+Current delivered source above is unchanged. No Worker update or activation occurs.
+
 ## Pane record and copy
 
 The actual OpenAI-compatible adapter creates a cryptographic UUID v4 and UTC

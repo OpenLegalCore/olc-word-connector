@@ -36,6 +36,11 @@ without changing the document.
 
 ## At a glance
 
+The [OLC-74 SSE diagnostic follow-up](docs/evidence/olc74-sse-code-20261025/README.md)
+is in review and not activated. It retains only allowlisted upstream error codes;
+the reported Word failure's cause remains undetermined. Existing staging and SSO
+acceptance records are preserved.
+
 The OLC-72 draft adds an [explicit document-review proposal with guarded
 user-clicked writes](docs/WORD_DOCUMENT_PROPOSAL.md). Its owner-accepted visual
 design is preserved; native Word Web write qualification and

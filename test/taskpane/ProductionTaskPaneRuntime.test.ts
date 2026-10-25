@@ -1024,62 +1024,71 @@ describe("secure same-origin composition", () => {
 });
 
 describe("diagnostic copy through the actual runtime and adapter", () => {
-  it("keeps a sanitized failure accessible after returning to the form and changing language, without another POST", async () => {
-    const send = vi.fn(async (url: string) =>
-      url.endsWith("/models")
-        ? Response.json({ object: "list", data: [{ id: OLC_ENGINE_MODEL_ID }] })
-        : new Response("PRIVATE_RAW_RESPONSE", { status: 503 })
-    );
-    const gateway = new OpenAICompatibleAdapter(
-      {
-        transport: "same-origin",
-        modelId: OLC_ENGINE_MODEL_ID,
-        responseProfile: "document-review",
-      },
-      { fetch: send }
-    );
-    const clipboard = { writeText: vi.fn(async (_text: string) => undefined) };
-    const word = new FakeWordAdapter(SNAPSHOT);
-    activeRuntime = new ProductionTaskPaneRuntime(
-      root(),
-      new TaskPaneView(root()),
-      word,
-      { olcEngine: gateway },
-      "STAGING",
-      clipboard,
-      undefined,
-      "sl-SI"
-    );
-    activeRuntime.start();
-    await waitForReady();
-    setQuestion("PRIVATE_QUESTION_SENTINEL");
-    click("send");
-    await vi.waitFor(() =>
-      expect(root().querySelector('[data-action-id="copy-diagnostics"]')).not.toBeNull()
-    );
-    click("copy-diagnostics");
-    await vi.waitFor(() => expect(clipboard.writeText).toHaveBeenCalledTimes(1));
-    const record = JSON.parse(clipboard.writeText.mock.calls[0][0]);
-    expect(record.frontend).toMatchObject({
-      code: "SERVICE_UNAVAILABLE",
-      phase: "http",
-      reason: "HTTP_STATUS",
-      httpStatus: 503,
-    });
-    expect(record.worker).toBe("UNAVAILABLE");
-    expect(record.engineCorrelation).toBe("UNSUPPORTED");
-    expect(JSON.stringify(record)).not.toContain("PRIVATE_");
-    expect(JSON.stringify(record)).not.toContain(SNAPSHOT.text);
-    click("refine-question");
-    await waitForReady();
-    selectLocale("en-US");
-    click("toggle-settings");
-    click("copy-diagnostics");
-    await vi.waitFor(() => expect(clipboard.writeText).toHaveBeenCalledTimes(2));
-    expect(clipboard.writeText.mock.calls[1][0]).toBe(clipboard.writeText.mock.calls[0][0]);
-    expect(send.mock.calls.filter(([url]) => url.endsWith("completions"))).toHaveLength(1);
-    expect(word.applyCalls).toHaveLength(0);
-    activeRuntime.dispose();
-    expect(gateway.diagnostics.snapshot()).toHaveLength(0);
-  });
+  it.each([false, true])(
+    "keeps a sanitized HTTP/SSE failure accessible after navigation without another POST (SSE=%s)",
+    async (sse) => {
+      const send = vi.fn(async (url: string) =>
+        url.endsWith("/models")
+          ? Response.json({ object: "list", data: [{ id: OLC_ENGINE_MODEL_ID }] })
+          : sse
+            ? new Response(
+                'data: {"error":{"code":"terminal_validation_failed","message":"PRIVATE_RAW_RESPONSE"}}\n\n',
+                { headers: { "Content-Type": "text/event-stream" } }
+              )
+            : new Response("PRIVATE_RAW_RESPONSE", { status: 503 })
+      );
+      const gateway = new OpenAICompatibleAdapter(
+        {
+          transport: "same-origin",
+          modelId: OLC_ENGINE_MODEL_ID,
+          responseProfile: "document-review",
+        },
+        { fetch: send }
+      );
+      const clipboard = { writeText: vi.fn(async (_text: string) => undefined) };
+      const word = new FakeWordAdapter(SNAPSHOT);
+      activeRuntime = new ProductionTaskPaneRuntime(
+        root(),
+        new TaskPaneView(root()),
+        word,
+        { olcEngine: gateway },
+        "STAGING",
+        clipboard,
+        undefined,
+        "sl-SI"
+      );
+      activeRuntime.start();
+      await waitForReady();
+      setQuestion("PRIVATE_QUESTION_SENTINEL");
+      click("send");
+      await vi.waitFor(() =>
+        expect(root().querySelector('[data-action-id="copy-diagnostics"]')).not.toBeNull()
+      );
+      click("copy-diagnostics");
+      await vi.waitFor(() => expect(clipboard.writeText).toHaveBeenCalledTimes(1));
+      const record = JSON.parse(clipboard.writeText.mock.calls[0][0]);
+      expect(record.frontend).toMatchObject({
+        code: sse ? "INVALID_RESPONSE" : "SERVICE_UNAVAILABLE",
+        phase: sse ? "sse" : "http",
+        reason: sse ? "SSE_ERROR_EVENT" : "HTTP_STATUS",
+        httpStatus: sse ? 200 : 503,
+        ...(sse ? { upstreamCode: "terminal_validation_failed" } : {}),
+      });
+      expect(record.worker).toBe("UNAVAILABLE");
+      expect(record.engineCorrelation).toBe("UNSUPPORTED");
+      expect(JSON.stringify(record)).not.toContain("PRIVATE_");
+      expect(JSON.stringify(record)).not.toContain(SNAPSHOT.text);
+      click("refine-question");
+      await waitForReady();
+      selectLocale("en-US");
+      click("toggle-settings");
+      click("copy-diagnostics");
+      await vi.waitFor(() => expect(clipboard.writeText).toHaveBeenCalledTimes(2));
+      expect(clipboard.writeText.mock.calls[1][0]).toBe(clipboard.writeText.mock.calls[0][0]);
+      expect(send.mock.calls.filter(([url]) => url.endsWith("completions"))).toHaveLength(1);
+      expect(word.applyCalls).toHaveLength(0);
+      activeRuntime.dispose();
+      expect(gateway.diagnostics.snapshot()).toHaveLength(0);
+    }
+  );
 });

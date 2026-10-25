@@ -66,7 +66,13 @@ function consumeJsonEvent(
   maxResponseChars: number,
   observer?: CompletionObserver
 ): void {
-  if (isRecord(value) && "error" in value) throw invalidResponse("SSE_ERROR_EVENT");
+  if (isRecord(value) && "error" in value) {
+    throw new ChatGatewayError(
+      "INVALID_RESPONSE",
+      "SSE_ERROR_EVENT",
+      isRecord(value.error) ? value.error.code : undefined
+    );
+  }
   if (!isRecord(value)) {
     throw invalidResponse();
   }

@@ -1,6 +1,7 @@
 /* global globalThis */
 import type { ChatGatewayErrorCode } from "./ChatGatewayError";
 import { frontendVersion } from "../buildVersion";
+import type { UpstreamSseErrorCode } from "./upstreamSseError";
 
 // Fixed vocabulary only. No exception messages, response text, URLs or user input.
 export const diagnosticReasons = [
@@ -55,6 +56,7 @@ export interface AttemptDiagnostic {
   readonly phase: DiagnosticPhase;
   readonly reason: DiagnosticReason;
   readonly httpStatus?: number;
+  readonly upstreamCode?: UpstreamSseErrorCode;
 }
 export const ATTEMPT_TTL_MS = 30 * 60_000;
 export class AttemptDiagnostics {

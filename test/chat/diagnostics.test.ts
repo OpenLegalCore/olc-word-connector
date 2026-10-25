@@ -4,6 +4,7 @@ import { OpenAICompatibleAdapter } from "../../src/chat/OpenAICompatibleAdapter"
 import { AttemptDiagnostics, ATTEMPT_TTL_MS, diagnosticReceipt } from "../../src/chat/diagnostics";
 import { ChatGatewayError } from "../../src/chat/ChatGatewayError";
 import { contentEvent } from "../fixtures/documentReview";
+import { upstreamSseErrorCodes } from "../../src/chat/upstreamSseError";
 const request = {
   question: "PRIVATE_QUESTION",
   context: { type: "none" as const },
@@ -15,6 +16,76 @@ const make = (fetch: (url: string, init?: RequestInit) => Promise<Response>, tim
     { fetch }
   );
 describe("frontend failure diagnostics", () => {
+  it.each([...upstreamSseErrorCodes, "UNKNOWN"])(
+    "retains only the allowlisted SSE code %s after a delta, without replay",
+    async (code) => {
+      const fetch = vi.fn(
+        async () =>
+          new Response(
+            contentEvent("PRIVATE_DELTA") +
+              `data: ${JSON.stringify({ error: { code, message: "PRIVATE_MESSAGE", type: "PRIVATE_TYPE", param: "PRIVATE_PARAM" } })}\n\n` +
+              "data: [DONE]\n\n",
+            { headers: { "Content-Type": "text/event-stream" } }
+          )
+      );
+      const adapter = make(fetch);
+      await expect(adapter.complete(request)).rejects.toMatchObject({
+        code: "INVALID_RESPONSE",
+        reason: "SSE_ERROR_EVENT",
+        upstreamCode: code,
+      });
+      expect(adapter.diagnostics.latestFailure()).toMatchObject({
+        outcome: "failed",
+        phase: "sse",
+        reason: "SSE_ERROR_EVENT",
+        httpStatus: 200,
+        upstreamCode: code,
+      });
+      expect(JSON.stringify(adapter.diagnostics.snapshot())).not.toContain("PRIVATE_");
+      expect(fetch).toHaveBeenCalledTimes(1);
+    }
+  );
+  it.each([
+    undefined,
+    null,
+    7,
+    [],
+    {},
+    "PRIVATE_CODE",
+    "planning_failed PRIVATE_TEXT",
+    "PLANNING_FAILED",
+    "planning_failed\n",
+  ])(
+    "maps unknown or malformed SSE codes to UNKNOWN without exposing the envelope",
+    async (code) => {
+      const adapter = make(
+        async () =>
+          new Response(
+            `data: ${JSON.stringify({ error: { code, message: "PRIVATE_MESSAGE" } })}\n\n`,
+            { headers: { "Content-Type": "text/event-stream" } }
+          )
+      );
+      await expect(adapter.complete(request)).rejects.toMatchObject({ upstreamCode: "UNKNOWN" });
+      expect(adapter.diagnostics.latestFailure()?.upstreamCode).toBe("UNKNOWN");
+      expect(JSON.stringify(adapter.diagnostics.snapshot())).not.toContain("PRIVATE_");
+    }
+  );
+  it.each([null, "PRIVATE_ERROR", [], 7])(
+    "rejects a malformed error envelope with UNKNOWN",
+    async (error) => {
+      const adapter = make(
+        async () =>
+          new Response(`data: ${JSON.stringify({ error })}\n\n`, {
+            headers: { "Content-Type": "text/event-stream" },
+          })
+      );
+      await expect(adapter.complete(request)).rejects.toMatchObject({
+        reason: "SSE_ERROR_EVENT",
+        upstreamCode: "UNKNOWN",
+      });
+      expect(JSON.stringify(adapter.diagnostics.snapshot())).not.toContain("PRIVATE_");
+    }
+  );
   it.each([
     [
       "network",
