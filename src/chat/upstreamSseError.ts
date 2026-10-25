@@ -1,6 +1,6 @@
 // Verified literal codes at Engine eef8ed0794046922842258ce587aab722db5fcb4:
 // workflow.py:_workflow_failure_code and explicit WorkflowError(code=...),
-// server.py:_stream_completion/stream_failure. Never accept a regex vocabulary.
+// server.py:_stream/stream_failure. Never accept a regex vocabulary.
 export const upstreamSseErrorCodes = [
   "analysis_failed",
   "document_output_invalid",

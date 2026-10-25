@@ -1,5 +1,5 @@
 {
-  "frontend_version": "word-629fbb2927b36a83ca6aaedd055b9432c1d0701ba196a2bb5e19538439c6affd",
+  "frontend_version": "word-b597de926a50cb988c79b8aa166b7ba4da8c986aa2afb94d2509a28b3d3c28cb",
   "frontend": {
     "MSAL-LICENSE.txt": "c544adf8f0d43453d9fdf6c11da19605d12d89806a7870653169b8cc97f5bb53",
     "_headers": "d7ba8a562548d191cfd0d7249b5a081a37fe235efc95dd6dc7976213582c0ad5",
@@ -22,9 +22,9 @@
     "polyfill.5f53caeebcc124812129.js": "43ed416b27bded9208218535ad0b2fe9c33476dfad7a70b9e793a594f811e6e0",
     "signin.9179a61cd92a01bb2e3f.js": "ee31786cdc45585452a4abed9b856e1793544ab900216f23c3220cec9e352cf4",
     "signin.html": "baeed5a06fe1014c73993c0902addf42af9e5526c28237f82555a7106f32ae03",
-    "taskpane.355b66b300ae5d4e583e.js": "46f8081f85cc06b9dfc789d646df2bf3de012c7a5accc3012b7ae50cc88bc3f9",
-    "taskpane.355b66b300ae5d4e583e.js.LICENSE.txt": "8c9946dfc859a2bfb26cc541125631cd96e7110fa20a702eb19275c9d1658805",
-    "taskpane.html": "9a7cb61cd95e0dce1e1126dd38f1c2cb15096b50c9db5aba11ff6def709c4bda"
+    "taskpane.add14d180a105236dd9d.js": "f4c05e65fabc8cf9e12eae11c3bc39b8048b56169f6a1e49f28cf045004a1a43",
+    "taskpane.add14d180a105236dd9d.js.LICENSE.txt": "8c9946dfc859a2bfb26cc541125631cd96e7110fa20a702eb19275c9d1658805",
+    "taskpane.html": "a6195653e1c9833688b65846305c281009df43a264b70f77665fbf20a7d1cfdf"
   },
   "rollback": {
     "MSAL-LICENSE.txt": "c544adf8f0d43453d9fdf6c11da19605d12d89806a7870653169b8cc97f5bb53",
@@ -60,8 +60,8 @@
   "added": [
     "microsoft-signin.056b6d368b270f71ad9c.js",
     "microsoft-signin.056b6d368b270f71ad9c.js.LICENSE.txt",
-    "taskpane.355b66b300ae5d4e583e.js",
-    "taskpane.355b66b300ae5d4e583e.js.LICENSE.txt"
+    "taskpane.add14d180a105236dd9d.js",
+    "taskpane.add14d180a105236dd9d.js.LICENSE.txt"
   ],
   "removed": [
     "microsoft-signin.4042e870fc4f1761da66.js",
