@@ -1,0 +1,22 @@
+{
+  "paths": [
+    "README.md",
+    "docs/STATUS.md",
+    "docs/WORD_DOCUMENT_PROPOSAL.md",
+    "src/chat/OpenAICompatibleAdapter.ts",
+    "src/chat/documentReview.ts",
+    "src/taskpane/ProductionTaskPaneRuntime.ts",
+    "test/chat/documentReview.test.ts",
+    "test/fixtures/documentReview.ts",
+    "docs/OLC74_ADAPTER_HANDOFF.md",
+    "docs/evidence/olc74-word-adapter-20261025/README.md",
+    "docs/evidence/olc74-word-adapter-20261025/gates.json",
+    "docs/evidence/olc74-word-adapter-20261025/publication-safety.json",
+    "test/taskpane/DocumentOnlyRuntime.test.ts"
+  ],
+  "secret_pattern_findings": [],
+  "broken_local_markdown_paths": [],
+  "out_of_scope_paths": [],
+  "manual_diff_review": "PASS: boundaries, selection, explicit apply, notice, provenance, no content logging, no copied third-party implementation",
+  "exit_code": 0
+}

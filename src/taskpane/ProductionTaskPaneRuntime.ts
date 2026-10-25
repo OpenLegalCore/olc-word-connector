@@ -281,7 +281,7 @@ function controllerModel(
       actions: [
         {
           id: "copy-answer",
-          disabled: applying,
+          disabled: applying || state.result.text.length === 0,
           label:
             copyFeedback === "copied" ? messages.result.copiedAction : messages.result.copyAction,
           variant: "primary",

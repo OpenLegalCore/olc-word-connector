@@ -126,8 +126,8 @@ function publicText(value: unknown, maxBytes: number, allowEmpty = false): strin
     invalid();
   return result;
 }
-function labels(value: unknown): string[] {
-  if (!Array.isArray(value) || value.length < 1 || value.length > 16) invalid();
+function labels(value: unknown, allowEmpty = false): string[] {
+  if (!Array.isArray(value) || value.length < (allowEmpty ? 0 : 1) || value.length > 16) invalid();
   const result = value.map((x) => text(x, 32));
   if (new Set(result).size !== result.length) invalid();
   return result;
@@ -136,7 +136,8 @@ function labels(value: unknown): string[] {
 /** Called only after the existing strict stop -> DONE transport succeeds. */
 export function adaptDocumentReview(
   raw: string,
-  locale: CompletionRequest["uiLocale"]
+  locale: CompletionRequest["uiLocale"],
+  context?: CompletionRequest["context"]
 ): CompletionResult {
   if (new TextEncoder().encode(raw).byteLength > 1024 * 1024) invalid();
   const scanner = new DocumentReviewExplanationStream();
@@ -160,8 +161,8 @@ export function adaptDocumentReview(
   )
     invalid();
   const used: string[] = [];
-  const use = (value: unknown): void => {
-    for (const label of labels(value)) if (!used.includes(label)) used.push(label);
+  const use = (value: unknown, allowEmpty = false): void => {
+    for (const label of labels(value, allowEmpty)) if (!used.includes(label)) used.push(label);
   };
   const explanation = result.claims.map((value) => {
     const claim = record(value, ["text", "source_labels"]);
@@ -216,7 +217,12 @@ export function adaptDocumentReview(
       "change_summary",
       "source_labels",
     ]);
-    use(value.source_labels);
+    // Engine owns semantic revision admission and evidence verification. Its pinned
+    // content-only result has neither claims nor sources; Word additionally requires
+    // the actual frozen selection. No prompt classifier or client bypass is involved.
+    const contentOnly = result.claims.length === 0 && sources.length === 0;
+    if (contentOnly && (context?.type !== "selected_text" || !context.quotedText.trim())) invalid();
+    use(value.source_labels, contentOnly);
     proposal = validateDocumentProposal(
       {
         text: publicText(value.markdown, 32768),
@@ -227,7 +233,8 @@ export function adaptDocumentReview(
     );
   }
   if (["ANSWER", "PARTIAL"].includes(status)) {
-    if (!result.claims.length || !sources.length) invalid();
+    if ((!result.claims.length && !proposal) || (result.claims.length && !sources.length))
+      invalid();
   } else if (result.claims.length || sources.length || proposal) invalid();
   if (JSON.stringify(used) !== JSON.stringify(sources.map((source) => source.label))) invalid();
   return { text: explanation.join("\n\n"), sources, proposal, rawResponse: raw };

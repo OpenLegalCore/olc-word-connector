@@ -308,7 +308,7 @@ export class OpenAICompatibleAdapter implements ChatGateway {
       if (explanationStream) {
         explanationStream.finish();
         return {
-          ...adaptDocumentReview(result.text, request.uiLocale),
+          ...adaptDocumentReview(result.text, request.uiLocale, request.context),
           model: this.modelId,
           usage: result.usage,
         };

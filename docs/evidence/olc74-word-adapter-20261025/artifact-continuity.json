@@ -1,0 +1,106 @@
+[
+  {
+    "path": "dist/stage/MSAL-LICENSE.txt",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/_headers",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/assets/icon-128.png",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/assets/office/1.0.0.2/openlegalcore-mark-16.png",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/assets/office/1.0.0.2/openlegalcore-mark-32.png",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/assets/office/1.0.0.2/openlegalcore-mark-64.png",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/assets/office/1.0.0.2/openlegalcore-mark-80.png",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/commands.7ecfbe69559036f859a7.js",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/commands.html",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/f801043f68c0679f8271.css",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/manifest.xml",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/microsoft-auth.df10041a98e9362e5574.js",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/microsoft-auth.df10041a98e9362e5574.js.LICENSE.txt",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/microsoft-redirect.3694cdae87bc70cb7bbf.js",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/microsoft-redirect.html",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/microsoft-signin.a4f0be7ff4c9506a7314.js",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/microsoft-signin.a4f0be7ff4c9506a7314.js.LICENSE.txt",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/microsoft-signin.html",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/polyfill.5f53caeebcc124812129.js",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/signin.9179a61cd92a01bb2e3f.js",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/stage/signin.html",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/word-session/JOSE-LICENSE.txt",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/word-session/api-worker.mjs",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/word-session/api.wrangler.toml",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/word-session/auth-worker.mjs",
+    "comparison": "MATCH"
+  },
+  {
+    "path": "dist/word-session/auth.wrangler.toml",
+    "comparison": "MATCH"
+  }
+]

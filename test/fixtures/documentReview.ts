@@ -38,6 +38,17 @@ export function documentReviewFixture(language: "sl" | "en" = "sl", withProposal
   };
 }
 
+/** Engine-validated document-only shapes, independent of request wording. */
+export function documentOnlyFixture(language: "sl" | "en" = "sl", legal = true) {
+  const value = documentReviewFixture(language);
+  value.claims = [];
+  if (!legal) {
+    value.sources = [];
+    value.proposal!.source_labels = [];
+  }
+  return value;
+}
+
 export function contentEvent(content: string): string {
   return `data: ${JSON.stringify({ model: "lexai-engine-local", choices: [{ delta: { content }, finish_reason: null }] })}\n\n`;
 }

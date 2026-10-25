@@ -1,7 +1,26 @@
-# Word Connector — OLC-72 review status
+# Word Connector — OLC-72 and OLC-74 review status
 
 Updated: 2026-10-25. **IN REVIEW**, draft PR #2,
 `codex/olc-72-word-native-sse`.
+
+## Isolated OLC-74 adapter candidate — 2026-10-25
+
+**IN REVIEW / NOT DEPLOYED.** Separate branch `codex/olc-74-word-adapter-offline`
+starts at Word PR #2 `69dbe682100575a6492fdf8fbfcde2b5b7eeaa45` and targets
+Engine PR54 `eef8ed0794046922842258ce587aab722db5fcb4`. It accepts validated
+proposal-only results without inventing explanation, retains legal-source
+validation, and narrowly accepts Engine-admitted content-only revision results
+with the actual frozen selection. Empty explanation no longer enables blank
+Copy answer; the proposal's separate explicit actions remain available.
+
+See [adapter contract, evidence, delivery dependencies and rollback](OLC74_ADAPTER_HANDOFF.md).
+No active SSO, Pages, Worker, Engine, Tunnel, DNS, browser or Word state was
+changed. The owner now explicitly accepts repeated pane close/reopen showing
+connected state and a usable form. Idle over 16 minutes and preservation of
+input, language and attached/removed selection still await actual results;
+**OLC-72 remains open**. Existing historical entries below retain their original
+checkpoint context. The new adapter has offline evidence only; actual model,
+Word editing and durable result reopen remain unqualified.
 
 ## Primary outcome still required
 
