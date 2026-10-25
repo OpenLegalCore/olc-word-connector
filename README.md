@@ -71,7 +71,9 @@ and [rollback](docs/MICROSOFT_SSO_STAGING.md).
 The OLC-74 frontend at `e8ff0317` is now activated on **staging only** against
 Engine TEST `eef8ed0`. Delivered bytes, CSP/cache and unchanged Microsoft Worker
 versions pass postflight checks. [Activation evidence and retained rollback](docs/evidence/olc74-staging-activation-20261025/README.md)
-keep native Word proposal display/use and actual model acceptance **NOT_RUN**.
+record the delivery checkpoint. A later [owner-reported Word trial failed](docs/evidence/olc74-word-trial-20261025/README.md)
+before a proposal appeared; the failing layer is unproven. Native proposal use
+and the remaining acceptance scenarios stay **NOT_RUN**.
 The earlier SSO MANUAL PASS remains historical access acceptance.
 
 |                         |                                                                         |

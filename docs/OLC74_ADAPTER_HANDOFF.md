@@ -1,11 +1,13 @@
 # OLC-74 Word adapter — isolated offline candidate
 
-Status: **IN REVIEW; STAGING DELIVERED; NOT WORD/MODEL ACCEPTED** (2026-10-25).
+Status: **IN REVIEW; STAGING DELIVERED; OWNER-REPORTED WORD TRIAL FAILED** (2026-10-25).
 
 The later [concrete staging preparation](OLC74_STAGING_CANDIDATE.md) preserves
 this product baseline, incorporates PR #2 manual SSO acceptance and records the
 actual Engine operator delivery. The later [staging activation](evidence/olc74-staging-activation-20261025/README.md)
 records owner-executed route proof and actual delivery of Word `e8ff0317`.
+The [subsequent read-only incident review](evidence/olc74-word-trial-20261025/README.md)
+records failure before proposal display, with no established failing layer.
 
 ## Pins and scope
 

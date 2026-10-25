@@ -202,3 +202,24 @@ Actual Word proposal display, explicit use, Undo/Redo, model behavior and saved
 result reopening remain NOT_RUN. Nonempty draft/language/attachment preservation
 also remains NOT_RUN. No provider/completion call, Word/browser action, Worker,
 Engine, Tunnel/DNS change, GitHub main change, production promotion or merge occurred.
+
+## OLC-74 actual Word trial — owner-reported failure, 2026-10-25
+
+**FAIL_OWNER_REPORTED / ROOT CAUSE UNDETERMINED.** The owner reports that a selected
+paragraph revision on active staging showed the generic safe-stop notice instead
+of a proposal and reported the document unchanged. The screenshot is referenced
+by name; its pixels and the owner tab's historical Network/console records were
+not available to this review. The private document link and input are not copied.
+
+The [read-only incident evidence](evidence/olc74-word-trial-20261025/README.md)
+confirms current public taskpane HTML/JS match delivered e8ff0317 and both Worker
+versions remain unchanged. Four Engine completion access entries return HTTP 200;
+one predates activation, and none has an incident correlation ID. The request's
+exact Engine reachability, browser/Worker HTTP status, terminal SSE result and
+adapter error code remain UNKNOWN. The generic UI and an HTTP 200 header record
+cannot establish a validation error or a successful stream. Missing evidence is
+not a cause. No new completion, code fix, deployment or Word action was performed.
+
+This failure supersedes NOT_RUN only for the owner's reported trial outcome.
+Native Apply/Undo/Redo/result reopen and the other outstanding scenarios remain
+NOT_RUN. The historical OLC-72 SSO MANUAL PASS is preserved separately.

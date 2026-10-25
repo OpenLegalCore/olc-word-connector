@@ -1,0 +1,114 @@
+{
+  "word_ref": "e8ff0317ef699204783de90eb65b6377a95ce9cd",
+  "engine_ref": "eef8ed0794046922842258ce587aab722db5fcb4",
+  "static_source_interpretation_only": true,
+  "references": [
+    {
+      "repo": "word",
+      "path": "src/taskpane/ProductionTaskPaneRuntime.ts",
+      "lines": [
+        308,
+        329
+      ],
+      "finding": "All non-SESSION_EXPIRED error states use the shared generic error view."
+    },
+    {
+      "repo": "word",
+      "path": "src/app/TaskPaneController.ts",
+      "lines": [
+        111,
+        125,
+        227,
+        228
+      ],
+      "finding": "Catch stores the ChatGatewayError code in the in-memory error state; other errors become COMPLETION_FAILED."
+    },
+    {
+      "repo": "word",
+      "path": "src/chat/OpenAICompatibleAdapter.ts",
+      "lines": [
+        155,
+        172,
+        252,
+        278,
+        290,
+        320,
+        439,
+        473
+      ],
+      "finding": "HTTP checks, stream parsing, result adaptation and timeout/network boundaries are distinct; no incident code was observed."
+    },
+    {
+      "repo": "word",
+      "path": "src/chat/openAICompatibleStream.ts",
+      "lines": [
+        67,
+        68,
+        145,
+        171
+      ],
+      "finding": "An SSE error envelope or invalid/missing terminal sequence is rejected. This is capability, not proof of the incident cause."
+    },
+    {
+      "repo": "word",
+      "path": "infrastructure/cloudflare/word-session/api-worker.js",
+      "lines": [
+        143,
+        165
+      ],
+      "finding": "Builds a fresh forwarded request with only allowed content headers; it does not preserve a client correlation header."
+    },
+    {
+      "repo": "word",
+      "path": "infrastructure/cloudflare/word-gateway-example/worker.js",
+      "lines": [
+        226,
+        236,
+        431,
+        447,
+        490,
+        521
+      ],
+      "finding": "Builds upstream headers afresh, handles HTTP/protocol failures and forwards a bounded SSE body. No custom request-ID logging is present."
+    },
+    {
+      "repo": "engine",
+      "path": "src/lexai_engine/server.py",
+      "lines": [
+        914,
+        946,
+        1029,
+        1045,
+        1178,
+        1182,
+        1225,
+        1233,
+        2293,
+        2294
+      ],
+      "finding": "HTTP 200 is emitted before terminal stream processing; later SSE errors are possible. Access logger omits correlation/terminal details."
+    },
+    {
+      "repo": "engine",
+      "path": "src/lexai_engine/server.py",
+      "lines": [
+        540,
+        556,
+        607,
+        608,
+        908,
+        928
+      ],
+      "finding": "Signed standalone/workflow terminal persistence is conditional; the basic Word ingress is not a signed durable-turn readback path."
+    },
+    {
+      "repo": "engine",
+      "path": "src/lexai_engine/inspection.py",
+      "lines": [
+        142,
+        168
+      ],
+      "finding": "Optional inspection storage may persist runs when configured. Current effective directory was not established; accessible historical files do not establish absence of protected records."
+    }
+  ]
+}

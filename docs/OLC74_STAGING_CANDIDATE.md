@@ -1,10 +1,13 @@
 # OLC-74 staging delivery and retained preparation
 
-**IN REVIEW / STAGING DELIVERED / WORD ACCEPTANCE NOT_RUN.** On 2026-10-25 the
+**IN REVIEW / STAGING DELIVERED / OWNER-REPORTED WORD TRIAL FAILED.** On 2026-10-25 the
 owner authorized frontend-only activation of `e8ff0317ef699204783de90eb65b6377a95ce9cd`.
 Canonical Pages deployment is `82da70e6-53ef-409e-b6cc-7f0ee91a9dd4`; source and
 all delivered bytes match the reviewed package. See [actual activation evidence](evidence/olc74-staging-activation-20261025/README.md).
 No Worker payload or change is part of this delivery.
+A later [read-only incident review](evidence/olc74-word-trial-20261025/README.md) records
+that the owner received the generic safe-stop view instead of a proposal. The
+exact HTTP/SSE/adapter outcome remains uncorrelated; native apply is NOT_RUN.
 
 ## Exact scope
 
@@ -127,5 +130,7 @@ recorded in [the evidence](evidence/olc74-staging-candidate-20261025/README.md).
 
 The actual staging frontend activation is recorded above. No provider call,
 completion, Word write, browser action, merge or other-project change occurred.
-Actual model behavior and native Word display/apply, Undo/Redo and result reopen
+The delivery checkpoint did not exercise Word or a model request. The later
+owner-reported trial failed before proposal display; this investigation did not
+replay it or establish its failing layer. Native apply, Undo/Redo and result reopen
 remain NOT_RUN. Historical SSO MANUAL PASS is not acceptance of this new delivery.
