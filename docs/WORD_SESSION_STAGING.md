@@ -1,5 +1,13 @@
 # OLC-72 Word session staging preparation
 
+> **Historical/source scope.** Current attribution is in [STATUS.md](STATUS.md).
+> This retained milestone's setup, activation and rollback steps are not a
+> current execution order. In particular, aa5 does not preserve later Microsoft
+> SSO; old “not activated” and “login failure” labels do not override the dated
+> manual access acceptance. OLC-74 proposal failure remains open. Follow the
+> [documentation map](DOCUMENTATION-MAP.md) before reusing a procedure.
+
+
 > Historical/deployed Cloudflare-user-login architecture. The owner-approved
 > Microsoft NAA/SSO candidate supersedes this user authentication path but is
 > not activated yet. See [Microsoft SSO](MICROSOFT_SSO.md) and its

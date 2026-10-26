@@ -14,7 +14,8 @@ corpus, hosting, identity, DNS or credentials.
 2. OLC Engine and infrastructure credentials remain server-side.
 3. OLC Engine is the only backend. There is no fallback or automatic retry.
 4. The dedicated API exposes only `/word-api/` session, models and completion
-   operations; the separate `/word-auth/authorize` boundary verifies human login.
+   operations, including the current Microsoft token exchange. The separate
+   `/word-auth/authorize` route belongs to legacy non-Microsoft login.
 5. Unexpected hosts, paths, methods, content types, redirects and oversized
    bodies fail closed.
 6. A request contains no Word text or only the exact selection shown in the
@@ -24,7 +25,7 @@ corpus, hosting, identity, DNS or credentials.
 flowchart LR
     Word["Word task pane"] --> API["Word-scoped API Worker"]
     Word --> Dialog["Office top-level login"]
-    Dialog --> Auth["Human Access + verified JWT"]
+    Dialog --> Auth["Microsoft API token; legacy Access branch separate"]
     Auth --> Store["SQLite Durable Object"]
     API --> Store
     API --> Engine["OLC Engine"]
@@ -35,17 +36,20 @@ flowchart LR
 
 Production wraps the Engine adapter with a memory-only Word session. Browser
 requests use `credentials:omit` and a Word-scoped Authorization capability, never
-an Engine bearer or Access service token. Human Access cookies are used only in
-the separate top-level Office dialog. See [PKCE, JWT and session boundary](WORD_SCOPED_SESSION.md).
+an Engine bearer or Access service token. The current Microsoft path obtains a verified API access token and exchanges
+it for the scoped capability. Legacy Access cookies/PKCE belong only to the
+disabled-in-Microsoft-mode branch. See [Microsoft identity](MICROSOFT_SSO.md)
+and the retained [session boundary](WORD_SCOPED_SESSION.md).
 
 | Route | Method | Result |
 | --- | --- | --- |
 | `/word-api/v1/models` | GET | Model list with `lexai-engine-local` |
 | `/word-api/v1/chat/completions` | POST | Bounded native SSE |
 | `/word-api/session` | GET | Authenticated session metadata |
-| `/word-api/session/exchange` | POST | Single-use code + PKCE exchange |
+| `/word-api/session/microsoft` | POST | Verified Microsoft API token → scoped capability |
+| `/word-api/session/exchange` | POST | Legacy single-use code + PKCE; rejected in Microsoft mode |
 | `/word-api/session/revoke` | POST | Revoke current Word capability |
-| `/word-auth/authorize` | GET | Human Access + verified JWT; exact Office return |
+| `/word-auth/authorize` | GET | Legacy Human Access + verified JWT; exact Office return |
 
 The local OLC-72 candidate fixes the model and selects the documented
 `lexai_document_review_v1` profile (supported from Engine 9753ad1, not 09171ea).
@@ -110,8 +114,9 @@ text; no citations, links, formatting markers or paragraphs are stripped. If
 the public text restrictions fail, reject the result instead of repairing it.
 Raw final JSON stays in current-result memory only. See
 [document-write guards and the outstanding Engine incident](WORD_DOCUMENT_PROPOSAL.md).
-This local adapter is not an activation or semantic-acceptance claim. The
-existing login failure remains an unchanged production blocker.
+This source contract is not a semantic-acceptance claim. Microsoft access has
+its own manual acceptance; OLC-74 terminal failure/proposal use remains open.
+Current attribution is in [STATUS.md](STATUS.md), not the original adapter plan.
 
 ## Preserved legacy gateway and new API boundary
 
@@ -148,12 +153,18 @@ Linear, logs or command arguments.
 The new API checks the shared Durable Object on every protected request and
 SSE start. Missing/expired/revoked capability returns 401; denial is 403, not
 inferred expiry. Timeout, network failure, throttling, unavailability and malformed
-responses remain separate. Code exchange is atomic and rate limited. The Office
-dialog passes no credentials to the pane; its verified, state-bound code is
-exchanged before the two safe GETs. Cancellation and late exchanges cannot restore
-a closed pane. There is no Storage Access action in the new composition.
-The old protected gateway/callback remains preserved for rollback. Current
-source/configuration is not a live change; see [staging procedure](WORD_SESSION_STAGING.md).
+responses remain separate. In Microsoft mode, MSAL/NAA or its supported-host
+dialog acquires/renews the API token; `/word-api/session/microsoft` verifies it
+before issuing a short Word capability. Safe probes use that capability; no
+completion is replayed. An interaction-required Microsoft response requires the
+existing explicit sign-in action. See [Microsoft identity](MICROSOFT_SSO.md).
+
+Only the legacy non-Microsoft branch exchanges the verified state-bound code
+and PKCE verifier. Microsoft mode disables that exchange. Cancellation and late
+acquisition/exchange results cannot restore a closed pane. There is no Storage
+Access action. The old gateway/callback remains retained history, not an
+instruction to restore older SSO. [Old staging procedures](WORD_SESSION_STAGING.md)
+are historical; [STATUS.md](STATUS.md) owns present attribution.
 
 Cancel, timeout and supersession abort the active fetch and invalidate its
 operation identity. Late deltas, resolution and rejection cannot become a

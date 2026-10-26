@@ -1,5 +1,12 @@
 # User guide
 
+> **Revision scope:** historical source-only beta instructions/support claims
+> are distinct from later fddc implementation and private deployment. Read
+> [current acceptance and limitations](STATUS.md) first. Microsoft access has
+> a separate manual accepted scope; current proposal use is not newly accepted.
+> No old command below authorizes activation or rollback of a running service.
+
+
 [Slovenščina](USER_GUIDE.sl-SI.md) · [Product gallery](SCREENSHOTS.md) ·
 [Installation](INSTALLATION.md) · [Troubleshooting](TROUBLESHOOTING.md)
 

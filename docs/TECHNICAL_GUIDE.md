@@ -1,9 +1,9 @@
 # Technical guide
 
-> OLC-72 Microsoft-auth candidate: [MSAL/NAA and API authorization](MICROSOFT_SSO.md)
-> supersede the deployed Cloudflare user-login path described below. The candidate
-> is IN REVIEW and not activated; private Engine credentials, API forwarding,
-> outbound Tunnel and document-operation boundaries are retained.
+> Source: fddc; [current dated status](STATUS.md) separates implementation,
+> delivery and acceptance. [Microsoft auth](MICROSOFT_SSO.md) is the later
+> activated/reported access path. Old Access/PKCE is a retained legacy branch,
+> not today's user-login instruction. No new cloud/configuration probe occurred.
 
 [Documentation index](README.md) · [Integration](INTEGRATION.md) ·
 [Compatibility](COMPATIBILITY_AND_LIMITATIONS.md)
@@ -32,7 +32,7 @@ The runtime observes and validates only the current explicit Word selection to
 show a removable attachment. Moving focus into the input preserves that
 attachment. Send freezes the displayed selection and locale; without an
 attachment it sends only the message. The adapter returns serializable data;
-Office.js proxy objects never cross its boundary. The local OLC-72 candidate adds
+Office.js proxy objects never cross its boundary. The source contains
 an optional document-writer capability for an explicit validated proposal.
 The production adapter now uses the documented document-review profile. Read
 [the contract, one-shot write guards and pending native qualification](WORD_DOCUMENT_PROPOSAL.md).
@@ -79,10 +79,12 @@ connector UI and `response_language`; it does not rewrite the question.
 
 Production now wraps the unchanged Engine adapter with `WordSessionClient`.
 Requests use dedicated `/word-api/*` routes, `credentials:omit` and a memory-only
-Word capability. The Office dialog uses PKCE and a verified-JWT authorization
-Worker; one-time consumption/revocation use a SQLite Durable Object. There is no
-Storage Access dependency, refresh token or automatic message replay. Read the
-[full trust boundary and limits](WORD_SCOPED_SESSION.md).
+Word capability. The current Microsoft path uses MSAL/NAA or its explicit supported-host dialog
+and exchanges the verified API token at `/word-api/session/microsoft` for a Word
+capability. The SQLite Durable Object handles issuance/revocation. Legacy
+Access/PKCE exchange is disabled when Microsoft mode is enabled. There is no
+automatic message replay. Read [Microsoft identity](MICROSOFT_SSO.md) and the
+[retained session boundary](WORD_SCOPED_SESSION.md).
 
 The settings connection check reuses the same protected-session probe and gateway
 model check, with `no-store` on both GETs. A successful manual check updates only
@@ -118,8 +120,10 @@ are confined to `OfficeWordAdapter`; HTML/OOXML and whole-body writes remain
 forbidden. No transport or rendering layer may write to Word.
 
 The new auth/API Workers and shared store are in `infrastructure/cloudflare/word-session/`.
-They are prepared source/configuration, not live resources. See
-[activation and rollback](WORD_SESSION_STAGING.md).
+They implement the current Microsoft/session/store source boundary. Last
+attributed delivery is recorded in [STATUS.md](STATUS.md); this source listing
+is not a fresh cloud resource check. Old [activation/rollback](WORD_SESSION_STAGING.md)
+steps are historical, not a current execution order.
 
 ## Builds and verification
 
@@ -141,3 +145,13 @@ actual runtime harness, including the logo, heading, selection attachment and
 Send action. This local visual acceptance does not claim a new completion or
 the full simplified-form Word Web walkthrough; that broader acceptance remains
 a pre-merge gate.
+
+## Manifests and permissions
+
+The checked-in development manifests request `ReadWriteDocument` and WordApi1.3;
+checked-in stage/production templates request `ReadDocument`, all at Office
+version1.0.0.3. Those templates alone do not authorize candidate document writes.
+A deployment must retain its separately reviewed actual manifest/permission
+artifact and explicitly prove Apply in the intended host. This documentation
+review changes no manifest, permission, sideload or installation. See
+[installation scope](INSTALLATION.md#path-b-word-for-the-web-development-sideload).

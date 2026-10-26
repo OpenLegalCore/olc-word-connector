@@ -1,5 +1,13 @@
 # Microsoft SSO staging and rollback
 
+> **Historical/source scope.** Current attribution is in [STATUS.md](STATUS.md).
+> This retained milestone's setup, activation and rollback steps are not a
+> current execution order. In particular, aa5 does not preserve later Microsoft
+> SSO; old “not activated” and “login failure” labels do not override the dated
+> manual access acceptance. OLC-74 proposal failure remains open. Follow the
+> [documentation map](DOCUMENTATION-MAP.md) before reusing a procedure.
+
+
 **Microsoft API and task pane activated; selected Word Web SSO access checks have MANUAL PASS.**
 The owner's actual Microsoft API token is cryptographically verified. The first
 attempt was rolled back after 503; corrected API issuance/session/models/revoke

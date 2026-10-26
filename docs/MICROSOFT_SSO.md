@@ -1,6 +1,9 @@
 # Microsoft identity for Word — OLC-72
 
-**IN REVIEW — independent code implemented, NOT ACTIVATED.** The primary goal is
+**Implemented; dated Microsoft delivery and reopen/idle MANUAL PASS retained.**
+See [current status](STATUS.md) and the [delivery evidence](evidence/olc72-microsoft-delivery-20261025/README.md).
+The original registration/setup observations below are historical preparation
+scope, not proof that current registrations are absent or a new activation order. The primary goal is
 to remove repeated **Cloudflare user sign-ins** and access interruptions after
 idle time or reopening the pane. Microsoft authentication replaces the user
 authentication boundary only. The existing outbound Cloudflare Tunnel,

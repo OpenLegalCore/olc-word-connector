@@ -9,6 +9,10 @@ The repository provides the connector, build and verification tooling, generic
 gateway example and public documentation. It does not provide a hosted backend,
 legal database, AppSource listing or access to private infrastructure.
 
+Start with [STATUS.md](STATUS.md) for current attribution and the
+[documentation map](DOCUMENTATION-MAP.md) for precedence. The beta acceptance
+at the end of this index is a historical release scope, not acceptance of fddc.
+
 ## Find the right guide
 
 | You are…                           | Start here                                                                        | Then read…                                                                                                |
@@ -25,13 +29,11 @@ legal database, AppSource listing or access to private infrastructure.
 
 ## Product and implementation guides
 
-OLC-72 review: [Word Web access recovery evidence and production plan](WORD_WEB_ACCESS_RECOVERY.md).
-Word for Mac remains backlog; native Word document-write acceptance is pending.
-
-The local OLC-72 [explicit document proposal candidate](WORD_DOCUMENT_PROPOSAL.md)
-adds the documented Engine profile and guarded user-clicked writes for synthetic review. Activation,
-native Word formatting and Undo/Redo remain unqualified; this does not change
-the historical release acceptance below.
+Microsoft [SSO](MICROSOFT_SSO.md) has separately reported manual access acceptance.
+The [proposal contract](WORD_DOCUMENT_PROPOSAL.md) describes implemented guarded
+writes; current Word outcome is still failed, with native acceptance incomplete.
+Older [access recovery plans](WORD_WEB_ACCESS_RECOVERY.md) remain historical,
+not a request to activate, roll back login or restore old data. Mac remains backlog.
 
 | Document                                                          | What it answers                                                                                                           |
 | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |

@@ -1,5 +1,13 @@
 # OLC-72 — sinhronizacija kode in očiščenih dokazov
 
+> **Historical/source scope.** Current attribution is in [STATUS.md](STATUS.md).
+> This retained milestone's setup, activation and rollback steps are not a
+> current execution order. In particular, aa5 does not preserve later Microsoft
+> SSO; old “not activated” and “login failure” labels do not override the dated
+> manual access acceptance. OLC-74 proposal failure remains open. Follow the
+> [documentation map](DOCUMENTATION-MAP.md) before reusing a procedure.
+
+
 Pregled: 24. oktober 2026; lokalni inventar ob **12:03:04 UTC**.
 Stanje: **IN REVIEW**, [draft PR #2](https://github.com/OpenLegalCore/olc-word-connector/pull/2).
 To je dokumentacijska objava obstoječih dokazov, brez popravka ali novega preverjanja storitev.

@@ -1,5 +1,13 @@
 # OLC-74 bounded failure diagnostics — staging delivered
 
+> **Historical/source scope.** Current attribution is in [STATUS.md](STATUS.md).
+> This retained milestone's setup, activation and rollback steps are not a
+> current execution order. In particular, aa5 does not preserve later Microsoft
+> SSO; old “not activated” and “login failure” labels do not override the dated
+> manual access acceptance. OLC-74 proposal failure remains open. Follow the
+> [documentation map](DOCUMENTATION-MAP.md) before reusing a procedure.
+
+
 **IN REVIEW / STAGING_DELIVERED; native acceptance open.** Reviewed source
 `de34ecdbc6d53ce756ecfc2e44b7c7ff6133339f` is active at Pages
 `6f22feb3-14cc-4fab-a3e0-d9b30cd55c79`, with Auth/store `8ec17425…` and API `cfb80b7b…`,

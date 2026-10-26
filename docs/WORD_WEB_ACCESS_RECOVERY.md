@@ -1,5 +1,13 @@
 # OLC-72 Word Web access recovery
 
+> **Historical/source scope.** Current attribution is in [STATUS.md](STATUS.md).
+> This retained milestone's setup, activation and rollback steps are not a
+> current execution order. In particular, aa5 does not preserve later Microsoft
+> SSO; old “not activated” and “login failure” labels do not override the dated
+> manual access acceptance. OLC-74 proposal failure remains open. Follow the
+> [documentation map](DOCUMENTATION-MAP.md) before reusing a procedure.
+
+
 Status: **IN REVIEW**, 2026-10-24. The owner explicitly approved the
 [cookie-independent Word-session implementation](WORD_SCOPED_SESSION.md) after
 `d419b477`. It is implemented and tested locally; activation and actual Word
