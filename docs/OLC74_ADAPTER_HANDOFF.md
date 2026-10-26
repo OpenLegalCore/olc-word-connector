@@ -1,5 +1,13 @@
 # OLC-74 Word adapter — isolated offline candidate
 
+> **Historical/source scope.** Current attribution is in [STATUS.md](STATUS.md).
+> This retained milestone's setup, activation and rollback steps are not a
+> current execution order. In particular, aa5 does not preserve later Microsoft
+> SSO; old “not activated” and “login failure” labels do not override the dated
+> manual access acceptance. OLC-74 proposal failure remains open. Follow the
+> [documentation map](DOCUMENTATION-MAP.md) before reusing a procedure.
+
+
 Latest delivery: [authorized frontend-only SSE diagnostic activation](evidence/olc74-sse-activation-20261025/README.md)
 records the exact current source/versions, delivered asset/header checks and retained
 rollback. The original offline/delivery sections below remain historical. This

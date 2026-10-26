@@ -36,67 +36,18 @@ without changing the document.
 
 ## At a glance
 
-The [OLC-74 SSE diagnostic follow-up](docs/evidence/olc74-sse-activation-20261025/README.md)
-is delivered on staging: source `de34ecd`, Pages `6f22feb3…`. It retains only
-allowlisted upstream error codes. The reported Word failure remains undetermined;
-this improves diagnostics and does not establish incident resolution or Word acceptance.
+[Current status and acceptance](docs/STATUS.md) distinguishes the public source-only
+beta, later implemented candidates, attributed delivery and scoped owner results.
+The documentation base is `fddc65d7ebf8a2f5e16332a322adca5783deacfd`.
+Microsoft SSO reopen/idle has MANUAL PASS. The latest native document request
+failed terminal validation; proposal display/Apply is not newly accepted.
+Structured review and guarded writes exist in this candidate, but are not a
+released editing promise. No new generation or live check occurred in this review.
 
-The OLC-72 draft adds an [explicit document-review proposal with guarded
-user-clicked writes](docs/WORD_DOCUMENT_PROPOSAL.md). Its owner-accepted visual
-design is preserved; native Word Web write qualification and
-[production access recovery](docs/WORD_WEB_ACCESS_RECOVERY.md) remain open.
-Word for Mac is backlog. This candidate is not a released editing capability.
-
-The draft includes **Settings → Check connection**: fresh protected-session and
-model-discovery GETs without reloading the pane or sending a message. The draft,
-language and selection attachment survive the check and explicit sign-in recovery.
-See [current qualification status](docs/STATUS.md); retained input alone does not
-establish that access or authentication recovery works in Word.
-
-The current OLC-72 candidate implements [Microsoft identity through MSAL/NAA](docs/MICROSOFT_SSO.md)
-to remove repeated Cloudflare user sign-ins after idle time or reopening the pane.
-It acquires/renews our API access token silently and obtains a short Word
-capability without a Cloudflare login. Required Microsoft interaction is explicit;
-older hosts use a Microsoft Office-dialog fallback. Staging authorization remains
-restricted to the configured verified owner. Draft, language and attachment choice
-survive recovery in an open pane, with no automatic message replay or Word write.
-
-Microsoft SSO pane-reopen and post-idle access checks have **MANUAL PASS** owner
-acceptance for the reported scenarios. This is not automated evidence or proof
-of a specific internal recovery mechanism; draft/language/attachment preservation
-and other unrun scenarios remain open. The separate document-proposal acceptance
-is tracked under OLC-74. This candidate remains **IN REVIEW; Microsoft SSO staging
-is activated**. The dedicated registrations and cryptographically verified owner
-authorization are configured. Actual API issuance, session/model discovery,
-revocation and delivered asset/header checks pass. The aa5 rollback is retained.
-Tunnel, DNS, local Engine and server-only credentials are unchanged. See [actual
-delivery evidence](docs/evidence/olc72-microsoft-delivery-20261025/README.md)
-and [rollback](docs/MICROSOFT_SSO_STAGING.md).
-
-The initial OLC-74 frontend at `e8ff0317` was activated on **staging only** against
-Engine TEST `eef8ed0`. Delivered bytes, CSP/cache and unchanged Microsoft Worker
-versions pass postflight checks. [Activation evidence and retained rollback](docs/evidence/olc74-staging-activation-20261025/README.md)
-record the delivery checkpoint. A later [owner-reported Word trial failed](docs/evidence/olc74-word-trial-20261025/README.md)
-before a proposal appeared; the failing layer is unproven. Native proposal use
-and the remaining acceptance scenarios stay **NOT_RUN**.
-The earlier SSO MANUAL PASS remains historical access acceptance.
-
-The [bounded diagnostics update](docs/evidence/olc74-diagnostics-activation-20261025/README.md)
-was activated on staging as source `dc3bef4a`, Pages `4bcc267c…`, with the
-reviewed Auth/store and API versions. Delivered bytes/settings and diagnostic GET
-protection pass. Authorized lookup and Word clipboard/proposal use remain NOT_RUN;
-the historical failed Word trial remains undiagnosed. Its frontend is now
-superseded by the frontend-only SSE-code activation linked above; Worker versions
-and their settings remain unchanged.
-
-|                         |                                                                         |
-| ----------------------- | ----------------------------------------------------------------------- |
-| **Word host**           | Microsoft SSO reopen and post-idle access checks: manual pass; Windows/Mac not tested           |
-| **Legal sources**       | Slovenian legislation and case law supplied by the configured backend   |
-| **Backend path**        | OLC Engine through the dedicated same-origin `/word-api/v1/*` boundary               |
-| **Document context**    | No document content, or only the exact selected text                    |
-| **Interface languages** | English (`en-US`) and Slovenian (`sl-SI`)                               |
-| **License**             | Apache License 2.0, subject to third-party notices and trademark policy |
+Use [integration](docs/INTEGRATION.md) and [proposal safety](docs/WORD_DOCUMENT_PROPOSAL.md)
+for the implementation, and the [documentation map](docs/DOCUMENTATION-MAP.md)
+for historical release evidence/runbooks. OLC-74 remains open; SSO acceptance
+must not be borrowed to declare proposal acceptance.
 
 ## Why this project exists
 
@@ -105,8 +56,8 @@ and case-law portals. This connector keeps that research step beside the text
 being reviewed while making the boundary around document content explicit.
 
 - **Legal professionals** can ask a question, inspect cited sources, copy an
-  answer, refine the question or start again without granting the beta document
-  editing capabilities.
+  answer, refine the question or start again. Candidate document writes require
+  a separate validated proposal and explicit Apply; the released beta claim is unchanged.
 - **Developers** get a strict TypeScript codebase, provider-neutral controller,
   isolated Office.js boundary, hardened renderer and deterministic verification
   suite.
@@ -298,5 +249,7 @@ discussions, see [Partnerships and services](PARTNERSHIPS.md). OpenLegalCore is
 open to working with teams that want to evaluate or extend trustworthy legal-AI
 workflows while retaining clear technical and data-governance boundaries.
 
-Inactive [OLC-74 correlated capture preparation](docs/evidence/olc74-correlated-capture/README.sl.md)
-keeps the current SSO and document workflow unchanged; it is not a delivered incident fix.
+The [OLC-74 correlated-capture source evidence](docs/evidence/olc74-correlated-capture/README.sl.md)
+records the original preparation at fddc. Its later attributed diagnostic delivery
+is distinguished in [current status](docs/STATUS.md); delivery is not a proven
+incident fix or a new Word proposal/Apply acceptance.

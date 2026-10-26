@@ -1,5 +1,13 @@
 # OLC-74 staging delivery and retained preparation
 
+> **Historical/source scope.** Current attribution is in [STATUS.md](STATUS.md).
+> This retained milestone's setup, activation and rollback steps are not a
+> current execution order. In particular, aa5 does not preserve later Microsoft
+> SSO; old “not activated” and “login failure” labels do not override the dated
+> manual access acceptance. OLC-74 proposal failure remains open. Follow the
+> [documentation map](DOCUMENTATION-MAP.md) before reusing a procedure.
+
+
 Current diagnostic delivery: [actual frontend-only SSE-code activation](evidence/olc74-sse-activation-20261025/README.md)
 records source `de34ecd…`, Pages `6f22feb3…`, postflight PASS and exact current-before-activation
 rollback `4bcc267c…` / `dc3bef4…`. Worker versions/settings are unchanged. The earlier

@@ -1,5 +1,12 @@
 # Installation and deployment
 
+> **Revision scope:** historical source-only beta instructions/support claims
+> are distinct from later fddc implementation and private deployment. Read
+> [current acceptance and limitations](STATUS.md) first. Microsoft access has
+> a separate manual accepted scope; current proposal use is not newly accepted.
+> No old command below authorizes activation or rollback of a running service.
+
+
 [Documentation index](README.md) · [Integration guide](INTEGRATION.md) ·
 [Troubleshooting](TROUBLESHOOTING.md)
 
@@ -121,10 +128,11 @@ runtime acceptance. Stop it with `Ctrl+C`.
 The repository-root `manifest.xml` is the local development manifest. Its task
 pane, commands and icons point to `https://localhost:3002`.
 
-The development manifest requests `ReadWriteDocument` because the repository
-retains an isolated replacement-safety test harness. The production search
-composition does not expose or call document-writing operations. The staging
-and reserved production manifests request `ReadDocument`; see
+The development manifest requests `ReadWriteDocument`. Candidate source also
+implements explicit guarded document writes; the historical released research
+walkthrough remains separate. Checked-in staging and reserved production
+templates request `ReadDocument` and are not proof of an actual candidate write
+permission. Retain/review the deployment-specific manifest separately; see
 [Manifests and permissions](TECHNICAL_GUIDE.md#manifests-and-permissions).
 
 ### Preferred command-line flow
