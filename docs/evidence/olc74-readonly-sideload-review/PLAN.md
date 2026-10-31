@@ -7,8 +7,43 @@ sideload URL, or register the development add-in before a new owner approval.
 ## Reviewed candidate
 
 - Read-only candidate: `/tmp/olc74-sideload-dom-candidate/CANDIDATE.json`;
-  all 28 listed file hashes were checked. `DOM-CHANGE.diff` is the incremental
-  change to the previously prepared harness, not a product change.
+  all 28 listed file hashes were checked. The locally preserved
+  `DOM-CHANGE.diff` is the incremental change, not a product change.
+- The exact prepared [taskpane.html](taskpane.html) is also published here.
+  Its SHA-256 is
+  `5c9bf7cbc65a330ed057aa05b6989cdf751d9587a7573c2e62f63f90f3f26595`.
+  Starting from the `npm run build:word-harness` output, insert exactly the
+  following bytes once immediately before `</head>`:
+
+  ```html
+  <meta name="olc74-readonly-export" content="1">
+  ```
+
+  Verify the resulting bytes and SHA-256 match this published file and
+  `CANDIDATE.json`; stop if they do not. This operation is for a new temporary
+  candidate, not for rewriting the preserved candidate. The deferred
+  `taskpane.js` invokes the marker check first and returns after binding the
+  read-only exporter, before proposal or normal harness composition. The test
+  uses the exact published HTML even when `?proposal=explicit` is present.
+
+  From the repository root, after the Word harness build, this read-only
+  comparison validates the minimal transformation without altering either
+  existing file:
+
+  ```sh
+  python3 - <<'PY'
+  from pathlib import Path
+  import hashlib
+  built = Path('dist/word-harness/taskpane.html').read_bytes()
+  saved = Path('docs/evidence/olc74-readonly-sideload-review/taskpane.html').read_bytes()
+  marker = b'<meta name="olc74-readonly-export" content="1">'
+  assert built.count(b'</head>') == 1 and marker not in built
+  result = built.replace(b'</head>', marker + b'</head>', 1)
+  assert result == saved
+  assert hashlib.sha256(result).hexdigest() == '5c9bf7cbc65a330ed057aa05b6989cdf751d9587a7573c2e62f63f90f3f26595'
+  print('candidate HTML matches')
+  PY
+  ```
 - Existing dev manifest: `manifest.xml`, SHA-256
   `c2ec4f5123d3b531142e9b87dbfe15a1a7d5637d9a3f180a131ccc75aea4ece3`,
   ID `7eb3a8cf-4fa9-47f2-a408-afe5f6c59515`, version `1.0.0.3`, source
@@ -35,11 +70,17 @@ sideload URL, or register the development add-in before a new owner approval.
   tooling and must be used only in the separate synthetic Document19. The old
   Blob link is retained; `collect-dom.js` reads DOM and writes mode-0600 JSON,
   no clipboard/download. Test/runtime evidence is fake-only so far.
-- `SHA256.json` pins all operator artifacts; candidate JSON pins the complete
-  static package. Existing prior real trust journal remains preserved. New
-  scripts use `trust-lease-sideload-real.json` and refuse an existing journal,
-  nickname, certificate or target trust object; watchdog is independent. On an
-  isolated test NSS DB, import and timed rollback passed; real CA stays absent.
+- `LOCAL-ARTIFACT-SHA256.json` preserves the original candidate/script hashes;
+  `REVIEW-FILES-SHA256.json` pins the revised local lease and watchdog and the
+  exact HTML. The prior real trust journal and candidate remain preserved. The
+  revised scripts use `trust-lease-sideload-v2-real.json` and refuse an existing
+  journal, nickname, certificate or target trust object. The independent watchdog
+  starts guarded cleanup at 240 seconds, leaving 60 seconds before the deadline.
+  It never kills an in-flight cleanup at the deadline: it reports the overrun,
+  waits for the process and returns failure even if deletion later succeeds.
+  Guarded deletion itself has no killing timeout. Concurrent begin/end calls use
+  a lock. A 300-second absolute maximum still cannot be guaranteed if cleanup or
+  the machine stalls; any overrun or unconfirmed removal is a failure, not PASS.
 
 ## Scope for separate owner approval
 
@@ -63,18 +104,23 @@ immediately before execution. No automatic repeat or extension is authorized.
    synthetic. Check that no development add-in of this ID is visibly registered.
    An empty My Add-ins list alone does not prove absence: record this uncertainty.
    Verify `/tmp/olc74-sideload-review/document19-sideload.url` hash and exact
-   Document19 ID/parameters, and all hashes from `SHA256.json` and `CANDIDATE.json`.
+   Document19 ID/parameters, and all hashes from `LOCAL-ARTIFACT-SHA256.json`,
+   `REVIEW-FILES-SHA256.json` and `CANDIDATE.json`. The revised lease/watchdog
+   are copied byte-for-byte into `/tmp/olc74-sideload-review-v2/`; the previous
+   `/tmp/olc74-sideload-review/` files are not overwritten.
 2. Start `node /tmp/olc74-sideload-review/serve.cjs` as a managed process and
    verify manifest endpoint/certificate. Start the independent watchdog before
    any trust mutation:
 
-   `python3 /tmp/olc74-sideload-review/olc74-ca-watchdog.py --db /home/rajko/.pki/nssdb --seconds 300`
+   `python3 /tmp/olc74-sideload-review-v2/olc74-ca-watchdog.py --db /home/rajko/.pki/nssdb --seconds 300`
 
-   Verify watchdog stays active and `trust-lease-sideload-real.json` does not
-   exist. The existing prior `trust-lease-real.json` stays untouched.
+   Verify watchdog stays active and `trust-lease-sideload-v2-real.json` does not
+   exist. The watchdog waits for the journal without an automatic timeout; if
+   begin fails with no journal or trust added, stop the unused watchdog. The
+   existing prior `trust-lease-real.json` stays untouched.
 3. Perform the one authorized lease:
 
-   `python3 /tmp/olc74-sideload-review/olc74-ca-lease.py begin --db /home/rajko/.pki/nssdb --authorized`
+   `python3 /tmp/olc74-sideload-review-v2/olc74-ca-lease.py begin --db /home/rajko/.pki/nssdb --authorized`
 
    Verify identity and status `added`. Open the generated URL in a separate tab
    of the existing Chrome profile using supported browser control. Do not use
@@ -93,14 +139,16 @@ immediately before execution. No automatic repeat or extension is authorized.
    including current vs target. Do not send or log raw document XML.
 5. On success, error, timeout or cancellation, immediately run guarded removal:
 
-   `python3 /tmp/olc74-sideload-review/olc74-ca-lease.py end --db /home/rajko/.pki/nssdb --authorized`
+   `python3 /tmp/olc74-sideload-review-v2/olc74-ca-lease.py end --db /home/rajko/.pki/nssdb --authorized`
 
    Verify its state, target certificate/nickname/trust object absent and other
    NSS records unchanged; while the server is still up, confirm a fresh Chrome
    tab rejects localhost TLS again. If guarded cleanup refuses or fails, report
    it and retain the journal, do not blindly delete. Watchdog covers the time
    limit but cannot guarantee cleanup after machine/process failure. Stop the
-   specific server process and close only temporary tabs. No automatic reimport.
+   specific server process and close only temporary tabs. Do not terminate an
+   in-flight cleanup when the deadline expires; report deadline breach and wait
+   for removal confirmation. No automatic reimport.
 
 Web sideload may leave a development registration in browser local storage.
 The current supported UI has not established a way to prove the baseline or
@@ -113,6 +161,15 @@ verifiable and must not be described as full registration rollback.
 
 ## Evidence and checks
 
+- Review follow-up: isolated fake-file regressions exercise delayed deletion
+  both before and after a scaled deadline, plus failed and invalid-journal cases.
+  `python3 test/word-harness/test_olc74_watchdog.py -v` passed 4/4. Actual
+  fake-marker removal occurred at 1.114 s of a 1.600 s deadline in the on-time
+  case and 1.914 s in the deliberately late case; the latter returned failure
+  after the child finished. These are fake markers, not CA trust measurements;
+  no CA was imported. The exact published HTML hash, marker and read-only
+  priority were tested with fake Word runtime (7/7 exporter tests). Neither test
+  establishes native Word behavior.
 - Targeted fake-runtime tests: 2 files / 16 tests pass. `npm run lint`,
   `npm run typecheck` using existing complete fixture dependencies, `npm run
   build:word-harness`, `npm run build`, `npm run verify:bundle` all exit 0.

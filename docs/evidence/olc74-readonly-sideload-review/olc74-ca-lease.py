@@ -2,7 +2,7 @@
 """OLC-74 reviewed trust lease; only begin/end can mutate the specified NSS DB.
 Do not execute begin against the real database without explicit owner approval.
 """
-import argparse, hashlib, json, os, re, sqlite3, subprocess, sys, tempfile
+import argparse, fcntl, hashlib, json, os, re, sqlite3, subprocess, sys, tempfile, time
 from pathlib import Path
 
 ROOT=Path('/tmp/olc74-local-https-review')
@@ -18,8 +18,8 @@ LEAF_SHA='68ce5b91ee71221d3a6da0c8c12fa70638a7133a0cbfcfb82bf9fa37f5622cc5'
 PATTERN=re.compile(r'^\s*(.*?)\s+([A-Za-z]*,[A-Za-z]*,[A-Za-z]*)\s*$')
 
 def digest(data): return hashlib.sha256(data).hexdigest()
-def run(args, data=None):
-    p=subprocess.run(args,input=data,capture_output=True,timeout=20)
+def run(args, data=None, timeout=20):
+    p=subprocess.run(args,input=data,capture_output=True,timeout=timeout)
     if p.returncode:
         raise RuntimeError(f'{Path(args[0]).name} exit {p.returncode}; no private stderr emitted')
     return p.stdout
@@ -82,7 +82,7 @@ def atomic_json(path, content):
         if os.path.exists(tmp): os.unlink(tmp)
 
 def journal_path(db):
-    return ROOT/('trust-lease-sideload-real.json' if db==ACTUAL else 'trust-lease-sideload-test.json')
+    return ROOT/('trust-lease-sideload-v2-real.json' if db==ACTUAL else 'trust-lease-sideload-v2-test.json')
 
 def verify_live_chrome_and_chain(db):
     if db!=ACTUAL: return
@@ -107,8 +107,16 @@ def verify_live_chrome_and_chain(db):
 
 def begin(db, authorized):
     if not authorized: raise RuntimeError('explicit --authorized required; obtain owner approval before real DB')
-    verify_live_chrome_and_chain(db)
     journal=journal_path(db)
+    lock_fd=os.open(str(journal)+'.lock',os.O_CREAT|os.O_RDWR,0o600)
+    try:
+        fcntl.flock(lock_fd,fcntl.LOCK_EX)
+        return begin_locked(db,journal)
+    finally:
+        os.close(lock_fd)
+
+def begin_locked(db, journal):
+    verify_live_chrome_and_chain(db)
     if journal.exists(): raise RuntimeError('journal exists: stop, do not overwrite prior evidence')
     before=get_entries(db)
     trusts_before=trust_rows(db)
@@ -116,7 +124,7 @@ def begin(db, authorized):
         raise RuntimeError('pre-existing NSS trust record for this CA: no changes made')
     if NICK in before or any(v['sha256']==CA_DER_SHA for v in before.values()):
         raise RuntimeError('CA or nickname already exists: no changes made')
-    state={'db':str(db),'ca_sha256':CA_DER_SHA,'nickname':NICK,'trust':TRUST,'before':before,'trusts_before':trusts_before,'state':'adding'}
+    state={'db':str(db),'ca_sha256':CA_DER_SHA,'nickname':NICK,'trust':TRUST,'before':before,'trusts_before':trusts_before,'state':'adding','lease_started_monotonic':time.monotonic()}
     fd=os.open(journal,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
     with os.fdopen(fd,'w') as f:
         json.dump(state,f,indent=2,sort_keys=True);f.write('\n');f.flush();os.fsync(f.fileno())
@@ -137,9 +145,21 @@ def begin(db, authorized):
 def end(db, authorized):
     if not authorized: raise RuntimeError('explicit --authorized required')
     journal=journal_path(db)
+    lock_fd=os.open(str(journal)+'.lock',os.O_CREAT|os.O_RDWR,0o600)
+    try:
+        fcntl.flock(lock_fd,fcntl.LOCK_EX)
+        return end_locked(db,journal)
+    finally:
+        os.close(lock_fd)
+
+def end_locked(db, journal):
     state=json.loads(journal.read_text())
     if state['db']!=str(db) or state['ca_sha256']!=CA_DER_SHA or state['nickname']!=NICK or state['trust']!=TRUST:
         raise RuntimeError('journal does not match requested removal')
+    if state['state']=='restored':
+        if get_entries(db)!=state['before'] or trust_rows(db)!=state['trusts_before']:
+            raise RuntimeError('restored journal but NSS differs; stop')
+        return {'status':'already-restored','other_entries_match':True}
     if state['state'] not in ('adding','added'):
         raise RuntimeError('journal state does not permit removal')
     now=get_entries(db)
@@ -147,7 +167,7 @@ def end(db, authorized):
     trusts_now=trust_rows(db)
     if target is None:
         if trusts_now!=state['trusts_before'] or now!=state['before']: raise RuntimeError('target absent but other records differ; stop')
-        state['state']='restored';atomic_json(journal,state)
+        state['state']='restored';state['restored_monotonic']=time.monotonic();atomic_json(journal,state)
         return {'status':'already-restored','other_entries_match':True}
     if len([r for r in trusts_now if r['target']])!=1:
         raise RuntimeError('CA trust object count changed; do not delete')
@@ -156,7 +176,9 @@ def end(db, authorized):
     if any(k != NICK and v['sha256'] == CA_DER_SHA for k,v in now.items()):
         raise RuntimeError('same certificate appears under another nickname; do not delete')
     # Remove only the unique nickname created by this lease; preserve other changes.
-    run([str(CERTUTIL),'-D','-d','sql:'+str(db),'-n',NICK])
+    # Once deletion begins, do not kill it on a timeout; the watchdog reports
+    # deadline breaches while continuing to wait for confirmed cleanup.
+    run([str(CERTUTIL),'-D','-d','sql:'+str(db),'-n',NICK],timeout=None)
     after=get_entries(db)
     if NICK in after or any(v['sha256']==CA_DER_SHA for v in after.values()):
         raise RuntimeError('target persists after removal; keep journal and report')
@@ -165,7 +187,7 @@ def end(db, authorized):
     trusts_after=trust_rows(db)
     if any(r['target'] for r in trusts_after) or trusts_after!=[r for r in trusts_now if not r['target']]:
         raise RuntimeError('NSS trust records differ after removal; keep journal')
-    state['state']='restored';atomic_json(journal,state)
+    state['state']='restored';state['restored_monotonic']=time.monotonic();atomic_json(journal,state)
     return {'status':'restored','other_entries_unchanged_during_removal':True,
             'unrelated_entries_match_pre_import':after==state['before'] and trusts_after==state['trusts_before']}
 

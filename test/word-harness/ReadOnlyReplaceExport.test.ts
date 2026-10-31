@@ -1,4 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { FakeOfficeWordRuntime } from "../office/FakeOfficeWordRuntime";
 import { bindReadOnlyReplaceExport } from "./ReadOnlyReplaceExport";
 import { createReadOnlyReplaceProbe } from "./ReadOnlyReplaceProbe";
@@ -15,6 +18,29 @@ afterEach(() => {
 function render(): void {
   document.body.innerHTML = '<main><p id="bootstrap-error"></p><button>Apply</button></main>';
 }
+
+it("the exact published candidate HTML selects read-only export before explicit proposal mode", async () => {
+  const directory = resolve(process.cwd(), "docs/evidence/olc74-readonly-sideload-review");
+  const html = readFileSync(resolve(directory, "taskpane.html"));
+  const candidate = JSON.parse(readFileSync(resolve(directory, "CANDIDATE.json"), "utf8"));
+  expect(createHash("sha256").update(html).digest("hex")).toBe(candidate.files["taskpane.html"]);
+  const parsed = new DOMParser().parseFromString(html.toString("utf8"), "text/html");
+  const marker = parsed.querySelector('meta[name="olc74-readonly-export"][content="1"]');
+  expect(marker).not.toBeNull();
+  expect(parsed.querySelector('script[src="taskpane.js"]')?.hasAttribute("defer")).toBe(true);
+  document.head.append(document.importNode(marker!, true));
+  document.body.innerHTML = parsed.body.innerHTML;
+  window.history.replaceState(null, "", "/?proposal=explicit");
+  vi.stubGlobal("Office", {
+    HostType: { Word: "Word" },
+    onReady: (callback: (info: { host: string }) => void) => callback({ host: "Word" }),
+  });
+  await import("./wordHarness.js");
+  expect(document.getElementById("readonly-export-status")?.textContent).toBe("ready");
+  expect(document.querySelector("button")?.textContent).toBe("Capture read-only OOXML once");
+  expect(document.getElementById("word-proposal-runtime")).toBeNull();
+  expect(document.getElementById("harness-content")).toBeNull();
+});
 
 it("exports the exact first triple as plain DOM text and a local Blob without writes", async () => {
   render();
