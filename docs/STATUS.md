@@ -370,3 +370,14 @@ log and a control/observation boundary. Local HTTPS checks passed without a CA
 import or Word sideload; actual manifest retrieval and Word registration remain
 unverified. See the [observation plan](evidence/olc74-readonly-sideload-review/PLAN.md).
 OLC-74 remains open.
+
+
+## OLC-74 observed manifest attempt — 2026-10-31
+
+After a control manifest response, the one-time observation recorded a TLS
+handshake but no HTTP request before cleanup; Word showed no registration
+dialog or local pane. CA removal was confirmed within the deadline. Chrome
+rejected localhost TLS while the 127.0.0.1 test loaded; the difference remains
+unexplained. No XML capture or product fix was obtained. See the [run
+report](evidence/olc74-readonly-sideload-review/RUN-20261031-OBSERVED.md).
+OLC-74 remains open.
