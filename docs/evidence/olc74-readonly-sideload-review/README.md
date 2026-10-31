@@ -1,5 +1,9 @@
 # OLC-74: read-only Word sideload diagnostic — review only
 
+The newly prepared shared-origin alternative is reviewed in
+[the staging read-only plan](../olc74-staging-readonly-review/PLAN.md). It
+requires separate activation approval; no new localhost/CA attempt is proposed.
+
 **Draft evidence; not a product fix or release.** The candidate takes one new
 synthetic Word capture, retains the first exact original/current/target OOXML
 and displays JSON as DOM text for local automation. It does not call Apply,

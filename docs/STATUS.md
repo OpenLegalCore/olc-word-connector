@@ -381,3 +381,17 @@ rejected localhost TLS while the 127.0.0.1 test loaded; the difference remains
 unexplained. No XML capture or product fix was obtained. See the [run
 report](evidence/olc74-readonly-sideload-review/RUN-20261031-OBSERVED.md).
 OLC-74 remains open.
+
+
+## OLC-74 shared staging read-only candidate — 2026-10-31
+
+Read-only Cloudflare/API and 69 static GETs confirm current canonical Pages
+deployment `9b0ae7ed-e4f2-4cd4-a07a-b2db42595d05`, source `fddc65d7…`. Its
+23 served files are retained byte-for-byte with a source-pinned `_headers`
+file and verified retained-deployment rollback reference. The review-only
+packet changes taskpane.html and adds three exact existing diagnostic assets;
+manifest, SSO assets, headers and all other old files stay unchanged. Offline
+exact-packet fake Word checks pass; actual Word capture and delivery/rollback
+are NOT RUN. The temporary UI would affect all newly opened staging panes.
+See the [approval plan](evidence/olc74-staging-readonly-review/PLAN.md).
+No CA/sideload/activation, Engine/SSO or infrastructure change. OLC-74 stays open.

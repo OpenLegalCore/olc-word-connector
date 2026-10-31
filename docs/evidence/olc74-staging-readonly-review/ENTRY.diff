@@ -1,0 +1,27 @@
+--- active/taskpane.html
++++ candidate/taskpane.html
+@@ -1 +1,24 @@
+-<!doctype html><html lang="en-US"><head><meta charset="UTF-8"/><meta http-equiv="X-UA-Compatible" content="IE=Edge"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>OpenLegalCore</title><script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script><link href="f801043f68c0679f8271.css" rel="stylesheet"/><script defer="defer" src="polyfill.015dadd7d7c3d40b4c90.js"></script><script defer="defer" src="microsoft-auth.a6a8ab99044c92476e33.js"></script><script defer="defer" src="taskpane.54de0fde9d0059ac8b60.js"></script></head><body class="taskpane-runtime"><div id="taskpane-root"><div class="olc-app olc-locale-pending" data-view-state="locale-pending" aria-busy="true"><header class="olc-app-header"><div class="olc-brand"><img class="olc-brand-mark" src="/assets/office/1.0.0.2/openlegalcore-mark-80.png" alt="OpenLegalCore" width="26" height="26"/><p class="olc-product-title">OpenLegalCore</p></div></header></div></div></body></html>+<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="UTF-8">
++  <meta name="viewport" content="width=device-width,initial-scale=1">
++  <meta name="olc74-readonly-export" content="1">
++  <meta name="olc74-staging-diagnostic" content="olc74-staging-readonly-v1">
++  <title>OLC-74 temporary read-only diagnostic</title>
++  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
++  <link rel="stylesheet" href="olc74-readonly-style.373d1e42241edc87d655.css">
++  <link rel="stylesheet" href="f801043f68c0679f8271.css">
++  <script defer src="olc74-readonly-polyfill.2976bd75fd5ece7afa55.js"></script>
++  <script defer src="olc74-readonly-taskpane.49fca523dcd5d7b4260a.js"></script>
++</head>
++<body>
++  <header>
++    <h1>OLC-74 temporary read-only diagnostic</h1>
++    <p id="olc74-staging-identity">olc74-staging-readonly-v1</p>
++    <p>Only use synthetic Document19. Verify its name in Word before capture.</p>
++    <p>One explicit capture per pane instance. This is a new diagnostic capture.</p>
++  </header>
++  <main><p id="bootstrap-error" role="alert">Waiting for the Word host.</p></main>
++</body>
++</html>

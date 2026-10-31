@@ -1,0 +1,10 @@
+{
+  "CURRENT.json": "20b7cd662acf4d263479225175b8a6d0ef5476ffae2944b767662c7cb81a1043",
+  "PACKAGE.json": "15f94df4e9e752fdc2b5c02be8dcac99fe08cb8bf3ec2f3c21fbdb079dd0b0f7",
+  "PLAN.md": "097bf5fa9ef410f9372153eedb79391c09005f1e8293de882c78a99a678984b7",
+  "prepare.py": "4f8321d5639b176305a319cfe435ff3e927c76ab8fdef1fafe569115c27c0591",
+  "verify-package.cjs": "a724a4b7b92bcc2a0155f52bc963eaa0a94328fec92acd5968e53f1c45b2bf47",
+  "collect-dom.REDACTED.js": "9627fda2035491ec26c9a68bf7d6155364060a061511c88dc4fdb1da24830cbe",
+  "taskpane.html": "1538939a7d8c2a312b9c3f32942b26e6c806a2876e75baf04ce2c14f199d9ae0",
+  "ENTRY.diff": "0640d632df64ff74a2e93a25222283e6a7d855dd1b7fd45a9bbcca6648eafc48"
+}

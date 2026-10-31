@@ -1,0 +1,239 @@
+{
+  "checked_at": "2026-10-31T16:21:53.363Z",
+  "http_checked_at": "2026-10-31T16:23:13.975882+00:00",
+  "project": {
+    "id": "8b6d587b-8ce5-46e7-a01f-8e528c2a1fc7",
+    "name": "olc-word-staging",
+    "domains": [
+      "olc-word-staging.pages.dev",
+      "word-staging.openlegalcore.org"
+    ],
+    "canonical_id": "9b0ae7ed-e4f2-4cd4-a07a-b2db42595d05",
+    "uses_functions": false,
+    "production_branch": "main"
+  },
+  "deployment": {
+    "id": "9b0ae7ed-e4f2-4cd4-a07a-b2db42595d05",
+    "url": "https://9b0ae7ed.olc-word-staging.pages.dev",
+    "created_on": "2026-10-26T05:28:12.180109Z",
+    "status": "success",
+    "source": "fddc65d7ebf8a2f5e16332a322adca5783deacfd",
+    "aliases": [
+      "https://word-staging.openlegalcore.org"
+    ]
+  },
+  "cloudflare_file_keys": {
+    "/MSAL-LICENSE.txt": "e0bec3a0dfc12d276f10d4561b035628",
+    "/assets/icon-128.png": "450f9e10225588ad5d705059c5f4fc7a",
+    "/assets/office/1.0.0.2/openlegalcore-mark-16.png": "7e186bdbb20b1fa4ccbcbb3ba315a098",
+    "/assets/office/1.0.0.2/openlegalcore-mark-32.png": "0dfaf36cb3ca80fbfdc7306240576562",
+    "/assets/office/1.0.0.2/openlegalcore-mark-64.png": "6276dada2e822544ac7da7ae58aa6340",
+    "/assets/office/1.0.0.2/openlegalcore-mark-80.png": "533836354658af93c0f4c99c1b130be5",
+    "/commands.7ecfbe69559036f859a7.js": "67b7dd853a03d2b2c245beacb0f84d44",
+    "/commands.html": "e86e6bb5d8db6b58599e368746cf9d59",
+    "/f801043f68c0679f8271.css": "beb90dd909d1f2087190913d323008e0",
+    "/manifest.xml": "989f43763c5a225f0f8dbf64e5581c27",
+    "/microsoft-auth.a6a8ab99044c92476e33.js": "e477f0d5c641a8440d96f519654282d7",
+    "/microsoft-auth.a6a8ab99044c92476e33.js.LICENSE.txt": "d53905693201cf795be0d4dfdc9e5d65",
+    "/microsoft-redirect.90b5dc65b940686b1746.js": "4402c5a333721d81c4005d255a50f139",
+    "/microsoft-redirect.html": "2b8727add0e46f94bbb047c831c730ce",
+    "/microsoft-signin.10f2634241f020cbc3ac.js": "0eb0ca3bfb580909ce9969ccd52ed398",
+    "/microsoft-signin.10f2634241f020cbc3ac.js.LICENSE.txt": "be1c69e508ce41d7218a8226d0e6392d",
+    "/microsoft-signin.html": "2dc3bac61f876c7315539ff9be7f794b",
+    "/polyfill.015dadd7d7c3d40b4c90.js": "f7c9be75bd5daf36985c5a988a0aa5f1",
+    "/signin.9179a61cd92a01bb2e3f.js": "9f0f7f9998ef2671c2570c561d2acf0a",
+    "/signin.html": "611dba2f4f03aeec0b0b332de14c95fa",
+    "/taskpane.54de0fde9d0059ac8b60.js": "f35795e2c445b0c7e5ec63dca31f9000",
+    "/taskpane.54de0fde9d0059ac8b60.js.LICENSE.txt": "be1c69e508ce41d7218a8226d0e6392d",
+    "/taskpane.html": "8830ce263644b1b5b64751cc32ee3239"
+  },
+  "files_sha256": {
+    "MSAL-LICENSE.txt": "c544adf8f0d43453d9fdf6c11da19605d12d89806a7870653169b8cc97f5bb53",
+    "_headers": "d7ba8a562548d191cfd0d7249b5a081a37fe235efc95dd6dc7976213582c0ad5",
+    "assets/icon-128.png": "8b1413f73e63b7ad079b4cd735b89bd854933326da505fee6e45613527fa96ce",
+    "assets/office/1.0.0.2/openlegalcore-mark-16.png": "71bf906b86e19ef6660af72dcae7fcb16b72d8b99d34319bf7154f7afac5c57b",
+    "assets/office/1.0.0.2/openlegalcore-mark-32.png": "0a605930e9605de57ac66431d5241862b82be1f5b72378a3c77fa056dff543e2",
+    "assets/office/1.0.0.2/openlegalcore-mark-64.png": "72415b81615fa6026db2b4affc8e22de26f490e36d020f517fecc26893ec5769",
+    "assets/office/1.0.0.2/openlegalcore-mark-80.png": "54c5cde1c8af4565f373108793729704e79fc5ce9083739769cb5896c2749736",
+    "commands.7ecfbe69559036f859a7.js": "827934507dc9ef32819cdcfbba8cde20a10448efc4a69824fa866dbe2787b6b9",
+    "commands.html": "547f2e3b5e142f3334fc521c0864d4b1ac3cf80264cf65ee7fae07d4f4ca9361",
+    "f801043f68c0679f8271.css": "73b0ae18f9499c6b869223adbc826b7e9d022d54cca4501de9f3ca3761b9289c",
+    "manifest.xml": "45f81beb454902c8206d350bcf06a24fede74fa3586e24476595b96e7d1ad665",
+    "microsoft-auth.a6a8ab99044c92476e33.js": "c5227138b3b3d5548764e38849f0a8699c2b0f1457702ee9a3b6a34bc99bbd3b",
+    "microsoft-auth.a6a8ab99044c92476e33.js.LICENSE.txt": "107af2f3a281dd103744d3cdbc0675a2d7016bc6183c06b0945832873081a7c0",
+    "microsoft-redirect.90b5dc65b940686b1746.js": "3ffe724ae4ce1097d24560d5fccdd87ebd9c57730466ef35046a2b79ce50c718",
+    "microsoft-redirect.html": "986c842c838b591f956f129c4a3f288b62fbb2b97097c56b8ee651bd81cd56aa",
+    "microsoft-signin.10f2634241f020cbc3ac.js": "921e35bea57ae25e9babb9e807ebc2ef3ff1e0d5c152ea190530699a0956be86",
+    "microsoft-signin.10f2634241f020cbc3ac.js.LICENSE.txt": "8c9946dfc859a2bfb26cc541125631cd96e7110fa20a702eb19275c9d1658805",
+    "microsoft-signin.html": "69ac3d6a864ca0cedc0c5909d05743dba35eb64632a1d1dad7806ac339ee53f6",
+    "polyfill.015dadd7d7c3d40b4c90.js": "c473447a7192423d011657808d56507c66496c049f3f8ac7480164080034888a",
+    "signin.9179a61cd92a01bb2e3f.js": "ee31786cdc45585452a4abed9b856e1793544ab900216f23c3220cec9e352cf4",
+    "signin.html": "729cbc1f4876147b466afd91f013bfc4ca416c533fce0e68114eb153e3f23a72",
+    "taskpane.54de0fde9d0059ac8b60.js": "bf6a404edf2086a7521c9b9dc0209f645f8efc0f4f93053020ec096fc0c3f8ec",
+    "taskpane.54de0fde9d0059ac8b60.js.LICENSE.txt": "8c9946dfc859a2bfb26cc541125631cd96e7110fa20a702eb19275c9d1658805",
+    "taskpane.html": "8e44739d3e34f1e724b0456da6813d4bf98d9bc6c0c39b14c96e8c6d5c640107"
+  },
+  "headers_source": "fddc65d7ebf8a2f5e16332a322adca5783deacfd:hosting/cloudflare/_headers",
+  "headers_provenance_limit": "_headers is hidden by Pages; bytes retained from the exact source commit; effects independently checked over HTTP, not retrieved from deployment storage.",
+  "harness_metadata_sha256": "56b401c5eb8fdc9dade12f439290c595f96be917a72ba27a33e6ed8412f51daa",
+  "candidate_entry_sha256": "1538939a7d8c2a312b9c3f32942b26e6c806a2876e75baf04ce2c14f199d9ae0",
+  "http": {
+    "hosts": [
+      {
+        "host": "https://9b0ae7ed.olc-word-staging.pages.dev",
+        "static_gets": 23,
+        "status_200": true,
+        "all_body_hashes_match_baseline": true
+      },
+      {
+        "host": "https://olc-word-staging.pages.dev",
+        "static_gets": 23,
+        "status_200": true,
+        "all_body_hashes_match_baseline": true
+      },
+      {
+        "host": "https://word-staging.openlegalcore.org",
+        "static_gets": 23,
+        "status_200": true,
+        "all_body_hashes_match_baseline": true,
+        "path_header_overrides": {
+          "/assets/icon-128.png": {
+            "final_path": "/assets/icon-128.png",
+            "content_type": "image/png",
+            "cache_control": "public, max-age=14400, must-revalidate"
+          }
+        }
+      }
+    ],
+    "common_security_headers": {
+      "content-security-policy": "default-src 'self'; script-src 'self' https://appsforoffice.microsoft.com; style-src 'self'; img-src 'self' data:; connect-src 'self' https://login.microsoftonline.com; frame-src 'self' https://login.microsoftonline.com https://login.live.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self' https://word.cloud.microsoft https://inclient.store.office.com https://*.officeapps.live.com;",
+      "strict-transport-security": "max-age=31536000; includeSubDomains",
+      "referrer-policy": "no-referrer",
+      "x-content-type-options": "nosniff",
+      "x-frame-options": null
+    },
+    "immutable_host_path_headers": {
+      "/MSAL-LICENSE.txt": {
+        "final_path": "/MSAL-LICENSE.txt",
+        "content_type": "text/plain; charset=utf-8",
+        "cache_control": "public, max-age=0, must-revalidate"
+      },
+      "/assets/icon-128.png": {
+        "final_path": "/assets/icon-128.png",
+        "content_type": "image/png",
+        "cache_control": "public, max-age=0, must-revalidate"
+      },
+      "/assets/office/1.0.0.2/openlegalcore-mark-16.png": {
+        "final_path": "/assets/office/1.0.0.2/openlegalcore-mark-16.png",
+        "content_type": "image/png",
+        "cache_control": "public, max-age=31536000, immutable"
+      },
+      "/assets/office/1.0.0.2/openlegalcore-mark-32.png": {
+        "final_path": "/assets/office/1.0.0.2/openlegalcore-mark-32.png",
+        "content_type": "image/png",
+        "cache_control": "public, max-age=31536000, immutable"
+      },
+      "/assets/office/1.0.0.2/openlegalcore-mark-64.png": {
+        "final_path": "/assets/office/1.0.0.2/openlegalcore-mark-64.png",
+        "content_type": "image/png",
+        "cache_control": "public, max-age=31536000, immutable"
+      },
+      "/assets/office/1.0.0.2/openlegalcore-mark-80.png": {
+        "final_path": "/assets/office/1.0.0.2/openlegalcore-mark-80.png",
+        "content_type": "image/png",
+        "cache_control": "public, max-age=31536000, immutable"
+      },
+      "/commands.7ecfbe69559036f859a7.js": {
+        "final_path": "/commands.7ecfbe69559036f859a7.js",
+        "content_type": "text/javascript; charset=UTF-8",
+        "cache_control": "public, max-age=31536000, immutable"
+      },
+      "/commands.html": {
+        "final_path": "/commands",
+        "content_type": "text/html; charset=utf-8",
+        "cache_control": "public, max-age=0, must-revalidate"
+      },
+      "/f801043f68c0679f8271.css": {
+        "final_path": "/f801043f68c0679f8271.css",
+        "content_type": "text/css; charset=UTF-8",
+        "cache_control": "public, max-age=31536000, immutable"
+      },
+      "/manifest.xml": {
+        "final_path": "/manifest.xml",
+        "content_type": "application/xml; charset=UTF-8",
+        "cache_control": "no-cache"
+      },
+      "/microsoft-auth.a6a8ab99044c92476e33.js": {
+        "final_path": "/microsoft-auth.a6a8ab99044c92476e33.js",
+        "content_type": "text/javascript; charset=UTF-8",
+        "cache_control": "public, max-age=31536000, immutable"
+      },
+      "/microsoft-auth.a6a8ab99044c92476e33.js.LICENSE.txt": {
+        "final_path": "/microsoft-auth.a6a8ab99044c92476e33.js.LICENSE.txt",
+        "content_type": "text/plain; charset=utf-8",
+        "cache_control": "public, max-age=0, must-revalidate"
+      },
+      "/microsoft-redirect.90b5dc65b940686b1746.js": {
+        "final_path": "/microsoft-redirect.90b5dc65b940686b1746.js",
+        "content_type": "text/javascript; charset=UTF-8",
+        "cache_control": "public, max-age=31536000, immutable"
+      },
+      "/microsoft-redirect.html": {
+        "final_path": "/microsoft-redirect",
+        "content_type": "text/html; charset=utf-8",
+        "cache_control": "no-store"
+      },
+      "/microsoft-signin.10f2634241f020cbc3ac.js": {
+        "final_path": "/microsoft-signin.10f2634241f020cbc3ac.js",
+        "content_type": "text/javascript; charset=UTF-8",
+        "cache_control": "public, max-age=31536000, immutable"
+      },
+      "/microsoft-signin.10f2634241f020cbc3ac.js.LICENSE.txt": {
+        "final_path": "/microsoft-signin.10f2634241f020cbc3ac.js.LICENSE.txt",
+        "content_type": "text/plain; charset=utf-8",
+        "cache_control": "public, max-age=0, must-revalidate"
+      },
+      "/microsoft-signin.html": {
+        "final_path": "/microsoft-signin",
+        "content_type": "text/html; charset=utf-8",
+        "cache_control": "no-store"
+      },
+      "/polyfill.015dadd7d7c3d40b4c90.js": {
+        "final_path": "/polyfill.015dadd7d7c3d40b4c90.js",
+        "content_type": "text/javascript; charset=UTF-8",
+        "cache_control": "public, max-age=31536000, immutable"
+      },
+      "/signin.9179a61cd92a01bb2e3f.js": {
+        "final_path": "/signin.9179a61cd92a01bb2e3f.js",
+        "content_type": "text/javascript; charset=UTF-8",
+        "cache_control": "public, max-age=31536000, immutable"
+      },
+      "/signin.html": {
+        "final_path": "/signin",
+        "content_type": "text/html; charset=utf-8",
+        "cache_control": "public, max-age=0, must-revalidate"
+      },
+      "/taskpane.54de0fde9d0059ac8b60.js": {
+        "final_path": "/taskpane.54de0fde9d0059ac8b60.js",
+        "content_type": "text/javascript; charset=UTF-8",
+        "cache_control": "public, max-age=31536000, immutable"
+      },
+      "/taskpane.54de0fde9d0059ac8b60.js.LICENSE.txt": {
+        "final_path": "/taskpane.54de0fde9d0059ac8b60.js.LICENSE.txt",
+        "content_type": "text/plain; charset=utf-8",
+        "cache_control": "public, max-age=0, must-revalidate"
+      },
+      "/taskpane.html": {
+        "final_path": "/taskpane",
+        "content_type": "text/html; charset=utf-8",
+        "cache_control": "no-store"
+      }
+    }
+  },
+  "final_read_only_check": {
+    "checked_at": "2026-10-31T16:30:30.602Z",
+    "canonical_id": "9b0ae7ed-e4f2-4cd4-a07a-b2db42595d05",
+    "source": "fddc65d7ebf8a2f5e16332a322adca5783deacfd",
+    "status": "success"
+  }
+}
