@@ -351,3 +351,13 @@ joining remains unsupported; private run ID/bodyhash requires independently
 retained actual sent bytes. No new provider/completion/replay, Word action,
 Engine/Studio/LWS runtime or infrastructure change or merge. Word source/deployment/Workers/SSO and all
 existing checkouts remain preserved. See [clean evidence and limits](evidence/olc74-terminal-failure-20261025/README.md).
+
+
+## OLC-74 read-only sideload attempt — 2026-10-31
+
+The second approved temporary CA lease was removed within its deadline, but the
+Word ribbon opened the existing staging pane and the diagnostic capture did not
+run. Chrome rejected localhost TLS after cleanup but still loaded the 127.0.0.1
+variant; its cause is undetermined. Development registration status remains
+unverified. No XML comparison or product fix was obtained. OLC-74 remains open;
+see the [sanitized run report](evidence/olc74-readonly-sideload-review/RUN-20261031-SECOND-LEASE.md).
