@@ -1,5 +1,27 @@
 # Word Connector — OLC-72 and OLC-74 review status
 
+## OLC-74 approved native diagnostic attempt — blocked before sideload
+
+The owner-approved one-time v2 CA lease was restored in 24.902 seconds; other
+NSS entries matched baseline and Chrome again rejected localhost TLS. The
+separate synthetic Word test reached an Enable Developer Mode prompt and was
+stopped before confirming or establishing a dev registration. No native
+read-only pane, capture or XML triple resulted. The Developer Mode scope is
+unverified. See the [sanitized execution result](evidence/olc74-readonly-sideload-review/RUN-20261031.md).
+OLC-74 remains open; Engine remains `54552da`.
+
+## OLC-74 read-only sideload diagnostic — IN REVIEW
+
+A test-only, one-shot Word probe and DOM export candidate is prepared for
+independent review. The real historical Apply rejection remains unexplained;
+the previously observed diagnostic OOXML mismatch has no captured XML diff.
+The dev manifest remains unchanged, and the candidate is not delivered,
+sideloaded or native-Word accepted. A web sideload may leave a development
+registration whose selective cleanup is unverified. Owner approval is required
+before a new CA lease or sideload; OLC-74 stays open. Targeted fake-runtime
+tests pass; full-suite and remote manifest validation have limitations. See the
+[review package and exact operating plan](evidence/olc74-readonly-sideload-review/README.md).
+
 ## Inactive OLC-74 correlated capture candidate
 
 [Prospective diagnostic correlation](evidence/olc74-correlated-capture/README.sl.md)
@@ -329,3 +351,47 @@ joining remains unsupported; private run ID/bodyhash requires independently
 retained actual sent bytes. No new provider/completion/replay, Word action,
 Engine/Studio/LWS runtime or infrastructure change or merge. Word source/deployment/Workers/SSO and all
 existing checkouts remain preserved. See [clean evidence and limits](evidence/olc74-terminal-failure-20261025/README.md).
+
+
+## OLC-74 read-only sideload attempt — 2026-10-31
+
+The second approved temporary CA lease was removed within its deadline, but the
+Word ribbon opened the existing staging pane and the diagnostic capture did not
+run. Chrome rejected localhost TLS after cleanup but still loaded the 127.0.0.1
+variant; its cause is undetermined. Development registration status remains
+unverified. No XML comparison or product fix was obtained. OLC-74 remains open;
+see the [sanitized run report](evidence/olc74-readonly-sideload-review/RUN-20261031-SECOND-LEASE.md).
+
+
+## OLC-74 manifest retrieval observation — review candidate
+
+The diagnostic server now has a review-only, privacy-limited TLS/HTTP event
+log and a control/observation boundary. Local HTTPS checks passed without a CA
+import or Word sideload; actual manifest retrieval and Word registration remain
+unverified. See the [observation plan](evidence/olc74-readonly-sideload-review/PLAN.md).
+OLC-74 remains open.
+
+
+## OLC-74 observed manifest attempt — 2026-10-31
+
+After a control manifest response, the one-time observation recorded a TLS
+handshake but no HTTP request before cleanup; Word showed no registration
+dialog or local pane. CA removal was confirmed within the deadline. Chrome
+rejected localhost TLS while the 127.0.0.1 test loaded; the difference remains
+unexplained. No XML capture or product fix was obtained. See the [run
+report](evidence/olc74-readonly-sideload-review/RUN-20261031-OBSERVED.md).
+OLC-74 remains open.
+
+
+## OLC-74 shared staging read-only candidate — 2026-10-31
+
+Read-only Cloudflare/API and 69 static GETs confirm current canonical Pages
+deployment `9b0ae7ed-e4f2-4cd4-a07a-b2db42595d05`, source `fddc65d7…`. Its
+23 served files are retained byte-for-byte with a source-pinned `_headers`
+file and verified retained-deployment rollback reference. The review-only
+packet changes taskpane.html and adds three exact existing diagnostic assets;
+manifest, SSO assets, headers and all other old files stay unchanged. Offline
+exact-packet fake Word checks pass; actual Word capture and delivery/rollback
+are NOT RUN. The temporary UI would affect all newly opened staging panes.
+See the [approval plan](evidence/olc74-staging-readonly-review/PLAN.md).
+No CA/sideload/activation, Engine/SSO or infrastructure change. OLC-74 stays open.

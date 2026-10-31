@@ -1,0 +1,80 @@
+{
+  "status": "PREPARED_NOT_DEPLOYED_NOT_WORD_ACCEPTED",
+  "baseline_deployment": {
+    "id": "9b0ae7ed-e4f2-4cd4-a07a-b2db42595d05",
+    "url": "https://9b0ae7ed.olc-word-staging.pages.dev",
+    "created_on": "2026-10-26T05:28:12.180109Z",
+    "status": "success",
+    "source": "fddc65d7ebf8a2f5e16332a322adca5783deacfd",
+    "aliases": [
+      "https://word-staging.openlegalcore.org"
+    ]
+  },
+  "identity": "olc74-staging-readonly-v1",
+  "changed_existing": [
+    "taskpane.html"
+  ],
+  "added": [
+    "olc74-readonly-polyfill.2976bd75fd5ece7afa55.js",
+    "olc74-readonly-style.373d1e42241edc87d655.css",
+    "olc74-readonly-taskpane.49fca523dcd5d7b4260a.js"
+  ],
+  "removed": [],
+  "rollback_files_sha256": {
+    "MSAL-LICENSE.txt": "c544adf8f0d43453d9fdf6c11da19605d12d89806a7870653169b8cc97f5bb53",
+    "_headers": "d7ba8a562548d191cfd0d7249b5a081a37fe235efc95dd6dc7976213582c0ad5",
+    "assets/icon-128.png": "8b1413f73e63b7ad079b4cd735b89bd854933326da505fee6e45613527fa96ce",
+    "assets/office/1.0.0.2/openlegalcore-mark-16.png": "71bf906b86e19ef6660af72dcae7fcb16b72d8b99d34319bf7154f7afac5c57b",
+    "assets/office/1.0.0.2/openlegalcore-mark-32.png": "0a605930e9605de57ac66431d5241862b82be1f5b72378a3c77fa056dff543e2",
+    "assets/office/1.0.0.2/openlegalcore-mark-64.png": "72415b81615fa6026db2b4affc8e22de26f490e36d020f517fecc26893ec5769",
+    "assets/office/1.0.0.2/openlegalcore-mark-80.png": "54c5cde1c8af4565f373108793729704e79fc5ce9083739769cb5896c2749736",
+    "commands.7ecfbe69559036f859a7.js": "827934507dc9ef32819cdcfbba8cde20a10448efc4a69824fa866dbe2787b6b9",
+    "commands.html": "547f2e3b5e142f3334fc521c0864d4b1ac3cf80264cf65ee7fae07d4f4ca9361",
+    "f801043f68c0679f8271.css": "73b0ae18f9499c6b869223adbc826b7e9d022d54cca4501de9f3ca3761b9289c",
+    "manifest.xml": "45f81beb454902c8206d350bcf06a24fede74fa3586e24476595b96e7d1ad665",
+    "microsoft-auth.a6a8ab99044c92476e33.js": "c5227138b3b3d5548764e38849f0a8699c2b0f1457702ee9a3b6a34bc99bbd3b",
+    "microsoft-auth.a6a8ab99044c92476e33.js.LICENSE.txt": "107af2f3a281dd103744d3cdbc0675a2d7016bc6183c06b0945832873081a7c0",
+    "microsoft-redirect.90b5dc65b940686b1746.js": "3ffe724ae4ce1097d24560d5fccdd87ebd9c57730466ef35046a2b79ce50c718",
+    "microsoft-redirect.html": "986c842c838b591f956f129c4a3f288b62fbb2b97097c56b8ee651bd81cd56aa",
+    "microsoft-signin.10f2634241f020cbc3ac.js": "921e35bea57ae25e9babb9e807ebc2ef3ff1e0d5c152ea190530699a0956be86",
+    "microsoft-signin.10f2634241f020cbc3ac.js.LICENSE.txt": "8c9946dfc859a2bfb26cc541125631cd96e7110fa20a702eb19275c9d1658805",
+    "microsoft-signin.html": "69ac3d6a864ca0cedc0c5909d05743dba35eb64632a1d1dad7806ac339ee53f6",
+    "polyfill.015dadd7d7c3d40b4c90.js": "c473447a7192423d011657808d56507c66496c049f3f8ac7480164080034888a",
+    "signin.9179a61cd92a01bb2e3f.js": "ee31786cdc45585452a4abed9b856e1793544ab900216f23c3220cec9e352cf4",
+    "signin.html": "729cbc1f4876147b466afd91f013bfc4ca416c533fce0e68114eb153e3f23a72",
+    "taskpane.54de0fde9d0059ac8b60.js": "bf6a404edf2086a7521c9b9dc0209f645f8efc0f4f93053020ec096fc0c3f8ec",
+    "taskpane.54de0fde9d0059ac8b60.js.LICENSE.txt": "8c9946dfc859a2bfb26cc541125631cd96e7110fa20a702eb19275c9d1658805",
+    "taskpane.html": "8e44739d3e34f1e724b0456da6813d4bf98d9bc6c0c39b14c96e8c6d5c640107"
+  },
+  "candidate_files_sha256": {
+    "MSAL-LICENSE.txt": "c544adf8f0d43453d9fdf6c11da19605d12d89806a7870653169b8cc97f5bb53",
+    "_headers": "d7ba8a562548d191cfd0d7249b5a081a37fe235efc95dd6dc7976213582c0ad5",
+    "assets/icon-128.png": "8b1413f73e63b7ad079b4cd735b89bd854933326da505fee6e45613527fa96ce",
+    "assets/office/1.0.0.2/openlegalcore-mark-16.png": "71bf906b86e19ef6660af72dcae7fcb16b72d8b99d34319bf7154f7afac5c57b",
+    "assets/office/1.0.0.2/openlegalcore-mark-32.png": "0a605930e9605de57ac66431d5241862b82be1f5b72378a3c77fa056dff543e2",
+    "assets/office/1.0.0.2/openlegalcore-mark-64.png": "72415b81615fa6026db2b4affc8e22de26f490e36d020f517fecc26893ec5769",
+    "assets/office/1.0.0.2/openlegalcore-mark-80.png": "54c5cde1c8af4565f373108793729704e79fc5ce9083739769cb5896c2749736",
+    "commands.7ecfbe69559036f859a7.js": "827934507dc9ef32819cdcfbba8cde20a10448efc4a69824fa866dbe2787b6b9",
+    "commands.html": "547f2e3b5e142f3334fc521c0864d4b1ac3cf80264cf65ee7fae07d4f4ca9361",
+    "f801043f68c0679f8271.css": "73b0ae18f9499c6b869223adbc826b7e9d022d54cca4501de9f3ca3761b9289c",
+    "manifest.xml": "45f81beb454902c8206d350bcf06a24fede74fa3586e24476595b96e7d1ad665",
+    "microsoft-auth.a6a8ab99044c92476e33.js": "c5227138b3b3d5548764e38849f0a8699c2b0f1457702ee9a3b6a34bc99bbd3b",
+    "microsoft-auth.a6a8ab99044c92476e33.js.LICENSE.txt": "107af2f3a281dd103744d3cdbc0675a2d7016bc6183c06b0945832873081a7c0",
+    "microsoft-redirect.90b5dc65b940686b1746.js": "3ffe724ae4ce1097d24560d5fccdd87ebd9c57730466ef35046a2b79ce50c718",
+    "microsoft-redirect.html": "986c842c838b591f956f129c4a3f288b62fbb2b97097c56b8ee651bd81cd56aa",
+    "microsoft-signin.10f2634241f020cbc3ac.js": "921e35bea57ae25e9babb9e807ebc2ef3ff1e0d5c152ea190530699a0956be86",
+    "microsoft-signin.10f2634241f020cbc3ac.js.LICENSE.txt": "8c9946dfc859a2bfb26cc541125631cd96e7110fa20a702eb19275c9d1658805",
+    "microsoft-signin.html": "69ac3d6a864ca0cedc0c5909d05743dba35eb64632a1d1dad7806ac339ee53f6",
+    "olc74-readonly-polyfill.2976bd75fd5ece7afa55.js": "2976bd75fd5ece7afa55777728795a21f2c341ca03a7216c3345e80368dde83a",
+    "olc74-readonly-style.373d1e42241edc87d655.css": "373d1e42241edc87d655771791edfaae4a62e1366a0397a944a11948a73315c9",
+    "olc74-readonly-taskpane.49fca523dcd5d7b4260a.js": "49fca523dcd5d7b4260af19b0fc83f32d6f014decb726c79bd36abb52da772ad",
+    "polyfill.015dadd7d7c3d40b4c90.js": "c473447a7192423d011657808d56507c66496c049f3f8ac7480164080034888a",
+    "signin.9179a61cd92a01bb2e3f.js": "ee31786cdc45585452a4abed9b856e1793544ab900216f23c3220cec9e352cf4",
+    "signin.html": "729cbc1f4876147b466afd91f013bfc4ca416c533fce0e68114eb153e3f23a72",
+    "taskpane.54de0fde9d0059ac8b60.js": "bf6a404edf2086a7521c9b9dc0209f645f8efc0f4f93053020ec096fc0c3f8ec",
+    "taskpane.54de0fde9d0059ac8b60.js.LICENSE.txt": "8c9946dfc859a2bfb26cc541125631cd96e7110fa20a702eb19275c9d1658805",
+    "taskpane.html": "1538939a7d8c2a312b9c3f32942b26e6c806a2876e75baf04ce2c14f199d9ae0"
+  },
+  "rollback_tar_sha256": "86b4b8decc13c99c598719bdb1b2d3a27e750d25775282a0f9fa7fb865655e77",
+  "candidate_tar_sha256": "a15f76140c1afcf3b359d03fb90cc5b9c7142a05bd2b6bfd98aab1727cb134d9"
+}

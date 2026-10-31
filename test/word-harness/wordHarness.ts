@@ -5,8 +5,21 @@ import { OfficeWordAdapter } from "../../src/office/OfficeWordAdapter";
 import { ProductionTaskPaneRuntime } from "../../src/taskpane/ProductionTaskPaneRuntime";
 import { TaskPaneView } from "../../src/taskpane/TaskPaneView";
 import { ProposalPreviewGateway } from "../harness/ProposalPreviewGateway";
+import { bindReadOnlyReplaceExport } from "./ReadOnlyReplaceExport";
 
 void Office.onReady((info) => {
+  // This mode returns before the normal harness or proposal runtime is composed.
+  if (
+    new URLSearchParams(window.location.search).get("replaceProbe") === "export" ||
+    document.querySelector('meta[name="olc74-readonly-export"]')?.getAttribute("content") === "1"
+  ) {
+    if (info.host !== Office.HostType.Word) {
+      document.getElementById("bootstrap-error")!.textContent = "WORD_HOST_REQUIRED";
+      return;
+    }
+    bindReadOnlyReplaceExport(document);
+    return;
+  }
   const proposalRoot = document.getElementById("word-proposal-runtime");
   if (new URLSearchParams(window.location.search).get("proposal") === "explicit" && proposalRoot) {
     if (info.host !== Office.HostType.Word) return;
