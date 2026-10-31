@@ -1,5 +1,15 @@
 # Word Connector — OLC-72 and OLC-74 review status
 
+## OLC-74 approved native diagnostic attempt — blocked before sideload
+
+The owner-approved one-time v2 CA lease was restored in 24.902 seconds; other
+NSS entries matched baseline and Chrome again rejected localhost TLS. The
+separate synthetic Word test reached an Enable Developer Mode prompt and was
+stopped before confirming or establishing a dev registration. No native
+read-only pane, capture or XML triple resulted. The Developer Mode scope is
+unverified. See the [sanitized execution result](evidence/olc74-readonly-sideload-review/RUN-20261031.md).
+OLC-74 remains open; Engine remains `54552da`.
+
 ## OLC-74 read-only sideload diagnostic — IN REVIEW
 
 A test-only, one-shot Word probe and DOM export candidate is prepared for
