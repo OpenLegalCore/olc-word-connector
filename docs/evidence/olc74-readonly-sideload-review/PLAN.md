@@ -184,3 +184,79 @@ verifiable and must not be described as full registration rollback.
 - No actual Word native run, XML difference, product bug fix, Apply/Undo/Redo,
   Engine or SSO change, staging manifest change, product delivery or merge.
   Original Document17 and its staging objects were not touched. OLC-74 is open.
+
+
+## Follow-up: observe manifest retrieval (review only)
+
+The revised [serve.cjs](serve.cjs) is pinned in `REVIEW-FILES-SHA256.json`;
+`LOCAL-ARTIFACT-SHA256.json` still pins the preserved original local server.
+The revised server does not change the candidate, response headers, permissions,
+or CORS. Start the reviewed file directly, capture stdout to a new private
+mode-0600 file, and record its PID. For example, from the reviewed checkout:
+
+```sh
+umask 077
+set -C
+node docs/evidence/olc74-readonly-sideload-review/serve.cjs > /tmp/olc74-server-observation-NEW.jsonl 2>&1 &
+server_pid=$!
+# Verify the process is alive, the file is new and the expected READY line is present.
+# Complete and close all control requests, then mark the boundary:
+kill -USR2 "$server_pid"
+# Verify the observation phase event before opening the separately approved flow.
+```
+
+Use a unique unused log filename; `set -C` prevents overwrite. Preserve prior
+logs. Control requests run in `control` phase.
+Close their connections before sending `kill -USR2 <server-pid>`; subsequent
+records are tagged `observation`. This marks time, not client identity: any
+concurrent process can send requests, and an old connection could be reused.
+Stop if the boundary or exclusivity cannot be established. No headers, bodies,
+client addresses, query strings, unknown paths, or arbitrary method/error
+strings are logged. `other` conceals paths outside the candidate allowlist.
+
+A `tls` record with `connected` means the server saw a completed handshake;
+`error` contains a limited code or `OTHER`. A request record identifies an
+allowlisted path and method; the corresponding response reports status and
+`finished` or `closed-before-finish`. `finished` means Node handed the response
+to its operating system, not that Word parsed or accepted it. For a finished
+HTTP 200 manifest GET, the SHA-256 is calculated over streamed bytes.
+
+After the next independently authorized registration confirmation, inspect
+the retained JSON lines and the actual Word UI promptly, without clicking the
+staging ribbon button as a substitute. Classify evidence conservatively:
+
+- no observation-phase TLS or request events: no arrival observed; this does
+  not establish why or exclude traffic outside the captured interval;
+- TLS error: handshake failed at the server, with the limited recorded code;
+- manifest request with non-200 or incomplete response: HTTP/response failure;
+- completed manifest 200 and expected SHA: manifest sent, not accepted;
+- a request for `/taskpane.html` (or subsequent allowlisted task-pane assets):
+  local pane resource requested, not proof of a working pane.
+
+Use the supported CUA Word tab's `playwright.domSnapshot()` for any visible
+Word error and its `dev.logs({levels:['error','warn'], limit:100})` for
+available captured console errors. The latter is best effort: it may not expose
+network failures or all frame logs. Inspect locally and publish only a fixed
+error category/code and sanitized visible message; never publish raw console
+entries, document URLs, tokens, XML or session data. Save a private screenshot
+of a visible Word error if present. If neither UI nor logs provide an error,
+report it as unobserved. Preserve the test tab and the CA cleanup rules of this
+plan; a new trust import or sideload needs separate explicit owner approval.
+
+Targeted local validation, no trust import or sideload: `node --check
+docs/evidence/olc74-readonly-sideload-review/serve.cjs` and an isolated Python
+HTTPS client exercise passed. The client used the CA only in its own SSL
+context (Python 3.13 strict flag disabled for this existing certificate),
+checked manifest bytes/hash and CORS, taskpane 200, GET unknown path, POST
+manifest and root 404, a rejected untrusted TLS handshake, phase tagging,
+response completion and log redaction of query, cookie, origin and unknown
+path. This does not test Microsoft Word, a browser's TLS state or registration.
+
+Repository gates in this worktree: `npm run lint` exited 0. `npm run
+typecheck` exited 2 (Office type definitions could not be resolved); `npm test
+-- --run` exited 1 (Vitest config package resolution); `npm run build` exited
+1 (unresolved loaders/dependencies); `npm run validate:dev` exited 1 (validation
+service DNS `EAI_AGAIN`). `npm run verify:bundle` exited 0 against the existing
+`dist/prod`, but the failed build means this is not a fresh-build gate. No
+dependencies were installed. The isolated server checks above are the relevant
+new passing checks, not a claim of a complete repository test pass.

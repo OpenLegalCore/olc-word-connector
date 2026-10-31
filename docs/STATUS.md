@@ -361,3 +361,12 @@ run. Chrome rejected localhost TLS after cleanup but still loaded the 127.0.0.1
 variant; its cause is undetermined. Development registration status remains
 unverified. No XML comparison or product fix was obtained. OLC-74 remains open;
 see the [sanitized run report](evidence/olc74-readonly-sideload-review/RUN-20261031-SECOND-LEASE.md).
+
+
+## OLC-74 manifest retrieval observation — review candidate
+
+The diagnostic server now has a review-only, privacy-limited TLS/HTTP event
+log and a control/observation boundary. Local HTTPS checks passed without a CA
+import or Word sideload; actual manifest retrieval and Word registration remain
+unverified. See the [observation plan](evidence/olc74-readonly-sideload-review/PLAN.md).
+OLC-74 remains open.
