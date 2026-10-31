@@ -1,5 +1,17 @@
 # Word Connector — OLC-72 and OLC-74 review status
 
+## OLC-74 read-only sideload diagnostic — IN REVIEW
+
+A test-only, one-shot Word probe and DOM export candidate is prepared for
+independent review. The real historical Apply rejection remains unexplained;
+the previously observed diagnostic OOXML mismatch has no captured XML diff.
+The dev manifest remains unchanged, and the candidate is not delivered,
+sideloaded or native-Word accepted. A web sideload may leave a development
+registration whose selective cleanup is unverified. Owner approval is required
+before a new CA lease or sideload; OLC-74 stays open. Targeted fake-runtime
+tests pass; full-suite and remote manifest validation have limitations. See the
+[review package and exact operating plan](evidence/olc74-readonly-sideload-review/README.md).
+
 ## Inactive OLC-74 correlated capture candidate
 
 [Prospective diagnostic correlation](evidence/olc74-correlated-capture/README.sl.md)

@@ -1,0 +1,12 @@
+{
+  "generate-url.cjs": "e36b2b898325e568e33e549a2c6351fcefd2977ba4aabb404d3fcf083f40a4db",
+  "serve.cjs": "d5199966d1b1afdda638550986fc7f5561d85a2cae8922f51ad71ebd7de79095",
+  "collect-dom.js": "bbf4cfa8f04d37584a4f3a3996be055de8fe5ba7f681a9cd9de0a16da6592817",
+  "olc74-ca-lease.py": "3890400038a6b444e4433816e24cee3ca5264f84c4ce1e34317c86c25c244dc5",
+  "olc74-ca-watchdog.py": "309e82a2921243d258df5fec38d3b1253be104a260947c3eef1de6259e060f40",
+  "DOM-CHANGE.diff": "f9f0dbe423b7201e4ec04292b8f306efb19196b90c4c3b3cb4463e771e224732",
+  "candidate/CANDIDATE.json": "56b401c5eb8fdc9dade12f439290c595f96be917a72ba27a33e6ed8412f51daa",
+  "candidate/manifest.xml": "c2ec4f5123d3b531142e9b87dbfe15a1a7d5637d9a3f180a131ccc75aea4ece3",
+  "candidate/taskpane.js": "49fca523dcd5d7b4260af19b0fc83f32d6f014decb726c79bd36abb52da772ad",
+  "candidate/taskpane.html": "5c9bf7cbc65a330ed057aa05b6989cdf751d9587a7573c2e62f63f90f3f26595"
+}
